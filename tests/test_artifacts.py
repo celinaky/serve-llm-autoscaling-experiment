@@ -52,3 +52,23 @@ def test_summary_failed_run(tmp_path: Path):
     text = format_run_summary(root)
     assert "FAILED at stage 'deploy'" in text
     assert "Error:     RuntimeError: Deploying application failed" in text
+
+
+def test_summary_prints_recommended_ttft_slo(tmp_path: Path):
+    root = _make_run(tmp_path, "succeeded", [
+        {"mode": "agentx_fixed_concurrency", "level": 8, "request_count": 100,
+         "failed_requests": 0, "error": None},
+    ])
+    write_json(root / "analysis" / "slo_calibration.json", {
+        "recommended_ttft_slo_ms": 2412.3, "ttft_sample_count": 100,
+        "failed_request_count": 0,
+    })
+    text = format_run_summary(root)
+    assert "recommended 2412.3ms" in text
+    assert "analysis.ttft_slo_ms: 2412" in text
+    assert "agentx_fixed_concurrency" in text
+
+
+def test_summary_omits_slo_without_calibration(tmp_path: Path):
+    root = _make_run(tmp_path, "succeeded", [])
+    assert "TTFT SLO" not in format_run_summary(root)

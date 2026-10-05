@@ -18,6 +18,9 @@ and tears Serve down. It supports two kinds of load tests:
 - **AgentX concurrency ramps** replay recorded agentic coding sessions in one
   uninterrupted benchmark while the number of concurrent sessions ramps up.
   Use these to study autoscaling under a realistic multi-turn workload.
+- **AgentX fixed concurrency** replays the same sessions at a constant number
+  of concurrent sessions. Use it on a fixed replica count to calibrate a TTFT
+  SLO before running autoscaling experiments.
 
 The checked-in baseline uses one real `Qwen/Qwen3-0.6B-FP8` replica and a
 synthetic prefill-heavy workload (8,000 input tokens and 50 output tokens).
@@ -289,6 +292,109 @@ seconds. Check `stdout.log`/`stderr.log` for
 issues no cache-priming requests for the initial sessions, and check in
 `profile_export.jsonl` that the first root conversations begin at turn zero.
 
+## Calibrate a TTFT SLO with fixed AgentX concurrency
+
+Set `benchmark.mode` to `agentx_fixed_concurrency` to hold AgentX session
+concurrency at `target_concurrency` for the whole profiling duration. Unlike
+the ramp, the harness does not pass `--concurrency-ramp-duration`, and
+`concurrency_ramp_duration_s` is rejected rather than silently ignored. All
+other AgentX rules apply: streaming is required, synthetic settings are
+rejected, the scenario owns warmup, cache busting and ignore-EOS, and
+`duration_s >= 900` unless `unsafe_override: true`.
+
+`experiments/agentx_slo_baseline.yaml` runs the
+`agentx_kv_aware_autoscaling.yaml` deployment (same model, RTX PRO 6000,
+engine, KV-aware routing, direct streaming, body forwarding, HAProxy buffer,
+dataset and seed) on exactly one replica (`min_replicas`, `initial_replicas`
+and `max_replicas` all 1), with 8 AgentX sessions for 900s and up to 300s of
+drain:
+
+```bash
+autoscale-harness validate experiments/agentx_slo_baseline.yaml
+autoscale-harness run experiments/agentx_slo_baseline.yaml
+```
+
+The harness runs the equivalent of:
+
+```bash
+aiperf profile --scenario inferencex-agentx-mvp \
+  --public-dataset semianalysis_cc_traces_weka_062126_256k \
+  --concurrency 8 \
+  --trajectory-start-min-ratio 0 --trajectory-start-max-ratio 0 \
+  --benchmark-duration 900 --benchmark-grace-period 300 --random-seed 42 \
+  --streaming --use-server-token-count ...
+```
+
+Raw artifacts go to `benchmark/agentx-fixed-concurrency/`. The run gets the
+same telemetry, lifecycle, request windows and timeline as the other
+continuous modes. In the timeline and `analysis/concurrency_qps.json` the
+configured session concurrency is 8 from profiling start until `duration_s`
+and 0 afterward; there is no ramp-end marker. The summary row has
+`mode: agentx_fixed_concurrency`, `level` and `target_concurrency` 8, the
+harness-derived mean QPS and AIPerf's TTFT percentiles, and no
+`ramp_duration_s`.
+
+The run also writes `analysis/slo_calibration.json`:
+
+```json
+{
+  "metric": "time_to_first_token",
+  "unit": "ms",
+  "successful_request_count": 123,
+  "failed_request_count": 2,
+  "ttft_sample_count": 123,
+  "p50_ttft_ms": 1000,
+  "p90_ttft_ms": 2400,
+  "p99_ttft_ms": 5000,
+  "recommended_ttft_slo_ms": 2400,
+  "method": "p90 TTFT across successful profiling-phase requests"
+}
+```
+
+Percentiles cover every successful profiling-phase request. Warmup records
+are excluded. Failed requests are counted in `failed_request_count` but
+contribute no TTFT samples. The percentiles use the same linear
+interpolation as the request windows. The terminal run summary (and
+`autoscale-harness analyze`) prints the recommendation:
+
+```text
+TTFT SLO:  recommended 2400.0ms (p90 of 123 successful requests; 2 failed). Copy into analysis.ttft_slo_ms: 2400
+```
+
+The harness does not edit other configs. To use the SLO, copy
+`recommended_ttft_slo_ms` into the autoscaling experiment yourself:
+
+```yaml
+# experiments/agentx_kv_aware_autoscaling.yaml
+analysis:
+  ttft_slo_ms: 2400
+```
+
+If `failed_request_count` is not small, the replica was overloaded at this
+concurrency, and the p90 describes a saturated system. Lower the concurrency
+before you trust the number.
+
+### Session concurrency, ongoing requests and batch size
+
+These three numbers count different things and are not interchangeable:
+
+- **AgentX session concurrency** (`target_concurrency`) is the number of live
+  session trees AIPerf keeps active. Each tree alternates between in-flight
+  requests and client-side think time, and subagents can add parallel
+  requests.
+- **Ongoing HTTP requests** (Serve's `ongoing_requests`, the quantity
+  `target_ongoing_requests` controls) are the requests a replica is serving
+  right now. With 8 sessions this can be below 8, when sessions are between
+  turns, or above 8, when subagents fan out.
+- **vLLM batch size** (bounded by `max_num_seqs`) is the number of sequences
+  the engine schedules in one step, limited further by KV-cache capacity and
+  `max_num_batched_tokens`.
+
+> **Warning:** `target_ongoing_requests: 8` does **not** mean eight AgentX
+> sessions per replica. The autoscaler counts in-flight HTTP requests. To
+> relate the two, compare the baseline's Serve ongoing requests (pressure
+> panel) and client in-flight counts with its configured session concurrency.
+
 ## Routing
 
 `deployment.routing` selects how Serve picks an LLM replica and the ingress
@@ -349,7 +455,8 @@ resolved router class and the verified deployments are written to
 
 ## Autoscaling telemetry and timeline
 
-While a continuous run (request-rate series or AgentX ramp) is in progress,
+While a continuous run (request-rate series, AgentX ramp or fixed AgentX
+concurrency) is in progress,
 two background collectors sample the cluster from immediately before AIPerf
 starts, through its grace/drain period, to the end of any post-load
 observation:
@@ -376,7 +483,7 @@ with no requests in flight, to watch recovery and downscaling:
 ```
 
 The harness records each boundary in epoch nanoseconds in
-`benchmark/lifecycle.json`: AIPerf launch, profiling start, ramp end (AgentX),
+`benchmark/lifecycle.json`: AIPerf launch, profiling start, ramp end (AgentX ramp only),
 load-issuance end (`profiling start + duration_s`), profiling-phase end (drain
 complete), AIPerf exit, and observation end. Observation is skipped when a
 `fail_fast` failure aborts the run, or when `benchmark` runs without
@@ -397,7 +504,7 @@ After the run, the harness derives the analysis from the raw artifacts:
 - **Timeline** (`autoscaling_timeline.png`), four panels on one time axis:
   1. Traffic: offered, started and completed QPS with the configured load:
      QPS for a request-rate series, session concurrency (on a second axis)
-     for an AgentX ramp.
+     for an AgentX ramp or fixed-concurrency run.
   2. User experience: TTFT p50/p90/p99, rolling p99, optional SLO.
   3. Pressure: client in-flight requests and queue delay, Serve ongoing
      requests and router queue length.
@@ -419,9 +526,11 @@ autoscale-harness analyze runs/<run-directory> --window-s 10 --tail-window-s 60
 autoscale-harness analyze runs/<run-directory> --no-plot
 ```
 
-A request-rate-series run directory contains the following; an AgentX run
-has `benchmark/agentx-concurrency-ramp/` instead (without `rate_series.json`)
-and also writes `analysis/concurrency_qps.json`.
+A request-rate-series run directory contains the following. An AgentX run
+has `benchmark/agentx-concurrency-ramp/` or
+`benchmark/agentx-fixed-concurrency/` instead, without `rate_series.json`.
+It also writes `analysis/concurrency_qps.json`, and a fixed-concurrency run
+writes `analysis/slo_calibration.json`.
 
 ```text
 benchmark/

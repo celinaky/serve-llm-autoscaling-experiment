@@ -14,7 +14,7 @@ from serve_llm_autoscaling.analysis import (
 )
 from serve_llm_autoscaling.artifacts import write_json
 from serve_llm_autoscaling.cli import main
-from serve_llm_autoscaling.config import load_config, write_config
+from serve_llm_autoscaling.config import CONTINUOUS_MODE_DIRS, load_config, write_config
 from serve_llm_autoscaling.plotting import primary_points
 from serve_llm_autoscaling.windows import request_timeseries
 
@@ -375,7 +375,7 @@ def _agentx_request(credit_s, end_s, depth):
 def make_agentx_run(root: Path, config) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     write_config(config, root / "resolved.yaml")
-    ramp = root / "benchmark" / "agentx-concurrency-ramp"
+    ramp = root / "benchmark" / CONTINUOUS_MODE_DIRS[config.benchmark.mode]
     ramp.mkdir(parents=True)
     duration = config.benchmark.duration_s
     write_json(ramp / "phase_manifest.json", {"phases": [
@@ -465,3 +465,76 @@ def test_series_run_writes_no_concurrency_artifact(tmp_path: Path):
     root = make_run(tmp_path / "run")
     analyze_run(root, plot=False)
     assert not (root / "analysis" / "concurrency_qps.json").exists()
+
+
+def test_ramp_run_writes_no_slo_calibration(agentx_run: Path):
+    analyze_run(agentx_run, plot=False)
+    assert not (agentx_run / "analysis" / "slo_calibration.json").exists()
+
+
+# --- AgentX fixed concurrency -----------------------------------------------
+
+
+@pytest.fixture
+def agentx_fixed_run(agentx_fixed_config, tmp_path: Path):
+    config = agentx_fixed_config({"unsafe_override": True}, duration_s=200, grace_period_s=30)
+    root = make_agentx_run(tmp_path / "run", config)
+    # AIPerf exits 30s after load ends, so windows extend past duration_s.
+    write_json(root / "benchmark" / "lifecycle.json",
+               {"profiling_start_ns": T0, "aiperf_exited_ns": T0 + 230 * S})
+    return root
+
+
+def test_agentx_fixed_workload_artifact_dir(agentx_fixed_config, tmp_path: Path):
+    assert workload_artifact_dir(tmp_path, agentx_fixed_config()) == (
+        tmp_path / "benchmark" / "agentx-fixed-concurrency"
+    )
+
+
+def test_agentx_fixed_configured_load_holds_then_stops(agentx_fixed_run: Path):
+    analyze_run(agentx_fixed_run, plot=False)
+    data = json.loads((agentx_fixed_run / "analysis" / "plot_data.json").read_text())
+    load = data["configured_load"]
+    assert load["dimension"] == "session_concurrency"
+    assert load["points"] == [{"time_s": 0.0, "value": 8.0},
+                              {"time_s": 200.0, "value": 8.0},
+                              {"time_s": 200.0, "value": 0.0}]
+    assert load["markers"] == []  # no ramp
+    assert data["lifecycle"]["markers"]["ramp_end_s"] is None
+    assert data["experiment"]["mode"] == "agentx_fixed_concurrency"
+
+
+def test_agentx_fixed_concurrency_qps_artifact(agentx_fixed_run: Path):
+    analyze_run(agentx_fixed_run, plot=False)
+    result = json.loads((agentx_fixed_run / "analysis" / "concurrency_qps.json").read_text())
+    assert result["target_concurrency"] == 8
+    assert "ramp_duration_s" not in result
+    windows = result["windows"]
+    during = [w for w in windows if w["window_end_s"] <= 200]
+    after = [w for w in windows if w["window_start_s"] >= 200]
+    assert during and after
+    assert {w["configured_session_concurrency"] for w in during} == {8.0}
+    assert {w["configured_session_concurrency"] for w in after} == {0.0}
+    assert windows[0]["requests_per_second_per_configured_session"] == pytest.approx(0.6 / 8)
+
+
+def test_agentx_fixed_writes_slo_calibration(agentx_fixed_run: Path):
+    analyze_run(agentx_fixed_run, plot=False)
+    calibration = json.loads(
+        (agentx_fixed_run / "analysis" / "slo_calibration.json").read_text()
+    )
+    # 50 root + 25 subagent profiling requests; the warmup record is excluded.
+    assert calibration["successful_request_count"] == 75
+    assert calibration["failed_request_count"] == 0
+    assert calibration["recommended_ttft_slo_ms"] == calibration["p90_ttft_ms"] == 100.0
+
+
+def test_agentx_fixed_plot_renders(agentx_fixed_run: Path):
+    result = analyze_run(agentx_fixed_run)
+    assert result["plot_error"] is None
+    assert (agentx_fixed_run / "analysis" / "autoscaling_timeline.png").stat().st_size > 10_000
+
+
+def test_analyze_cli_prints_slo_recommendation(agentx_fixed_run: Path, capsys):
+    assert main(["analyze", str(agentx_fixed_run), "--no-plot"]) == 0
+    assert "analysis.ttft_slo_ms: 100" in capsys.readouterr().out

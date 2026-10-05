@@ -10,6 +10,7 @@ from serve_llm_autoscaling.windows import (
     percentile,
     profiling_qps_summary,
     request_timeseries,
+    slo_calibration,
 )
 
 S = 1_000_000_000
@@ -270,3 +271,33 @@ def test_mean_qps_uses_profiling_interval(tmp_path: Path):
     assert summary["mean_successful_qps"] == pytest.approx(0.2)
     assert summary["mean_failed_qps"] == pytest.approx(0.1)
     assert request_timeseries(tmp_path, duration_s=10)["summary"] == summary
+
+
+# --- SLO calibration --------------------------------------------------------
+
+
+def test_slo_calibration_excludes_warmup_and_failed(tmp_path: Path):
+    ttfts = [float(v) for v in range(10, 210, 10)]  # 20 successful samples
+    _write(tmp_path, [
+        _record(-20, -19, ttft=99_999, phase="warmup"),
+        _record(1, 2, ttft=88_888, error="boom"),
+        _record(2, 3, ttft=None, error="timeout"),
+        *[_record(i, i + 1, ttft=v) for i, v in enumerate(ttfts)],
+    ])
+    result = slo_calibration(tmp_path)
+    assert result["metric"] == "time_to_first_token" and result["unit"] == "ms"
+    assert result["successful_request_count"] == 20
+    assert result["failed_request_count"] == 2
+    assert result["ttft_sample_count"] == 20
+    for key, q in (("p50_ttft_ms", 50), ("p90_ttft_ms", 90), ("p99_ttft_ms", 99)):
+        assert result[key] == pytest.approx(np.percentile(ttfts, q))
+    assert result["p90_ttft_ms"] == pytest.approx(181.0)  # 180 + 0.1 * (200 - 180)
+    assert result["recommended_ttft_slo_ms"] == result["p90_ttft_ms"]
+    assert result["method"] == "p90 TTFT across successful profiling-phase requests"
+
+
+def test_slo_calibration_without_samples(tmp_path: Path):
+    _write(tmp_path, [_record(1, 2, error="boom")])
+    result = slo_calibration(tmp_path)
+    assert result["successful_request_count"] == 0 and result["failed_request_count"] == 1
+    assert result["recommended_ttft_slo_ms"] is None

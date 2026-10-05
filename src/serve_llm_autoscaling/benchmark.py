@@ -62,6 +62,17 @@ def normalize_aiperf(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def agentx_row_fields(mode: str, workload: AgentXWorkloadConfig) -> dict[str, Any]:
+    """Summary-row fields describing the configured AgentX load.
+
+    Fixed concurrency has no ramp, so it reports no ramp duration.
+    """
+    fields: dict[str, Any] = {"target_concurrency": workload.target_concurrency}
+    if mode == "agentx_concurrency_ramp":
+        fields["ramp_duration_s"] = workload.concurrency_ramp_duration_s
+    return fields
+
+
 @dataclass
 class AIPerfRunner:
     config: ExperimentConfig
@@ -138,23 +149,30 @@ class AIPerfRunner:
             artifact_dir,
         )
 
-    def build_agentx_ramp_command(self, artifact_dir: Path) -> list[str]:
-        """AgentX replay ramping session-tree concurrency from 1 to the target.
+    def build_agentx_command(self, artifact_dir: Path) -> list[str]:
+        """AgentX replay at a session-tree concurrency.
 
-        The scenario owns ignore_eos, cache busting and warmup, so none of the
+        A ramp rises from 1 to the target over the ramp duration; fixed
+        concurrency holds the target for the whole profiling duration. The
+        scenario owns ignore_eos, cache busting and warmup, so none of the
         synthetic or request-rate options are passed.
         """
         benchmark = self.config.benchmark
         workload = benchmark.workload
         if not isinstance(workload, AgentXWorkloadConfig):
-            raise TypeError("build_agentx_ramp_command requires an agentx workload")
+            raise TypeError("build_agentx_command requires an agentx workload")
         ratio = str(workload.trajectory_start_ratio)
         cmd = self._common_args(artifact_dir)
         cmd.extend([
             "--scenario", AGENTX_SCENARIO,
             "--public-dataset", workload.public_dataset,
             "--concurrency", str(workload.target_concurrency),
-            "--concurrency-ramp-duration", str(workload.concurrency_ramp_duration_s),
+        ])
+        if benchmark.mode == "agentx_concurrency_ramp":
+            cmd.extend([
+                "--concurrency-ramp-duration", str(workload.concurrency_ramp_duration_s)
+            ])
+        cmd.extend([
             "--trajectory-start-min-ratio", ratio,
             "--trajectory-start-max-ratio", ratio,
             "--random-seed", str(workload.seed),
@@ -192,22 +210,20 @@ class AIPerfRunner:
         cmd = self.build_series_command(series_path, series_dir)
         return self._execute(cmd, series_dir, "series")
 
-    def run_agentx_ramp(self) -> dict[str, Any]:
-        workload = self.config.benchmark.workload
+    def run_agentx(self) -> dict[str, Any]:
+        benchmark = self.config.benchmark
+        workload = benchmark.workload
         assert isinstance(workload, AgentXWorkloadConfig)
-        ramp_dir = self.benchmark_root / CONTINUOUS_MODE_DIRS["agentx_concurrency_ramp"]
-        ramp_dir.mkdir(parents=True, exist_ok=False)
+        run_dir = self.benchmark_root / CONTINUOUS_MODE_DIRS[benchmark.mode]
+        run_dir.mkdir(parents=True, exist_ok=False)
         row = self._execute(
-            self.build_agentx_ramp_command(ramp_dir), ramp_dir, workload.target_concurrency
+            self.build_agentx_command(run_dir), run_dir, workload.target_concurrency
         )
-        row.update({
-            "target_concurrency": workload.target_concurrency,
-            "ramp_duration_s": workload.concurrency_ramp_duration_s,
-            # Kept distinct from the harness-derived rates below.
-            "aiperf_request_throughput": row["request_throughput"],
-        })
+        row.update(agentx_row_fields(benchmark.mode, workload))
+        # Kept distinct from the harness-derived rates below.
+        row["aiperf_request_throughput"] = row["request_throughput"]
         try:
-            qps = profiling_qps_summary(ramp_dir, self.config.benchmark.duration_s)
+            qps = profiling_qps_summary(run_dir, benchmark.duration_s)
         except OSError as exc:
             row["qps_summary_error"] = f"{type(exc).__name__}: {exc}"
         else:

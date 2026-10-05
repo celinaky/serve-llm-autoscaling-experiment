@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 
+from .artifacts import format_slo_calibration
 from .backend import RayServeBackend, check_routing_support, verify_topology
 from .config import load_config
 from .runner import environment_check, run_experiment, run_manual_benchmark
@@ -55,6 +56,8 @@ def main(argv: list[str] | None = None) -> int:
             for warning in result["warnings"]:
                 print(f"WARNING: {warning}", file=sys.stderr)
             print(f"Analysis artifacts: {args.run_dir / 'analysis'}")
+            if calibration := format_slo_calibration(args.run_dir):
+                print(calibration)
             if result["plot_error"]:
                 print(f"ERROR: plot failed: {result['plot_error']}", file=sys.stderr)
                 return 1

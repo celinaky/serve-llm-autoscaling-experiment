@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from serve_llm_autoscaling.config import load_config
+from serve_llm_autoscaling.config import CONTINUOUS_MODE_DIRS, CONTINUOUS_MODES, load_config
 from serve_llm_autoscaling.runner import run_benchmarks
 
 
@@ -232,7 +232,7 @@ def test_agentx_ramp_runs_once(agentx_config, monkeypatch, tmp_path: Path):
         calls.append(1)
         return _agentx_row(self)
 
-    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx_ramp",
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx",
                         fake_ramp)
     monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_point",
                         _fail_on_run_point)
@@ -247,7 +247,7 @@ def test_agentx_ramp_failure_row(agentx_config, monkeypatch, tmp_path: Path):
     def fail(self):
         raise RuntimeError("AIPerf exited 1")
 
-    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx_ramp", fail)
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx", fail)
     summary = run_benchmarks(agentx_config(fail_fast=False), tmp_path)
     assert summary == [{"mode": "agentx_concurrency_ramp", "level": 16,
                         "target_concurrency": 16, "ramp_duration_s": 1200,
@@ -271,7 +271,7 @@ def test_agentx_experiment_collects_telemetry_and_analyzes(
         return _agentx_row(self)
 
     analyzed = []
-    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx_ramp",
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx",
                         fake_ramp)
     monkeypatch.setattr("serve_llm_autoscaling.runner.run_analysis",
                         lambda root: analyzed.append(root) or {"warnings": []})
@@ -292,8 +292,75 @@ def test_manual_agentx_benchmark_attempts_telemetry(
         raise ConnectionError("no cluster")
 
     monkeypatch.setattr(runner.RayServeBackend, "connect", no_ray)
-    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx_ramp",
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx",
                         _agentx_row)
     runner.run_manual_benchmark(agentx_config(), tmp_path)
     assert "running without Serve telemetry" in capsys.readouterr().err
     assert (tmp_path / "resolved.yaml").exists()
+
+
+# --- AgentX fixed concurrency -----------------------------------------------
+
+
+def _agentx_fixed_row(self):
+    return {"mode": "agentx_fixed_concurrency", "level": 8, "target_concurrency": 8,
+            "error": None}
+
+
+def test_agentx_fixed_is_continuous():
+    assert "agentx_fixed_concurrency" in CONTINUOUS_MODES
+    assert CONTINUOUS_MODE_DIRS["agentx_fixed_concurrency"] == "agentx-fixed-concurrency"
+    assert CONTINUOUS_MODE_DIRS["agentx_concurrency_ramp"] == "agentx-concurrency-ramp"
+
+
+def test_agentx_fixed_runs_once(agentx_fixed_config, monkeypatch, tmp_path: Path):
+    calls = []
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx",
+                        lambda self: calls.append(1) or _agentx_fixed_row(self))
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_point",
+                        _fail_on_run_point)
+    summary = run_benchmarks(agentx_fixed_config(), tmp_path)
+    assert calls == [1]
+    assert summary == [_agentx_fixed_row(None)]
+    lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())
+    assert lifecycle["ramp_end_ns"] is None
+
+
+def test_agentx_fixed_failure_row_has_no_ramp(agentx_fixed_config, monkeypatch,
+                                              tmp_path: Path):
+    def fail(self):
+        raise RuntimeError("AIPerf exited 1")
+
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx", fail)
+    summary = run_benchmarks(agentx_fixed_config(fail_fast=False), tmp_path)
+    assert summary == [{"mode": "agentx_fixed_concurrency", "level": 8,
+                        "target_concurrency": 8, "error": "RuntimeError: AIPerf exited 1"}]
+
+
+def test_agentx_fixed_experiment_collects_telemetry_and_analyzes(
+    agentx_fixed_config, monkeypatch, tmp_path: Path
+):
+    from serve_llm_autoscaling.runner import run_experiment
+
+    sessions = _fake_cluster(monkeypatch, tmp_path)
+    config = agentx_fixed_config()
+    config.runtime.results_dir = tmp_path / "runs"
+    input_path = tmp_path / "agentx.yaml"
+    input_path.write_text("name: agentx-fixed\n")
+    alive = []
+
+    def fake_run(self):
+        alive.append([c._thread.is_alive() for c in sessions[0].collectors])
+        return _agentx_fixed_row(self)
+
+    analyzed = []
+    monkeypatch.setattr("serve_llm_autoscaling.runner.AIPerfRunner.run_agentx", fake_run)
+    monkeypatch.setattr("serve_llm_autoscaling.runner.run_analysis",
+                        lambda root: analyzed.append(root) or {"warnings": []})
+    root = run_experiment(config, input_path)
+    assert alive == [[True, True]]
+    assert analyzed == [root]
+    manifest = json.loads((root / "manifest.json").read_text())
+    assert manifest["status"] == "succeeded"
+    assert set(manifest["telemetry"]) == {"serve_status.jsonl", "serve_metrics.jsonl"}
+    assert (root / "benchmark" / "lifecycle.json").exists()

@@ -20,7 +20,7 @@ from .config import (
     ExperimentConfig,
 )
 from .telemetry import SELECTED_METRICS, normalize_metric_name
-from .windows import configured_concurrency_at, request_timeseries
+from .windows import configured_concurrency_at, request_timeseries, slo_calibration
 
 # 2: ``request_rate_curve`` became the dimension-tagged ``configured_load``.
 # 3: added ``lifecycle`` (load, drain and idle observation periods).
@@ -154,6 +154,15 @@ def configured_load(config: ExperimentConfig, artifact_dir: Path) -> dict[str, A
     """
     benchmark = config.benchmark
     workload = benchmark.workload
+    if isinstance(workload, AgentXWorkloadConfig) and benchmark.mode == "agentx_fixed_concurrency":
+        # Held at the target from the profiling start until load issuance ends.
+        target = float(workload.target_concurrency)
+        return {"dimension": "session_concurrency", "unit": "session trees",
+                "label": "configured session concurrency",
+                "points": [{"time_s": 0.0, "value": target},
+                           {"time_s": benchmark.duration_s, "value": target},
+                           {"time_s": benchmark.duration_s, "value": 0.0}],
+                "markers": []}
     if isinstance(workload, AgentXWorkloadConfig):
         ramp = workload.concurrency_ramp_duration_s
         points = [{"time_s": 0.0, "value": 1.0},
@@ -178,16 +187,21 @@ def concurrency_qps(
 ) -> dict[str, Any]:
     """Configured session concurrency beside the request rates it generated.
 
-    Concurrency is the configured ramp at each window's midpoint; the live
-    session count can briefly differ because of scheduling and tree turnover.
-    No sessions are configured once load issuance ends at ``duration_s``.
+    Concurrency is the configured load at each window's midpoint: the ramp,
+    or the target throughout for fixed concurrency. The live session count can
+    briefly differ because of scheduling and tree turnover. No sessions are
+    configured once load issuance ends at ``duration_s``.
     """
+    ramp = workload.concurrency_ramp_duration_s
     rows = []
     for w in timeseries["windows"]:
         mid = (w["window_start_s"] + w["window_end_s"]) / 2
-        sessions = 0.0 if mid >= duration_s else configured_concurrency_at(
-            mid, workload.target_concurrency, workload.concurrency_ramp_duration_s
-        )
+        if mid >= duration_s:
+            sessions = 0.0
+        elif ramp is None:
+            sessions = float(workload.target_concurrency)
+        else:
+            sessions = configured_concurrency_at(mid, workload.target_concurrency, ramp)
         row = {
             "window_start_s": w["window_start_s"],
             "window_end_s": w["window_end_s"],
@@ -207,10 +221,14 @@ def concurrency_qps(
             row["offered_root_qps"] = w["offered_root_rps"]
             row["offered_subagent_qps"] = w["offered_subagent_rps"]
         rows.append(row)
-    return {
+    result: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "target_concurrency": workload.target_concurrency,
-        "ramp_duration_s": workload.concurrency_ramp_duration_s,
+    }
+    if ramp is not None:
+        result["ramp_duration_s"] = ramp
+    return {
+        **result,
         "window_s": timeseries["window_s"],
         "summary": timeseries["summary"],
         "windows": rows,
@@ -605,6 +623,9 @@ def analyze_run(
         write_json(out / "concurrency_qps.json", concurrency_qps(
             config.benchmark.workload, timeseries, config.benchmark.duration_s
         ))
+    if config.benchmark.mode == "agentx_fixed_concurrency":
+        write_json(out / "slo_calibration.json",
+                   slo_calibration(workload_artifact_dir(root, config)))
     write_json(
         out / "metrics_inventory.json",
         build_metrics_inventory(root / "telemetry" / "serve_metrics.jsonl"),

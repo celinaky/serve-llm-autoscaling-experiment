@@ -41,3 +41,20 @@ def agentx_config():
         return ExperimentConfig.model_validate(raw)
 
     return build
+
+
+@pytest.fixture
+def agentx_fixed_config():
+    """Build a fixed-concurrency AgentX config (no ramp duration)."""
+
+    def build(workload=None, **benchmark) -> ExperimentConfig:
+        raw = copy.deepcopy(AGENTX_RAW)
+        raw["name"] = "agentx-fixed"
+        raw["benchmark"].update({"mode": "agentx_fixed_concurrency", "duration_s": 900})
+        raw["benchmark"].update(benchmark)
+        del raw["benchmark"]["workload"]["concurrency_ramp_duration_s"]
+        raw["benchmark"]["workload"]["target_concurrency"] = 8
+        raw["benchmark"]["workload"].update(workload or {})
+        return ExperimentConfig.model_validate(raw)
+
+    return build

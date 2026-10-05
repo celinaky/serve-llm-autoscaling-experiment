@@ -9,9 +9,9 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 
-from .artifacts import RunArtifacts, format_run_summary, write_json
+from .artifacts import RunArtifacts, format_run_summary, format_slo_calibration, write_json
 from .backend import RayServeBackend, check_routing_support, verify_topology
-from .benchmark import AIPerfRunner, aiperf_command
+from .benchmark import AIPerfRunner, agentx_row_fields, aiperf_command
 from .config import (
     CONTINUOUS_MODE_DIRS,
     CONTINUOUS_MODES,
@@ -68,8 +68,7 @@ def _run_job(
     except Exception as exc:
         row = {"mode": config.benchmark.mode, "level": level}
         if isinstance(workload, AgentXWorkloadConfig):
-            row["target_concurrency"] = workload.target_concurrency
-            row["ramp_duration_s"] = workload.concurrency_ramp_duration_s
+            row.update(agentx_row_fields(config.benchmark.mode, workload))
         row["error"] = f"{type(exc).__name__}: {exc}"
         summary.append(row)
         write_json(root / "benchmark" / "sweep_summary.json", summary)
@@ -107,9 +106,11 @@ def lifecycle_record(
         "clock": "epoch_ns",
         "aiperf_launched_ns": aiperf_launched_ns,
         "profiling_start_ns": start,
+        # Fixed AgentX concurrency and request-rate series have no ramp.
         "ramp_end_ns": (
             offset(workload.concurrency_ramp_duration_s)
-            if isinstance(workload, AgentXWorkloadConfig) else None
+            if isinstance(workload, AgentXWorkloadConfig)
+            and workload.concurrency_ramp_duration_s is not None else None
         ),
         "load_end_ns": offset(benchmark.duration_s),
         "profiling_phase_end_ns": phase_end,
@@ -171,7 +172,7 @@ def run_benchmarks(
     if config.benchmark.mode == "request_rate_series":
         jobs = [("series", runner.run_series)]
     elif isinstance(workload, AgentXWorkloadConfig):
-        jobs = [(workload.target_concurrency, runner.run_agentx_ramp)]
+        jobs = [(workload.target_concurrency, runner.run_agentx)]
     else:
         jobs = [
             (
@@ -223,6 +224,8 @@ def run_manual_benchmark(config: ExperimentConfig, root: Path) -> list[dict[str,
     for key in ("analysis_error", "plot_error"):
         if analysis.get(key):
             print(f"WARNING: {key}: {analysis[key]}", file=sys.stderr)
+    if calibration := format_slo_calibration(root):
+        print(calibration, file=sys.stderr)
     return summary
 
 

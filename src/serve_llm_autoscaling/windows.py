@@ -156,6 +156,34 @@ def profiling_qps_summary(artifact_dir: Path, duration_s: float) -> dict[str, An
     return _qps_summary(requests, t0, duration_s)
 
 
+def slo_calibration(artifact_dir: Path) -> dict[str, Any]:
+    """TTFT distribution of a fixed-load baseline, to choose a TTFT SLO.
+
+    Covers every successful profiling-phase request, whenever it started;
+    warmup records are excluded, and failed requests are counted but have no
+    TTFT sample. The recommendation is the p90.
+    """
+    requests, malformed = _read_requests(artifact_dir / "profile_export.jsonl")
+    ttft = sorted(r.ttft_ms for r in requests if not r.failed and r.ttft_ms is not None)
+    successful = sum(not r.failed for r in requests)
+    p90 = percentile(ttft, 0.90)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "metric": "time_to_first_token",
+        "unit": "ms",
+        "successful_request_count": successful,
+        "failed_request_count": len(requests) - successful,
+        # Successful requests whose record carried no TTFT are left out.
+        "ttft_sample_count": len(ttft),
+        "malformed_record_count": malformed,
+        "p50_ttft_ms": percentile(ttft, 0.50),
+        "p90_ttft_ms": p90,
+        "p99_ttft_ms": percentile(ttft, 0.99),
+        "recommended_ttft_slo_ms": p90,
+        "method": "p90 TTFT across successful profiling-phase requests",
+    }
+
+
 def request_timeseries(
     artifact_dir: Path,
     *,

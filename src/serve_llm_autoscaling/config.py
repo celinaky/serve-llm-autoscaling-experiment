@@ -11,8 +11,11 @@ from pydantic import BaseModel, ConfigDict, Discriminator, Field, Tag, model_val
 CONTINUOUS_MODE_DIRS = {
     "request_rate_series": "request-rate-series",
     "agentx_concurrency_ramp": "agentx-concurrency-ramp",
+    "agentx_fixed_concurrency": "agentx-fixed-concurrency",
 }
 CONTINUOUS_MODES = tuple(CONTINUOUS_MODE_DIRS)
+# Modes that replay AgentX traces; both require an agentx workload.
+AGENTX_MODES = ("agentx_concurrency_ramp", "agentx_fixed_concurrency")
 
 # The inferencex-agentx-mvp scenario rejects shorter runs unless overridden.
 AGENTX_MIN_DURATION_S = 900
@@ -195,7 +198,8 @@ class AgentXWorkloadConfig(BaseModel):
     type: Literal["agentx"] = "agentx"
     public_dataset: str = "semianalysis_cc_traces_weka_062126_256k"
     target_concurrency: int = Field(ge=1, strict=True)
-    concurrency_ramp_duration_s: float = Field(gt=0)
+    # Required by agentx_concurrency_ramp; rejected by agentx_fixed_concurrency.
+    concurrency_ramp_duration_s: float | None = Field(default=None, gt=0)
     # Used as both the min and max start ratio; 0 starts every trajectory cold
     # at turn zero.
     trajectory_start_ratio: float = Field(default=0, ge=0, le=1)
@@ -229,7 +233,8 @@ class RequestRatePoint(BaseModel):
 class BenchmarkConfig(BaseModel):
     generator: Literal["aiperf"] = "aiperf"
     mode: Literal[
-        "concurrency", "request_rate", "request_rate_series", "agentx_concurrency_ramp"
+        "concurrency", "request_rate", "request_rate_series",
+        "agentx_concurrency_ramp", "agentx_fixed_concurrency",
     ] = "concurrency"
     # Only used by the static sweep modes; ignored for request_rate_series.
     levels: list[float] = Field(default_factory=lambda: [1, 2, 4, 8], min_length=1)
@@ -253,10 +258,10 @@ class BenchmarkConfig(BaseModel):
     @model_validator(mode="after")
     def validate_levels(self) -> "BenchmarkConfig":
         agentx = isinstance(self.workload, AgentXWorkloadConfig)
-        if self.mode == "agentx_concurrency_ramp":
+        if self.mode in AGENTX_MODES:
             self._validate_agentx()
         elif agentx:
-            raise ValueError("workload type agentx requires mode: agentx_concurrency_ramp")
+            raise ValueError("workload type agentx requires mode: " + " or ".join(AGENTX_MODES))
         elif self.mode == "request_rate_series":
             self._validate_rate_series()
         else:
@@ -287,7 +292,7 @@ class BenchmarkConfig(BaseModel):
     def _validate_agentx(self) -> None:
         workload = self.workload
         if not isinstance(workload, AgentXWorkloadConfig):
-            raise ValueError("agentx_concurrency_ramp mode requires workload type: agentx")
+            raise ValueError(f"{self.mode} mode requires workload type: agentx")
         # The trace replay owns arrivals and warmup; reject settings that would
         # otherwise be silently ignored. Defaults are accepted so that a
         # resolved config, which lists every field, still loads.
@@ -300,15 +305,21 @@ class BenchmarkConfig(BaseModel):
             )
         )
         if unsupported:
-            raise ValueError(
-                "agentx_concurrency_ramp mode does not accept: " + ", ".join(unsupported)
-            )
+            raise ValueError(f"{self.mode} mode does not accept: " + ", ".join(unsupported))
         if not self.streaming:
-            raise ValueError("agentx_concurrency_ramp mode requires streaming: true")
-        if workload.concurrency_ramp_duration_s > self.duration_s:
+            raise ValueError(f"{self.mode} mode requires streaming: true")
+        ramp = workload.concurrency_ramp_duration_s
+        if self.mode == "agentx_fixed_concurrency":
+            if ramp is not None:
+                raise ValueError(
+                    "agentx_fixed_concurrency mode does not accept "
+                    "concurrency_ramp_duration_s; use agentx_concurrency_ramp to ramp"
+                )
+        elif ramp is None:
+            raise ValueError("agentx_concurrency_ramp mode requires concurrency_ramp_duration_s")
+        elif ramp > self.duration_s:
             raise ValueError(
-                f"concurrency_ramp_duration_s {workload.concurrency_ramp_duration_s} "
-                f"exceeds duration_s {self.duration_s}"
+                f"concurrency_ramp_duration_s {ramp} exceeds duration_s {self.duration_s}"
             )
         if self.duration_s < AGENTX_MIN_DURATION_S and not workload.unsafe_override:
             raise ValueError(

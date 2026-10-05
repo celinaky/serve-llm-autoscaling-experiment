@@ -83,7 +83,7 @@ def test_observation_runs_with_telemetry_after_aiperf(agentx_config, monkeypatch
         real_sleep(seconds)
 
     monkeypatch.setattr(runner.time, "sleep", sleep)
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx_ramp", fake_ramp)
+    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", fake_ramp)
     monkeypatch.setattr(runner, "run_analysis", lambda root: {"warnings": []})
     input_path = tmp_path / "agentx.yaml"
     input_path.write_text("name: agentx-ramp\n")
@@ -114,7 +114,7 @@ def test_observation_runs_with_telemetry_after_aiperf(agentx_config, monkeypatch
 def test_no_observation_by_default(agentx_config, monkeypatch, tmp_path):
     sleeps = []
     _clock(monkeypatch, sleeps)
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx_ramp", _agentx_row)
+    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", _agentx_row)
     runner.run_benchmarks(_observed(agentx_config), tmp_path)
     assert sleeps == []
     lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())
@@ -129,7 +129,7 @@ def test_fail_fast_skips_observation_but_records_exit(agentx_config, monkeypatch
     def fail(self):
         raise RuntimeError("AIPerf exited 1")
 
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx_ramp", fail)
+    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", fail)
     config = _observed(agentx_config, post_load_observation_s=90)
     with pytest.raises(RuntimeError, match="exited 1"):
         runner.run_benchmarks(config, tmp_path)
@@ -146,7 +146,7 @@ def test_failure_without_fail_fast_still_observes(agentx_config, monkeypatch, tm
     def fail(self):
         raise RuntimeError("AIPerf exited 1")
 
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx_ramp", fail)
+    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", fail)
     config = _observed(agentx_config, post_load_observation_s=45, fail_fast=False)
     summary = runner.run_benchmarks(config, tmp_path, telemetry=_NullTelemetry())
     assert summary[0]["error"] == "RuntimeError: AIPerf exited 1"
@@ -164,7 +164,7 @@ class _NullTelemetry:
 def test_observation_skipped_without_telemetry(agentx_config, monkeypatch, tmp_path):
     sleeps = []
     _clock(monkeypatch, sleeps)
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx_ramp", _agentx_row)
+    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", _agentx_row)
     runner.run_benchmarks(_observed(agentx_config, post_load_observation_s=90), tmp_path)
     assert sleeps == []
     lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())

@@ -131,7 +131,7 @@ def test_session_header_only_for_consistent_hash(policy, header, monkeypatch, tm
     monkeypatch.setattr(benchmark.shutil, "which", lambda name: f"/bin/{name}")
     config = load_config(AGENTX_PATH)
     config.deployment.routing = RoutingConfig(policy=policy)
-    command = AIPerfRunner(config, tmp_path).build_agentx_ramp_command(tmp_path / "a")
+    command = AIPerfRunner(config, tmp_path).build_agentx_command(tmp_path / "a")
     if header:
         assert command[command.index("--session-header") + 1] == "X-Session-ID"
     else:

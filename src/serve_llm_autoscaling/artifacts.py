@@ -78,6 +78,22 @@ def _teardown_state(root: Path) -> str:
     return state
 
 
+def format_slo_calibration(root: Path) -> str | None:
+    """The recommended TTFT SLO of a fixed-concurrency baseline, if any."""
+    calibration = _read_json(root / "analysis" / "slo_calibration.json")
+    if not calibration:
+        return None
+    slo = calibration.get("recommended_ttft_slo_ms")
+    if slo is None:
+        return "TTFT SLO:  no successful requests with TTFT; no recommendation"
+    return (
+        f"TTFT SLO:  recommended {slo:.1f}ms (p90 of "
+        f"{calibration.get('ttft_sample_count')} successful requests; "
+        f"{calibration.get('failed_request_count')} failed). "
+        f"Copy into analysis.ttft_slo_ms: {slo:.0f}"
+    )
+
+
 def format_run_summary(root: Path) -> str:
     """Render a human-readable summary of a run directory for the terminal."""
     manifest = _read_json(root / "manifest.json") or {}
@@ -121,18 +137,18 @@ def format_run_summary(root: Path) -> str:
 
     if points:
         header = (
-            f"{'mode':<20}{'level':>7}{'requests':>10}{'failed':>8}{'req/s':>8}"
+            f"{'mode':<26}{'level':>7}{'requests':>10}{'failed':>8}{'req/s':>8}"
             f"{'TTFT p50':>11}{'TTFT p99':>11}{'TPOT p50':>11}{'E2E p99':>11}"
         )
         lines += ["", header]
         for p in points:
             if p.get("error"):
                 lines.append(
-                    f"{p.get('mode', ''):<20}{_fmt(p.get('level')):>7}  ERROR: {p['error']}"
+                    f"{p.get('mode', ''):<26}{_fmt(p.get('level')):>7}  ERROR: {p['error']}"
                 )
                 continue
             lines.append(
-                f"{p.get('mode', ''):<20}{_fmt(p.get('level')):>7}"
+                f"{p.get('mode', ''):<26}{_fmt(p.get('level')):>7}"
                 f"{_fmt(p.get('request_count'), '.0f'):>10}{_fmt(p.get('failed_requests'), '.0f'):>8}"
                 f"{_fmt(p.get('request_throughput'), '.2f'):>8}"
                 f"{_fmt(p.get('p50_ttft_ms'), '.1f', 'ms'):>11}"
@@ -152,6 +168,9 @@ def format_run_summary(root: Path) -> str:
                 f"{_fmt(w['p50_ttft_ms'], '.0f', 'ms'):>11}"
                 f"{_fmt(w['p99_ttft_ms'], '.0f', 'ms'):>11}"
             )
+    calibration_line = format_slo_calibration(root)
+    if calibration_line:
+        lines += ["", calibration_line]
     analysis = manifest.get("analysis") or {}
     if analysis:
         lines.append("")

@@ -293,3 +293,92 @@ def test_agentx_rejects_unknown_workload_fields(agentx_config):
 def test_agentx_resolved_config_round_trips(agentx_config):
     config = agentx_config()
     assert ExperimentConfig.model_validate(config.resolved_dict()) == config
+
+
+# --- AgentX fixed concurrency -----------------------------------------------
+
+
+def test_agentx_fixed_config_parses(agentx_fixed_config):
+    config = agentx_fixed_config()
+    workload = config.benchmark.workload
+    assert config.benchmark.mode == "agentx_fixed_concurrency"
+    assert workload.type == "agentx"
+    assert workload.target_concurrency == 8
+    assert workload.concurrency_ramp_duration_s is None
+
+
+def test_agentx_fixed_rejects_ramp_duration(agentx_fixed_config):
+    with pytest.raises(ValidationError, match="does not accept concurrency_ramp_duration_s"):
+        agentx_fixed_config({"concurrency_ramp_duration_s": 60})
+
+
+def test_agentx_ramp_requires_ramp_duration(agentx_fixed_config):
+    with pytest.raises(ValidationError, match="requires concurrency_ramp_duration_s"):
+        agentx_fixed_config(mode="agentx_concurrency_ramp")
+
+
+def test_agentx_fixed_requires_agentx_workload():
+    with pytest.raises(ValidationError, match="agentx_fixed_concurrency mode requires "
+                                              "workload type: agentx"):
+        _benchmark(mode="agentx_fixed_concurrency", duration_s=900,
+                   workload={"type": "synthetic"})
+
+
+def test_agentx_fixed_requires_streaming(agentx_fixed_config):
+    with pytest.raises(ValidationError, match="requires streaming: true"):
+        agentx_fixed_config(streaming=False)
+
+
+def test_agentx_fixed_enforces_minimum_duration(agentx_fixed_config):
+    with pytest.raises(ValidationError, match="duration_s >= 900"):
+        agentx_fixed_config(duration_s=600)
+    assert agentx_fixed_config({"unsafe_override": True}, duration_s=600) \
+        .benchmark.duration_s == 600
+
+
+@pytest.mark.parametrize(
+    "setting",
+    [
+        {"levels": [1, 2]},
+        {"rate_series": SERIES},
+        {"arrival_pattern": "constant"},
+        {"warmup": {"enabled": False}},
+    ],
+)
+def test_agentx_fixed_rejects_synthetic_load_settings(agentx_fixed_config, setting):
+    with pytest.raises(ValidationError, match="agentx_fixed_concurrency mode does not accept"):
+        agentx_fixed_config(**setting)
+
+
+def test_agentx_fixed_rejects_ramp_flag_in_extra_args(agentx_fixed_config):
+    with pytest.raises(ValidationError, match="harness-owned"):
+        agentx_fixed_config(extra_args=["--concurrency-ramp-duration", "60"])
+
+
+def test_agentx_fixed_resolved_config_round_trips(agentx_fixed_config):
+    config = agentx_fixed_config()
+    resolved = config.resolved_dict()
+    assert resolved["benchmark"]["workload"]["concurrency_ramp_duration_s"] is None
+    assert ExperimentConfig.model_validate(resolved) == config
+
+
+def test_agentx_slo_baseline_experiment():
+    config = load_config("experiments/agentx_slo_baseline.yaml")
+    reference = load_config("experiments/agentx_kv_aware_autoscaling.yaml")
+    deployment = config.deployment
+    for field in ("model_id", "model_source", "tokenizer", "accelerator_type",
+                  "routing", "engine", "max_ongoing_requests"):
+        assert getattr(deployment, field) == getattr(reference.deployment, field)
+    scaling = deployment.autoscaling
+    assert (scaling.min_replicas, scaling.initial_replicas, scaling.max_replicas) == (1, 1, 1)
+    benchmark = config.benchmark
+    assert benchmark.mode == "agentx_fixed_concurrency"
+    assert (benchmark.duration_s, benchmark.grace_period_s,
+            benchmark.post_load_observation_s) == (900, 300, 0)
+    assert benchmark.streaming and benchmark.fail_fast and benchmark.use_server_token_count
+    workload = benchmark.workload
+    assert workload.public_dataset == reference.benchmark.workload.public_dataset
+    assert (workload.target_concurrency, workload.trajectory_start_ratio,
+            workload.seed, workload.unsafe_override) == (8, 0, 42, False)
+    assert workload.concurrency_ramp_duration_s is None
+    assert config.analysis.ttft_slo_ms is None  # this run produces the SLO
