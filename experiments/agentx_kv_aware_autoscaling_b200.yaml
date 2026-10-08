@@ -1,0 +1,110 @@
+name: qwen-agentx-kv-aware-autoscaling-b200
+
+# Replays AgentX coding sessions against Qwen3.6-27B (dense, FP8) with
+# KV-aware routing, ramping session concurrency while Serve autoscales.
+#
+# Hardware: one 4xB200:92CPU-960GB node that is also the head node (no
+# worker nodes). One B200 (179GiB) per replica at TP=1; max_replicas 4 uses
+# all 4 GPUs.
+#
+# KV budget per replica (estimate; confirm "GPU KV cache size" and
+# "Maximum concurrency" in the vLLM startup log): 179GiB x 0.92 = ~165GiB,
+# minus ~29GiB FP8 weights and ~5-10GiB of activations, CUDA graphs and
+# Gated DeltaNet state leaves ~125GiB. Only 16 of the 64 layers use full
+# attention (4 KV heads x 256 head_dim), so FP8 KV costs 32KiB per token:
+# ~4M tokens per replica, ~15 full 256K contexts.
+#
+# Autoscaling (suggested starting point, not yet measured on B200):
+# max_num_seqs = 32 is vLLM's batch limit (KV holds 4,182,251 tokens per
+# replica, measured). target_ongoing_requests = 8 is deliberately
+# aggressive: in the first run (target 24), cold-start sessions began
+# queueing for prefill at ~7-10 requests per replica, because prefill ran
+# at only ~4-10K tok/s. At 8, ~35-40 ongoing requests ask for all 4
+# replicas, so this run shows the best a request-count policy can do with
+# the whole node. upscale_delay_s = 10 (was 30) reacts sooner; replica
+# startup (~177s, 68s of it torch.compile) still dominates scale-up time. downscale_delay_s is 60: a
+# cold replica (weight load + torch.compile + CUDA graphs) takes minutes,
+# so a short lull between agent turns should not drop one, and 60s still
+# lets scale-down show within the 90s post-load observation.
+#
+# Requires ai-dynamo>=1.4.0 on every node for KV-aware routing; the harness
+# refuses to deploy without it.
+#
+# Timeline: load 0-210s, AIPerf drains for up to 30s, then 90s of idle
+# telemetry, so a run takes ~5.5 minutes after the deployment is ready.
+
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    # Conservative first guess: ~125K tokens of KV per sequence at the
+    # estimated ~4M-token budget, so even long agent contexts fit without
+    # preemption. Raise toward ~64 if the vLLM log shows spare capacity.
+    max_num_seqs: 32
+    # Prefill chunk size, a trade-off for prefill-heavy agent traffic:
+    # larger chunks cut TTFT on 100K+ token prompts, but every step that
+    # carries a chunk stalls the decodes batched with it. Try 32768 if TTFT
+    # dominates and ITL has slack.
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 4
+    target_ongoing_requests: 8
+    upscale_delay_s: 10
+    downscale_delay_s: 60
+  # Deliberately ABOVE max_num_seqs (not equal, as handle-based guidance
+  # suggests). Under direct streaming (Ray 2.58) the router picks a replica
+  # immediately without checking capacity, and a replica only reports a
+  # request to the autoscaler once it holds one of these slots. Requests
+  # waiting for a slot are invisible. With a cap of 32 each replica would
+  # report at most 32, so scale-out could only step 1->2->3->4, waiting
+  # for each new replica to start. At >= max_replicas x target (32) the
+  # whole backlog is counted (it waits in vLLM's queue instead) and Serve
+  # can jump straight to 4. Excess requests stay on their replica either
+  # way.
+  max_ongoing_requests: 128
+
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 700
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 32
+    concurrency_ramp_duration_s: 150
+    trajectory_start_ratio: 0
+    seed: 42
+    # The scenario requires 900s runs; this is a short development run.
+    unsafe_override: true
+  streaming: true
+  fail_fast: true
+
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
