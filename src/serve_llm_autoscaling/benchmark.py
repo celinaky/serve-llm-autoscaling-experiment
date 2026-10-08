@@ -59,6 +59,13 @@ def normalize_aiperf(data: dict[str, Any]) -> dict[str, Any]:
         "p99_tpot_ms": _metric_value(data, "inter_token_latency", "p99"),
         "mean_e2el_ms": _metric_value(data, "request_latency", "avg"),
         "p99_e2el_ms": _metric_value(data, "request_latency", "p99"),
+        # Present only when the server reports prompt_tokens_details.
+        "total_prompt_cache_read_tokens": _metric_value(
+            data, "total_usage_prompt_cache_read_tokens"
+        ),
+        "prompt_cache_read_pct": _metric_value(
+            data, "overall_usage_prompt_cache_read_pct"
+        ),
     }
 
 

@@ -46,6 +46,9 @@ class EngineConfig(BaseModel):
     max_num_seqs: int = Field(default=128, ge=1)
     max_num_batched_tokens: int = Field(default=16_384, ge=1)
     enable_prefix_caching: bool = False
+    # Reports usage.prompt_tokens_details.cached_tokens so AIPerf can record
+    # prefix-cache hits. vLLM only computes the count with prefix caching on.
+    enable_prompt_tokens_details: bool = True
     kv_cache_dtype: str = "fp8"
 
 

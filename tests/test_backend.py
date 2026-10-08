@@ -11,5 +11,6 @@ def test_deployment_spec_matches_baseline():
     }
     assert spec["engine_kwargs"]["max_model_len"] == 10000
     assert spec["engine_kwargs"]["enable_prefix_caching"] is False
+    assert spec["engine_kwargs"]["enable_prompt_tokens_details"] is True
     assert spec["deployment_config"]["autoscaling_config"]["min_replicas"] == 1
     assert spec["deployment_config"]["autoscaling_config"]["max_replicas"] == 1

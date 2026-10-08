@@ -148,6 +148,7 @@ def test_normalize_aiperf():
     assert result["request_count"] == 10
     assert result["request_throughput"] == 2.5
     assert result["p99_ttft_ms"] == 20
+    assert result["prompt_cache_read_pct"] is None
     assert result["failed_requests"] == 2
 
 
