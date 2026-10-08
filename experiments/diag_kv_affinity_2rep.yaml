@@ -1,0 +1,56 @@
+# Diagnostic: 2 fixed replicas behind KV-aware routing, used with
+# findings-claude-code-overnight/scripts/affinity_probe.py to check whether follow-up turns of one
+# session stay on the replica that cached their prefix. Deploy with
+# `autoscale-harness deploy`; the benchmark section is unused.
+name: diag-kv-affinity-2rep
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 32
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    min_replicas: 2
+    initial_replicas: 2
+    max_replicas: 2
+  max_ongoing_requests: 128
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 700
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 32
+    concurrency_ramp_duration_s: 150
+    trajectory_start_ratio: 0
+    seed: 42
+    unsafe_override: true
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  readiness_timeout_s: 1800
+  keep_deployment: true
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
