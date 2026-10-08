@@ -242,11 +242,22 @@ class AgentXWorkloadConfig(BaseModel):
     target_concurrency: int = Field(ge=1, strict=True)
     # Required by agentx_concurrency_ramp; rejected by agentx_fixed_concurrency.
     concurrency_ramp_duration_s: float | None = Field(default=None, gt=0)
-    # Used as both the min and max start ratio; 0 starts every trajectory cold
-    # at turn zero.
-    trajectory_start_ratio: float = Field(default=0, ge=0, le=1)
+    # Window of each trace's recorded duration that AIPerf samples a lane's
+    # start instant from. Turns before it are replayed as warmup to prime the
+    # KV cache. 0/0 starts every trajectory cold at turn zero; the scenario's
+    # own default is 0/1.
+    trajectory_start_min_ratio: float = Field(default=0, ge=0, le=1)
+    trajectory_start_max_ratio: float = Field(default=0, ge=0, le=1)
     seed: int = 42
     unsafe_override: bool = False
+
+    @model_validator(mode="after")
+    def validate_trajectory_start_window(self) -> "AgentXWorkloadConfig":
+        if self.trajectory_start_min_ratio > self.trajectory_start_max_ratio:
+            raise ValueError(
+                "trajectory_start_min_ratio cannot exceed trajectory_start_max_ratio"
+            )
+        return self
 
 
 def _workload_type(value: Any) -> str:

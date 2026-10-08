@@ -40,7 +40,8 @@ benchmark:
     public_dataset: semianalysis_cc_traces_weka_062126_256k
     target_concurrency: 32
     concurrency_ramp_duration_s: 150
-    trajectory_start_ratio: 0
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
     seed: 42
     unsafe_override: true
   streaming: true

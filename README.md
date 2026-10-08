@@ -178,7 +178,8 @@ benchmark:
     public_dataset: semianalysis_cc_traces_weka_062126_256k
     target_concurrency: 16
     concurrency_ramp_duration_s: 1200
-    trajectory_start_ratio: 0
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
     seed: 42
     unsafe_override: false
 ```
@@ -203,10 +204,13 @@ How to read the load:
   tree drains, AgentX replaces it with a new trace. Faster configurations
   therefore complete more sessions and may see a somewhat different trace mix,
   so report throughput together with TTFT and ITL rather than on its own.
-- **`trajectory_start_ratio: 0`** starts each trajectory at turn zero, so the
-  sessions ramped in at the start arrive cold rather than mid-conversation
-  with a primed cache. The value is passed as both the minimum and maximum
-  start ratio.
+- **`trajectory_start_min_ratio` / `trajectory_start_max_ratio`** set the
+  window, as a fraction of each trace's recorded duration, from which AIPerf
+  samples a session's starting instant. Turns before that instant are
+  replayed once during warmup to prime the KV cache, and measurement starts
+  at the first turn after it. Both default to `0`, which starts every session
+  cold at turn zero with no warmup. The AgentX scenario's own default is
+  `0` / `1`: sessions start mid-conversation with their prefix cached.
 - **Ramp-up only.** Ramping down, multiple cohorts and arbitrary concurrency
   curves are not supported yet.
 

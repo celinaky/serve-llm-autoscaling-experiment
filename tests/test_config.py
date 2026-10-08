@@ -200,7 +200,8 @@ def test_agentx_config_parses(agentx_config):
     assert workload.type == "agentx"
     assert workload.public_dataset == "semianalysis_cc_traces_weka_062126_256k"
     assert (workload.target_concurrency, workload.concurrency_ramp_duration_s) == (16, 1200)
-    assert workload.trajectory_start_ratio == 0 and not workload.unsafe_override
+    assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0, 0)
+    assert not workload.unsafe_override
 
 
 def test_workload_type_defaults_to_synthetic():
@@ -378,7 +379,21 @@ def test_agentx_slo_baseline_experiment():
     assert benchmark.streaming and benchmark.fail_fast and benchmark.use_server_token_count
     workload = benchmark.workload
     assert workload.public_dataset == reference.benchmark.workload.public_dataset
-    assert (workload.target_concurrency, workload.trajectory_start_ratio,
-            workload.seed, workload.unsafe_override) == (8, 0, 42, False)
+    assert (workload.target_concurrency, workload.trajectory_start_min_ratio,
+            workload.trajectory_start_max_ratio, workload.seed,
+            workload.unsafe_override) == (8, 0, 0, 42, False)
     assert workload.concurrency_ramp_duration_s is None
     assert config.analysis.ttft_slo_ms is None  # this run produces the SLO
+
+
+def test_agentx_trajectory_start_window(agentx_config):
+    workload = agentx_config(workload={
+        "trajectory_start_min_ratio": 0.25, "trajectory_start_max_ratio": 1,
+    }).benchmark.workload
+    assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0.25, 1)
+    with pytest.raises(ValidationError, match="cannot exceed"):
+        agentx_config(workload={
+            "trajectory_start_min_ratio": 0.5, "trajectory_start_max_ratio": 0.25,
+        })
+    with pytest.raises(ValidationError, match="trajectory_start_ratio"):
+        agentx_config(workload={"trajectory_start_ratio": 0})

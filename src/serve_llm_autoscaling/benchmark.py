@@ -168,7 +168,6 @@ class AIPerfRunner:
         workload = benchmark.workload
         if not isinstance(workload, AgentXWorkloadConfig):
             raise TypeError("build_agentx_command requires an agentx workload")
-        ratio = str(workload.trajectory_start_ratio)
         cmd = self._common_args(artifact_dir)
         cmd.extend([
             "--scenario", AGENTX_SCENARIO,
@@ -180,8 +179,8 @@ class AIPerfRunner:
                 "--concurrency-ramp-duration", str(workload.concurrency_ramp_duration_s)
             ])
         cmd.extend([
-            "--trajectory-start-min-ratio", ratio,
-            "--trajectory-start-max-ratio", ratio,
+            "--trajectory-start-min-ratio", str(workload.trajectory_start_min_ratio),
+            "--trajectory-start-max-ratio", str(workload.trajectory_start_max_ratio),
             "--random-seed", str(workload.seed),
         ])
         if workload.unsafe_override:

@@ -354,3 +354,15 @@ def test_run_agentx_fixed_summary_row(agentx_fixed_config, monkeypatch, tmp_path
     assert row["mean_successful_qps"] == pytest.approx(0.1)
     assert set(row) >= {"request_count", "failed_requests", "p50_ttft_ms",
                         "p90_ttft_ms", "p99_ttft_ms", "error"}
+
+
+def test_build_agentx_command_trajectory_start_window(
+    agentx_config, monkeypatch, tmp_path: Path
+):
+    monkeypatch.setattr(benchmark.shutil, "which", lambda name: f"/bin/{name}")
+    config = agentx_config(workload={
+        "trajectory_start_min_ratio": 0, "trajectory_start_max_ratio": 1,
+    })
+    command = AIPerfRunner(config, tmp_path).build_agentx_command(tmp_path / "ramp")
+    assert _arg(command, "--trajectory-start-min-ratio") == "0.0"
+    assert _arg(command, "--trajectory-start-max-ratio") == "1.0"

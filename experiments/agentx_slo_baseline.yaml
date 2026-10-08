@@ -52,7 +52,8 @@ benchmark:
     # Session trees, not HTTP requests: subagents can put more requests in
     # flight than this.
     target_concurrency: 8
-    trajectory_start_ratio: 0
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
     seed: 42
     unsafe_override: false
   streaming: true
