@@ -146,7 +146,7 @@ them. The 10K-context Qwen3-0.6B experiments are not suitable.
 
 `experiments/agentx_kv_aware_autoscaling.yaml` is a checked-in short
 development run. It serves `Qwen/Qwen3.6-27B-FP8`, a dense hybrid-attention
-model with a 262,144-token context, on one RTX PRO 6000 (96GB) per replica,
+model with a 262,144-token context, on one >=80GB GPU per replica,
 autoscaling from 1 to 4 replicas behind KV-aware routing. It ramps to 32
 sessions over 150s, issues load for 210s, drains for up to 30s, then observes
 the idle deployment for 90s. It needs `ai-dynamo>=1.4.0` (see
@@ -303,7 +303,7 @@ rejected, the scenario owns warmup, cache busting and ignore-EOS, and
 `duration_s >= 900` unless `unsafe_override: true`.
 
 `experiments/agentx_slo_baseline.yaml` runs the
-`agentx_kv_aware_autoscaling.yaml` deployment (same model, RTX PRO 6000,
+`agentx_kv_aware_autoscaling.yaml` deployment (same model, GPU,
 engine, KV-aware routing, direct streaming, body forwarding, HAProxy buffer,
 dataset and seed) on exactly one replica (`min_replicas`, `initial_replicas`
 and `max_replicas` all 1), with 8 AgentX sessions for 900s and up to 300s of

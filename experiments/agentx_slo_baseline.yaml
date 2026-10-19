@@ -9,15 +9,15 @@ name: qwen-agentx-slo-baseline
 # into analysis.ttft_slo_ms of the autoscaling experiment. This config sets
 # no ttft_slo_ms because it produces one.
 #
-# Hardware: one RTX PRO 6000 (96GB). Requires ai-dynamo>=1.4.0 for KV-aware
-# routing, which the harness checks before deploying.
+# Hardware: one >=80GB GPU of any type (no accelerator_type is pinned).
+# Requires ai-dynamo>=1.4.0 for KV-aware routing, which the harness checks
+# before deploying.
 #
 # Timeline: load 0-900s, then AIPerf drains for up to 300s.
 
 deployment:
   application_name: ttft-benchmark
   model_id: Qwen/Qwen3.6-27B-FP8
-  accelerator_type: RTX-PRO-6000
   route_prefix: /
   routing:
     policy: kv_aware
