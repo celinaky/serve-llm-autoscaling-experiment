@@ -144,6 +144,94 @@ def verify_topology(config: ExperimentConfig, status: dict[str, Any]) -> dict[st
     return {"topology": topology, "deployments": names}
 
 
+def autoscaling_policy(config: ExperimentConfig) -> dict[str, Any]:
+    """The Serve ``AutoscalingPolicy`` for LLMServer, as deployed."""
+    policy = config.deployment.autoscaling.policy
+    kwargs = dict(policy.kwargs)
+    host = os.environ.get("RAY_PROMETHEUS_HOST")
+    if policy.name == "sla" and "prometheus_address" not in kwargs and host:
+        # The policy runs in the controller; pin it to the driver's Prometheus.
+        kwargs["prometheus_address"] = host
+    return {"policy_function": policy.policy_function, "policy_kwargs": kwargs}
+
+
+def check_autoscaling_support(config: ExperimentConfig) -> dict[str, Any]:
+    """Fail before deploying if the controller cannot run the autoscaling policy.
+
+    Without scikit-learn the SLA policy fails to construct, and without
+    Prometheus it silently falls back to the default policy.
+    """
+    name = config.deployment.autoscaling.policy.name
+    policy = autoscaling_policy(config)
+    module_name, _, attr = policy["policy_function"].partition(":")
+    try:
+        getattr(importlib.import_module(module_name), attr)
+    except Exception as exc:
+        import ray
+
+        raise RuntimeError(
+            f"autoscaling policy {name!r} needs {policy['policy_function']}, which "
+            f"Ray {ray.__version__} does not provide ({type(exc).__name__}: {exc})"
+        ) from exc
+    result: dict[str, Any] = {"policy": name, **policy}
+    if name == "sla":
+        try:
+            result["scikit_learn_version"] = importlib.metadata.version("scikit-learn")
+        except importlib.metadata.PackageNotFoundError:
+            raise RuntimeError(
+                "autoscaling policy sla requires scikit-learn in the Serve "
+                "controller's environment (pip install scikit-learn)"
+            ) from None
+        address = policy["policy_kwargs"].get("prometheus_address")
+        if not address:
+            raise RuntimeError(
+                "autoscaling policy sla needs Prometheus; set RAY_PROMETHEUS_HOST "
+                "or autoscaling.policy.kwargs.prometheus_address"
+            )
+        try:
+            response = requests.get(
+                urljoin(address.rstrip("/") + "/", "api/v1/query"),
+                params={"query": "1"},
+                timeout=5,
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            raise RuntimeError(
+                f"autoscaling policy sla cannot query Prometheus at {address} "
+                f"({type(exc).__name__}: {exc})"
+            ) from exc
+    return result
+
+
+def verify_autoscaling_policy(
+    config: ExperimentConfig, details: dict[str, Any]
+) -> dict[str, Any]:
+    """Check that every LLMServer deployment runs the requested policy.
+
+    ``details`` is the controller's serve instance details, whose deployment
+    configs are the ones Serve applied rather than the ones requested.
+    """
+    expected = autoscaling_policy(config)
+    application = config.deployment.application_name
+    app = (details.get("applications") or {}).get(application) or {}
+    applied = {
+        name: (
+            (deployment.get("deployment_config") or {}).get("autoscaling_config") or {}
+        ).get("policy") or {}
+        for name, deployment in (app.get("deployments") or {}).items()
+        if name.startswith("LLMServer")
+    }
+    if not applied:
+        raise RuntimeError(f"application {application!r} has no LLMServer deployment")
+    for name, policy in applied.items():
+        actual = {key: policy.get(key) for key in expected}
+        if actual != expected:
+            raise RuntimeError(
+                f"{name} runs autoscaling policy {actual}, expected {expected}"
+            )
+    return {"verified_deployments": sorted(applied)}
+
+
 def _jsonable(value: Any) -> Any:
     if hasattr(value, "model_dump"):
         return value.model_dump(mode="json")
@@ -183,6 +271,12 @@ class RayServeBackend:
 
         return _jsonable(serve.status())
 
+    def serve_details(self) -> dict[str, Any]:
+        """The controller's view, including each deployment's applied config."""
+        from ray.serve.context import _get_global_client
+
+        return _jsonable(_get_global_client().get_serve_details())
+
     def deployment_spec(self) -> dict[str, Any]:
         """Return the serializable LLMConfig payload used for deployment."""
         deployment = self.config.deployment
@@ -193,9 +287,12 @@ class RayServeBackend:
             },
             "engine_kwargs": deployment.engine.model_dump(),
             "deployment_config": {
-                "autoscaling_config": deployment.autoscaling.model_dump(
-                    exclude_none=True
-                ),
+                "autoscaling_config": {
+                    **deployment.autoscaling.model_dump(
+                        exclude_none=True, exclude={"policy"}
+                    ),
+                    "policy": autoscaling_policy(self.config),
+                },
                 "max_ongoing_requests": deployment.max_ongoing_requests,
                 "request_router_config": {
                     "request_router_class": deployment.routing.router_class,

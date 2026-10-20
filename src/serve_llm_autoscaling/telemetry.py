@@ -29,6 +29,12 @@ SELECTED_METRICS = (
     "serve_replica_processing_queries",
     "serve_deployment_replica_healthy",
     "serve_replica_startup_latency_ms",
+    # Exported only by the experimental SLA autoscaling policy.
+    "serve_sla_autoscaling_recommended_replicas",
+    "serve_sla_autoscaling_model_ready",
+    "serve_sla_autoscaling_training_rows",
+    "serve_sla_autoscaling_predicted_ttft_ms",
+    "serve_sla_autoscaling_predicted_itl_ms",
 )
 SCRAPE_TIMEOUT_S = 2.0
 

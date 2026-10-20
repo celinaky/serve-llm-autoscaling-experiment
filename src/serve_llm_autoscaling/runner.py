@@ -10,7 +10,13 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .artifacts import RunArtifacts, format_run_summary, format_slo_calibration, write_json
-from .backend import RayServeBackend, check_routing_support, verify_topology
+from .backend import (
+    RayServeBackend,
+    check_autoscaling_support,
+    check_routing_support,
+    verify_autoscaling_policy,
+    verify_topology,
+)
 from .benchmark import AIPerfRunner, agentx_row_fields, aiperf_command
 from .config import (
     CONTINUOUS_MODE_DIRS,
@@ -253,6 +259,13 @@ def run_experiment(
         artifacts.manifest["routing"] = routing["resolved"]
         artifacts.flush_manifest()
 
+        stage = "autoscaling_preflight"
+        autoscaling = check_autoscaling_support(config)
+        autoscaling_path = artifacts.root / "deployment" / "autoscaling.json"
+        write_json(autoscaling_path, autoscaling)
+        artifacts.manifest["autoscaling"] = autoscaling
+        artifacts.flush_manifest()
+
         stage = "deploy"
         artifacts.record_event("deploy_started")
         write_json(
@@ -275,6 +288,12 @@ def run_experiment(
         routing["verified"] = verify_topology(config, ready["serve_status"])
         write_json(routing_path, routing)
         artifacts.manifest["routing"] = {**routing["resolved"], **routing["verified"]}
+        artifacts.flush_manifest()
+
+        stage = "autoscaling_policy"
+        autoscaling.update(verify_autoscaling_policy(config, backend.serve_details()))
+        write_json(autoscaling_path, autoscaling)
+        artifacts.manifest["autoscaling"] = autoscaling
         artifacts.flush_manifest()
 
         stage = "benchmark"

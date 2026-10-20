@@ -36,6 +36,9 @@ deployment:
     enable_prefix_caching: true
     kv_cache_dtype: fp8
   autoscaling:
+    # Serve's request-based policy; see README "Autoscaling policy" for sla.
+    policy:
+      name: default
     min_replicas: 1
     initial_replicas: 1
     max_replicas: 4

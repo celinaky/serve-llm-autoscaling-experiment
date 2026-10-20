@@ -33,14 +33,16 @@ because its dependencies and Python requirement may differ from the image's.
 
 ```bash
 pip install -e ".[dev]"
-pip install "quack-kernels==0.6.3" "nvidia-cutlass-dsl==4.6.0"
+pip install "ai-dynamo>=1.4.0" scikit-learn
 autoscale-harness check
 ```
 
-The second `pip install` works around an image bug: its vLLM 0.26.0 pins
-`nvidia-cutlass-dsl==4.6.0`, but the bundled `quack-kernels` 0.4.1 is
-incompatible with it and fails engine startup with
-`AttributeError: module 'cutlass.cute.core' has no attribute 'ThrMma'`.
+The second `pip install` is for the cluster rather than the harness:
+`ai-dynamo` backs `kv_aware` routing (see [Routing](#routing)) and
+`scikit-learn` backs the `sla` autoscaling policy (see
+[Autoscaling policy](#autoscaling-policy)). Both run in Ray Serve processes,
+so they must be installed on every node; in a workspace, a `pip install` is
+added to the workspace dependencies, which Ray installs for every job.
 
 ## Run
 
@@ -452,6 +454,53 @@ After the deployment is ready, the harness verifies the Serve topology:
 stage `topology`. The requested routing, the environment switches, the
 resolved router class and the verified deployments are written to
 `deployment/routing.json` and summarized under `routing` in `manifest.json`.
+
+## Autoscaling policy
+
+`deployment.autoscaling.policy` selects the Serve autoscaling policy that
+decides `LLMServer`'s replica count:
+
+```yaml
+deployment:
+  autoscaling:
+    policy:
+      name: sla            # default | sla
+      kwargs:              # passed to the policy class unchanged
+        ttft_ms: 300       # mean TTFT target
+        itl_ms: 20         # mean inter-token latency target
+        advisory: false    # the harness default for sla
+    upscaling_factor: 1.0  # recommended for sla: keep its exact recommendation
+    min_replicas: 1
+    max_replicas: 4
+```
+
+| `name` | Ray `policy_function` | Notes |
+| --- | --- | --- |
+| `default` | `ray.serve.autoscaling_policy:default_autoscaling_policy` | Scales on ongoing requests per replica (`target_ongoing_requests`); takes no kwargs |
+| `sla` | `ray.serve.experimental.llm_sla_autoscaling_policy:SLAOnlineAutoscalingPolicy` | Learns per-replica capacity from Prometheus and scales to meet `ttft_ms` and `itl_ms`; needs `scikit-learn` |
+
+The policy is always passed explicitly, including `default`. For `sla`:
+
+- `advisory` defaults to `false`. With `advisory: true` the policy only
+  reports its recommendation (`serve_sla_autoscaling_recommended_replicas`)
+  and Serve scales exactly as with `default`; set it explicitly to compare.
+- `prometheus_address` defaults to the driver's `RAY_PROMETHEUS_HOST`, because
+  the policy runs in the Serve controller.
+- Until the policy has enough metrics and training coverage, it falls back to
+  the default policy's decision. Its `sla_reason` state is logged by the Serve
+  controller.
+
+Before deploying, `run` and `deploy` check that the installed Ray provides the
+policy class and, for `sla`, that `scikit-learn` is installed and Prometheus
+answers a query. After the deployment is ready, the harness reads the
+autoscaling config Serve applied to every `LLMServer` deployment and fails at
+stage `autoscaling_policy` unless its `policy_function` and `policy_kwargs`
+match the request. The policy, its kwargs and the verified deployments are
+written to `deployment/autoscaling.json`, summarized under `autoscaling` in
+`manifest.json` and in the run summary, and `autoscaling_policy` is recorded in
+the analysis summary. The SLA policy's diagnostic gauges (recommended
+replicas, model readiness, training rows, predicted TTFT and ITL) are collected
+with the other Prometheus metrics.
 
 ## Autoscaling telemetry and timeline
 

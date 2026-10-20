@@ -49,9 +49,48 @@ class EngineConfig(BaseModel):
     kv_cache_dtype: str = "fp8"
 
 
+# Autoscaling policy -> Ray Serve policy_function. Every policy is passed
+# explicitly so the deployed config names the policy that decided the run.
+AUTOSCALING_POLICIES = {
+    "default": "ray.serve.autoscaling_policy:default_autoscaling_policy",
+    "sla": "ray.serve.experimental.llm_sla_autoscaling_policy:SLAOnlineAutoscalingPolicy",
+}
+
+
+class AutoscalingPolicyConfig(BaseModel):
+    """The Serve autoscaling policy that decides the replica count.
+
+    ``kwargs`` go to the policy unchanged, except that ``sla`` defaults
+    ``advisory`` to false: an advisory SLA policy only reports its
+    recommendation and scales exactly like ``default``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: Literal["default", "sla"] = "default"
+    kwargs: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_kwargs(self) -> "AutoscalingPolicyConfig":
+        if self.name == "default":
+            if self.kwargs:
+                raise ValueError("autoscaling policy default takes no kwargs")
+            return self
+        missing = {"ttft_ms", "itl_ms"} - set(self.kwargs)
+        if missing:
+            raise ValueError(f"autoscaling policy sla requires kwargs {sorted(missing)}")
+        self.kwargs.setdefault("advisory", False)
+        return self
+
+    @property
+    def policy_function(self) -> str:
+        return AUTOSCALING_POLICIES[self.name]
+
+
 class AutoscalingConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
+    policy: AutoscalingPolicyConfig = Field(default_factory=AutoscalingPolicyConfig)
     min_replicas: int = Field(default=1, ge=0)
     initial_replicas: int | None = Field(default=1, ge=0)
     max_replicas: int = Field(default=1, ge=1)

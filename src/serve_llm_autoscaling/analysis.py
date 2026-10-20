@@ -564,6 +564,7 @@ def build_plot_data(
             "duration_s": config.benchmark.duration_s,
             "grace_period_s": config.benchmark.grace_period_s,
             "post_load_observation_s": config.benchmark.post_load_observation_s,
+            "autoscaling_policy": autoscaling.policy.name,
             "routing_policy": config.deployment.routing.policy,
             "direct_streaming": config.deployment.routing.direct_streaming,
             "window_s": analysis.window_s,

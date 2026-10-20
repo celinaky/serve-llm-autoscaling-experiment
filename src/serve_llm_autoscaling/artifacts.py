@@ -129,6 +129,13 @@ def format_run_summary(root: Path) -> str:
     ]
     if manifest.get("error"):
         lines.append(f"Error:     {manifest['error']}")
+    if autoscaling := manifest.get("autoscaling"):
+        policy = autoscaling.get("policy")
+        if "advisory" in (autoscaling.get("policy_kwargs") or {}):
+            policy += f" (advisory={autoscaling['policy_kwargs']['advisory']})"
+        if "verified_deployments" not in autoscaling:
+            policy += " (not verified on the deployment)"
+        lines.append(f"Autoscale: {policy}")
     lines += [
         f"Duration:  {timing}",
         f"Teardown:  {_teardown_state(root)}",

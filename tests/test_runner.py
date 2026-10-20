@@ -123,9 +123,17 @@ def _fake_cluster(monkeypatch, tmp_path: Path):
         app = self.config.deployment.application_name
         return {"serve_status": {"applications": {app: {"deployments": deployments}}}}
 
+    def details(self):
+        # Serve applies the requested autoscaling config unchanged.
+        applied = self.deployment_spec()["deployment_config"]
+        app = self.config.deployment.application_name
+        deployment = {"deployment_config": applied}
+        return {"applications": {app: {"deployments": {"LLMServer:m": deployment}}}}
+
     for name, value in {"deploy": {}, "teardown": None}.items():
         monkeypatch.setattr(runner.RayServeBackend, name, lambda self, v=value: v)
     monkeypatch.setattr(runner.RayServeBackend, "wait_healthy", ready)
+    monkeypatch.setattr(runner.RayServeBackend, "serve_details", details)
     sessions = []
 
     def session(config, root):
