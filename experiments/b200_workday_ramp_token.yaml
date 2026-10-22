@@ -84,3 +84,4 @@ analysis:
   metrics_interval_s: 2
   generate_plots: true
   ttft_slo_ms: 3000
+  itl_slo_ms: 50
