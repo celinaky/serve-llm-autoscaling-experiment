@@ -19,12 +19,19 @@ from .config import (
     AnalysisConfig,
     ExperimentConfig,
 )
+from .evaluation import evaluate_run
 from .telemetry import SELECTED_METRICS, normalize_metric_name
-from .windows import configured_concurrency_at, request_timeseries, slo_calibration
+from .windows import (
+    configured_concurrency_at,
+    profiling_requests,
+    request_timeseries,
+    slo_calibration,
+)
 
 # 2: ``request_rate_curve`` became the dimension-tagged ``configured_load``.
 # 3: added ``lifecycle`` (load, drain and idle observation periods).
-SCHEMA_VERSION = 3
+# 4: added SLA policy and vLLM series, ``sla_policy_events`` and the ITL SLO.
+SCHEMA_VERSION = 4
 
 # key -> (normalized sample name, aggregation, identity labels)
 #
@@ -32,7 +39,8 @@ SCHEMA_VERSION = 3
 # the replica for replica metrics, the handle or router actor for router
 # metrics, nothing more for controller gauges. Copies of one series exported by
 # several nodes are deduplicated; samples missing an identity label are
-# excluded, since they cannot be told apart.
+# excluded, since they cannot be told apart. vLLM metrics carry no deployment
+# labels; they are attributed through their ReplicaId instead.
 METRIC_SERIES = {
     "ongoing_requests": ("serve_replica_processing_queries", "sum", ("replica",)),
     "handle_ongoing_requests": (
@@ -48,6 +56,31 @@ METRIC_SERIES = {
     "autoscaling_total_requests": ("serve_autoscaling_total_requests", "sum", ()),
     "target_ongoing_requests": ("serve_autoscaling_target_ongoing_requests", "sum", ()),
     "replica_startups": ("serve_replica_startup_latency_ms_count", "counter_delta", ()),
+    "sla_recommended_replicas": ("serve_sla_autoscaling_recommended_replicas", "sum", ()),
+    "sla_model_ready": ("serve_sla_autoscaling_model_ready", "sum", ()),
+    "sla_training_rows": ("serve_sla_autoscaling_training_rows", "sum", ()),
+    "sla_training_buckets": ("serve_sla_autoscaling_training_buckets", "sum", ()),
+    "sla_predicted_ttft_ms": ("serve_sla_autoscaling_predicted_ttft_ms", "sum", ()),
+    "sla_predicted_itl_ms": ("serve_sla_autoscaling_predicted_itl_ms", "sum", ()),
+    "vllm_running_requests": ("vllm_num_requests_running", "sum", ("ReplicaId",)),
+    "vllm_waiting_requests": ("vllm_num_requests_waiting", "sum", ("ReplicaId",)),
+}
+
+# key -> (numerator counter, denominator counter, scale). Each point is the
+# ratio of the counters' increases over the preceding ``tail_window_s``,
+# summed across replicas: the means the SLA policy reads from Prometheus.
+WINDOWED_RATIOS = {
+    "vllm_mean_ttft_ms": (
+        "vllm_time_to_first_token_seconds_sum",
+        "vllm_time_to_first_token_seconds_count", 1000.0,
+    ),
+    "vllm_mean_itl_ms": (
+        "vllm_request_time_per_output_token_seconds_sum",
+        "vllm_request_time_per_output_token_seconds_count", 1000.0,
+    ),
+    "vllm_prefix_cache_hit_rate": (
+        "vllm_prefix_cache_hits_total", "vllm_prefix_cache_queries_total", 1.0,
+    ),
 }
 
 
@@ -428,6 +461,60 @@ def aggregate_metric(
     return points
 
 
+def _replica_values(
+    samples: list[tuple[str | None, dict[str, Any]]]
+) -> dict[str, float]:
+    """One value per ReplicaId; a replica whose copies disagree is dropped."""
+    values: dict[str, set[float]] = defaultdict(set)
+    for _, sample in samples:
+        replica = sample["labels"].get("ReplicaId")
+        if replica and sample.get("value") is not None:
+            values[replica].add(sample["value"])
+    return {replica: v.pop() for replica, v in values.items() if len(v) == 1}
+
+
+def windowed_ratio(
+    numerator_ticks: list[tuple[int, list[tuple[str | None, dict[str, Any]]]]],
+    denominator_ticks: list[tuple[int, list[tuple[str | None, dict[str, Any]]]]],
+    window_s: float,
+    t0: int,
+    scale: float = 1.0,
+) -> list[dict[str, Any]]:
+    """Per tick, the ratio of two counters' increases over the trailing window.
+
+    Increases are taken per replica against its latest sample at or before
+    the window start, or its first sample if it appeared inside the window,
+    then summed over the replicas present at the tick. Ticks with no
+    denominator increase produce no point.
+    """
+    history: dict[str, list[tuple[int, float, float]]] = defaultdict(list)
+    points = []
+    window_ns = round(window_s * 1e9)
+    for (timestamp_ns, numerators), (_, denominators) in zip(numerator_ticks, denominator_ticks):
+        current_num = _replica_values(numerators)
+        current_den = _replica_values(denominators)
+        total_num = total_den = 0.0
+        for replica in current_num.keys() & current_den.keys():
+            samples = history[replica]
+            baseline = samples[0] if samples else None
+            for sample in reversed(samples):
+                if sample[0] <= timestamp_ns - window_ns:
+                    baseline = sample
+                    break
+            samples.append((timestamp_ns, current_num[replica], current_den[replica]))
+            if baseline is None:
+                continue
+            total_num += current_num[replica] - baseline[1]
+            total_den += current_den[replica] - baseline[2]
+        if total_den > 0:
+            points.append({
+                "relative_time_s": (timestamp_ns - t0) / 1e9,
+                "value": total_num / total_den * scale,
+                "series_count": len(current_num.keys() & current_den.keys()),
+            })
+    return points
+
+
 def metric_series(
     records: list[dict[str, Any]],
     application: str,
@@ -435,6 +522,7 @@ def metric_series(
     interval_s: float,
     t0: int,
     warnings: list[str],
+    window_s: float = 30.0,
 ) -> dict[str, dict[str, Any]]:
     ticks: dict[Any, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
@@ -445,8 +533,24 @@ def metric_series(
             tick = round(record["timestamp_ns"] / 1e9 / interval_s)
         ticks[tick].append(record)
 
+    def attributed(labels: dict[str, str]) -> bool:
+        return (
+            labels.get("application") == application
+            and labels.get("deployment") in deployments
+        )
+
+    # vLLM samples belong to the deployment when their ReplicaId is one of its
+    # replicas; without any replica-labeled Serve sample, every one is kept.
+    replica_ids = {
+        s["labels"]["replica"]
+        for r in records for s in r.get("samples") or []
+        if "replica" in (s.get("labels") or {}) and attributed(s["labels"])
+    }
+
     unlabeled: dict[str, int] = defaultdict(int)
-    by_metric: dict[str, list] = {name: [] for name, _, _ in METRIC_SERIES.values()}
+    wanted = {name for name, _, _ in METRIC_SERIES.values()}
+    wanted |= {name for pair in WINDOWED_RATIOS.values() for name in pair[:2]}
+    by_metric: dict[str, list] = {name: [] for name in wanted}
     for tick in sorted(ticks):
         tick_records = ticks[tick]
         timestamp_ns = max(r["timestamp_ns"] for r in tick_records)
@@ -457,12 +561,13 @@ def metric_series(
                 if name not in by_metric:
                     continue
                 labels = sample.get("labels") or {}
-                if "application" not in labels or "deployment" not in labels:
+                if name.startswith("vllm_"):
+                    if replica_ids and labels.get("ReplicaId") not in replica_ids:
+                        continue
+                elif "application" not in labels or "deployment" not in labels:
                     unlabeled[name] += 1  # cannot be attributed to the deployment
                     continue
-                if labels["application"] != application:
-                    continue
-                if labels["deployment"] not in deployments:
+                elif not attributed(labels):
                     continue
                 selected[name].append((record.get("node_id"), sample))
         for name in by_metric:
@@ -477,7 +582,33 @@ def metric_series(
         points = aggregate_metric(by_metric[name], aggregation, identity, t0, warnings, name)
         if points:
             result[key] = {"metric": name, "aggregation": aggregation, "points": points}
+    for key, (numerator, denominator, scale) in WINDOWED_RATIOS.items():
+        points = windowed_ratio(by_metric[numerator], by_metric[denominator], window_s, t0, scale)
+        if points:
+            result[key] = {"metric": f"{numerator} / {denominator}",
+                           "aggregation": f"windowed_ratio_{window_s:g}s", "points": points}
     return result
+
+
+# --- SLA policy events ------------------------------------------------------
+
+
+def read_sla_policy_events(root: Path, application: str, t0: int) -> list[dict[str, Any]]:
+    """The SLA policy's logged state transitions, on the profiling clock."""
+    path = root / "telemetry" / "sla_policy_events.jsonl"
+    if not path.exists():
+        return []
+    events = [
+        {
+            "relative_time_s": (record["logged_at_ns"] - t0) / 1e9,
+            "reason": record["reason"],
+            "recommended_replicas": record["recommended_replicas"],
+            "advisory": record["advisory"],
+        }
+        for record in read_jsonl(path)
+        if not record.get("error") and application in record.get("deployment", "")
+    ]
+    return sorted(events, key=lambda e: e["relative_time_s"])
 
 
 # --- Plot data --------------------------------------------------------------
@@ -528,12 +659,20 @@ def build_plot_data(
     if not metrics_path.exists():
         warnings.append("Prometheus metrics were not collected; Serve-side signals are omitted")
     series = metric_series(
-        metric_records, application, deployments, analysis.metrics_interval_s, t0, warnings
+        metric_records, application, deployments, analysis.metrics_interval_s, t0, warnings,
+        window_s=analysis.tail_window_s,
     )
     if metrics_path.exists():
         for key in ("ongoing_requests", "router_queue", "desired_replicas"):
             if key not in series:
                 warnings.append(f"{METRIC_SERIES[key][0]} was not exported; omitted from the plot")
+    autoscaling = config.deployment.autoscaling
+    sla_events = read_sla_policy_events(root, application, t0)
+    if autoscaling.policy.name == "sla":
+        if "sla_recommended_replicas" not in series:
+            warnings.append("SLA policy gauges were not exported; policy panel is empty")
+        if not sla_events:
+            warnings.append("no SLA policy state transitions were found in the controller log")
 
     manifest_end = None
     try:
@@ -547,7 +686,6 @@ def build_plot_data(
     periods = lifecycle_periods(config, t0, manifest_end, lifecycle)
     if periods["observation_skipped"]:
         warnings.append(f"post-load observation skipped: {periods['observation_skipped']}")
-    autoscaling = config.deployment.autoscaling
     return {
         "schema_version": SCHEMA_VERSION,
         "experiment": {
@@ -565,6 +703,7 @@ def build_plot_data(
             "grace_period_s": config.benchmark.grace_period_s,
             "post_load_observation_s": config.benchmark.post_load_observation_s,
             "autoscaling_policy": autoscaling.policy.name,
+            "autoscaling_policy_kwargs": autoscaling.policy.kwargs,
             "routing_policy": config.deployment.routing.policy,
             "direct_streaming": config.deployment.routing.direct_streaming,
             "window_s": analysis.window_s,
@@ -572,6 +711,8 @@ def build_plot_data(
             "status_interval_s": analysis.status_interval_s,
             "metrics_interval_s": analysis.metrics_interval_s,
             "ttft_slo_ms": analysis.ttft_slo_ms,
+            "itl_slo_ms": analysis.itl_slo_ms,
+            "warmup_s": analysis.warmup_s,
             "mode": config.benchmark.mode,
         },
         "time_origin": {
@@ -584,6 +725,7 @@ def build_plot_data(
         "request_windows": timeseries["windows"],
         "serve_status_samples": status,
         "serve_metric_series": series,
+        "sla_policy_events": sla_events,
         "availability": {
             "replica_status": any(s.get("error") is None for s in status),
             "router_queue": "router_queue" in series,
@@ -591,6 +733,9 @@ def build_plot_data(
             "desired_replicas": "desired_replicas" in series,
             "target_replicas_metric": "target_replicas" in series,
             "healthy_replicas": "healthy_replicas" in series,
+            "sla_policy_metrics": "sla_recommended_replicas" in series,
+            "sla_policy_events": bool(sla_events),
+            "vllm_latency": "vllm_mean_ttft_ms" in series,
         },
         "warnings": warnings,
     }
@@ -611,11 +756,13 @@ def analyze_run(
     out = root / "analysis"
 
     lifecycle = read_lifecycle(root)
+    artifact_dir = workload_artifact_dir(root, config)
     timeseries = request_timeseries(
-        workload_artifact_dir(root, config),
+        artifact_dir,
         window_s=analysis.window_s,
         tail_window_s=analysis.tail_window_s,
         ttft_slo_ms=analysis.ttft_slo_ms,
+        itl_slo_ms=analysis.itl_slo_ms,
         duration_s=config.benchmark.duration_s,
         horizon_s=lifecycle_horizon_s(lifecycle),
     )
@@ -633,6 +780,8 @@ def analyze_run(
     )
     plot_data = build_plot_data(root, config, analysis, timeseries, lifecycle)
     write_json(out / "plot_data.json", plot_data)
+    requests, _ = profiling_requests(artifact_dir)
+    write_json(out / "autoscaling_evaluation.json", evaluate_run(plot_data, requests))
 
     result: dict[str, Any] = {"warnings": plot_data["warnings"], "plot_error": None}
     if analysis.generate_plots if plot is None else plot:

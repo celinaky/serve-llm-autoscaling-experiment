@@ -6,15 +6,20 @@ from bisect import bisect_left, bisect_right
 from pathlib import Path
 from typing import Any, NamedTuple
 
-SCHEMA_VERSION = 1
+# 2: added ITL, window means and rolling means.
+SCHEMA_VERSION = 2
 
 
-class _Request(NamedTuple):
+class Request(NamedTuple):
+    """One profiling-phase request from AIPerf's per-request export."""
+
     credit_ns: int
     start_ns: int
     end_ns: int
     failed: bool
     ttft_ms: float | None
+    # AIPerf's per-request mean inter-token latency.
+    itl_ms: float | None
     # 0 for root agents, > 0 for subagents; None if the record does not say.
     agent_depth: int | None
 
@@ -30,6 +35,17 @@ def percentile(ordered: list[float], q: float) -> float | None:
     lower = math.floor(position)
     upper = math.ceil(position)
     return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
+
+
+def mean(values: list[float]) -> float | None:
+    return sum(values) / len(values) if values else None
+
+
+def attainment(values: list[float], slo: float | None) -> float | None:
+    """The fraction of ``values`` within ``slo``; None without either."""
+    if slo is None or not values:
+        return None
+    return sum(v <= slo for v in values) / len(values)
 
 
 def profiling_phase_ns(artifact_dir: Path) -> tuple[int | None, int | None]:
@@ -55,7 +71,18 @@ def profiling_start_ns(artifact_dir: Path) -> int | None:
     return profiling_phase_ns(artifact_dir)[0]
 
 
-def _parse(line: str) -> _Request | None:
+def _latency_ms(metrics: Any, name: str) -> float | None:
+    """A latency metric's value in ms; None when absent or not a number."""
+    metric = (metrics or {}).get(name) or {}
+    value = metric.get("value") if isinstance(metric, dict) else None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(value):
+        raise ValueError(f"{name} is not finite")
+    return float(value)
+
+
+def _parse(line: str) -> Request | None:
     """Return one profiling request, or None if it belongs to another phase.
 
     Raises ValueError for malformed records.
@@ -78,20 +105,18 @@ def _parse(line: str) -> _Request | None:
     depth = meta.get("agent_depth")
     if isinstance(depth, bool) or not isinstance(depth, int):
         depth = None
-    ttft = (record.get("metrics") or {}).get("time_to_first_token") or {}
-    ttft_ms = ttft.get("value") if isinstance(ttft, dict) else None
-    if isinstance(ttft_ms, bool) or not isinstance(ttft_ms, (int, float)):
-        ttft_ms = None
-    elif not math.isfinite(ttft_ms):
-        raise ValueError("TTFT is not finite")
-    return _Request(
+    metrics = record.get("metrics")
+    return Request(
         credit, start, end, record.get("error") is not None,
-        float(ttft_ms) if ttft_ms is not None else None, depth,
+        _latency_ms(metrics, "time_to_first_token"),
+        _latency_ms(metrics, "inter_token_latency"),
+        depth,
     )
 
 
-def _read_requests(path: Path) -> tuple[list[_Request], int]:
-    requests: list[_Request] = []
+def read_requests(path: Path) -> tuple[list[Request], int]:
+    """Profiling requests in file order, with the count of malformed lines."""
+    requests: list[Request] = []
     malformed = 0
     with path.open() as fh:
         for line in fh:
@@ -116,7 +141,7 @@ def configured_concurrency_at(
     return 1 + (target - 1) * max(time_s, 0.0) / ramp_duration_s
 
 
-def _qps_summary(requests: list[_Request], t0: int | None, duration_s: float) -> dict[str, Any]:
+def _qps_summary(requests: list[Request], t0: int | None, duration_s: float) -> dict[str, Any]:
     """Mean request rates over the profiling send interval ``[t0, t0 + duration_s)``.
 
     Only profiling records are counted, and the interval starts at the
@@ -142,17 +167,22 @@ def _qps_summary(requests: list[_Request], t0: int | None, duration_s: float) ->
     }
 
 
-def _time_origin(artifact_dir: Path, requests: list[_Request]) -> tuple[int | None, str]:
+def _time_origin(artifact_dir: Path, requests: list[Request]) -> tuple[int | None, str]:
     t0 = profiling_start_ns(artifact_dir)
     if t0 is not None:
         return t0, "phase_manifest"
     return min((r.credit_ns for r in requests), default=None), "first_credit"
 
 
+def profiling_requests(artifact_dir: Path) -> tuple[list[Request], int | None]:
+    """A run's profiling requests and the time origin they are aligned to."""
+    requests, _ = read_requests(artifact_dir / "profile_export.jsonl")
+    return requests, _time_origin(artifact_dir, requests)[0]
+
+
 def profiling_qps_summary(artifact_dir: Path, duration_s: float) -> dict[str, Any]:
     """Harness-derived mean QPS of a run, from its per-request records."""
-    requests, _ = _read_requests(artifact_dir / "profile_export.jsonl")
-    t0, _ = _time_origin(artifact_dir, requests)
+    requests, t0 = profiling_requests(artifact_dir)
     return _qps_summary(requests, t0, duration_s)
 
 
@@ -163,7 +193,7 @@ def slo_calibration(artifact_dir: Path) -> dict[str, Any]:
     warmup records are excluded, and failed requests are counted but have no
     TTFT sample. The recommendation is the p90.
     """
-    requests, malformed = _read_requests(artifact_dir / "profile_export.jsonl")
+    requests, malformed = read_requests(artifact_dir / "profile_export.jsonl")
     ttft = sorted(r.ttft_ms for r in requests if not r.failed and r.ttft_ms is not None)
     successful = sum(not r.failed for r in requests)
     p90 = percentile(ttft, 0.90)
@@ -184,26 +214,42 @@ def slo_calibration(artifact_dir: Path) -> dict[str, Any]:
     }
 
 
+def _latency_fields(name: str, values: list[float], slo_ms: float | None) -> dict[str, Any]:
+    """Distribution of one latency over a window; ``values`` must be sorted."""
+    return {
+        f"{name}_sample_count": len(values),
+        f"mean_{name}_ms": mean(values),
+        f"p50_{name}_ms": percentile(values, 0.50),
+        f"p90_{name}_ms": percentile(values, 0.90),
+        f"p99_{name}_ms": percentile(values, 0.99),
+        f"{name}_slo_attainment": attainment(values, slo_ms),
+    }
+
+
 def request_timeseries(
     artifact_dir: Path,
     *,
     window_s: float = 5,
     tail_window_s: float | None = None,
     ttft_slo_ms: float | None = None,
+    itl_slo_ms: float | None = None,
     duration_s: float | None = None,
     horizon_s: float | None = None,
 ) -> dict[str, Any]:
     """Summarize a series run's profiling records in fixed windows.
 
     Offered load uses credit issue time, starts use request start, completions
-    use request end, and TTFT belongs to the window in which the request
+    use request end, and latencies belong to the window in which the request
     started. Credits and starts fall in ``[start, end)`` windows, completions in
     ``(start, end]``, so a request ending exactly on a boundary completes in the
     earlier window and is no longer in flight at that boundary. Windows continue
     until the last request finishes, or until ``horizon_s`` if later (the end
     of post-load observation, so idle windows read as zero traffic).
+
+    Each window also carries the mean and p99 over the ``tail_window_s``
+    preceding its end: the rolling mean is what a mean-latency SLO is judged on.
     """
-    requests, malformed = _read_requests(artifact_dir / "profile_export.jsonl")
+    requests, malformed = read_requests(artifact_dir / "profile_export.jsonl")
     t0, source = _time_origin(artifact_dir, requests)
     # Subagent requests are real requests and count toward the totals; the
     # split is reported only when the records carry agent_depth.
@@ -224,7 +270,7 @@ def request_timeseries(
 
     buckets = [
         {"offered": 0, "offered_root": 0, "started": 0, "ok": 0, "failed": 0,
-         "ttft": [], "queue": []}
+         "ttft": [], "itl": [], "queue": []}
         for _ in range(count)
     ]
     for r in requests:
@@ -234,24 +280,29 @@ def request_timeseries(
         if (i := index(r.start_ns)) is not None:
             buckets[i]["started"] += 1
             buckets[i]["queue"].append((r.start_ns - r.credit_ns) / 1e6)
-            if not r.failed and r.ttft_ms is not None:
-                buckets[i]["ttft"].append(r.ttft_ms)
+            if not r.failed:
+                for name in ("ttft", "itl"):
+                    if (value := getattr(r, f"{name}_ms")) is not None:
+                        buckets[i][name].append(value)
         if (i := index(r.end_ns, closed_right=True)) is not None:
             buckets[i]["failed" if r.failed else "ok"] += 1
 
     starts = sorted(r.start_ns for r in requests)
     ends = sorted(r.end_ns for r in requests)
-    # (start time, TTFT) for the rolling tail, ordered by start.
-    ttft_by_start = sorted(
-        (r.start_ns, r.ttft_ms) for r in requests if not r.failed and r.ttft_ms is not None
-    )
-    ttft_starts = [ns for ns, _ in ttft_by_start]
+    # (start time, latency) for the rolling windows, ordered by start.
+    by_start = {
+        name: sorted(
+            (r.start_ns, getattr(r, f"{name}_ms")) for r in requests
+            if not r.failed and getattr(r, f"{name}_ms") is not None
+        )
+        for name in ("ttft", "itl")
+    }
+    start_keys = {name: [ns for ns, _ in pairs] for name, pairs in by_start.items()}
 
     windows = []
     for i, b in enumerate(buckets):
         start_s, end_s = i * window_s, (i + 1) * window_s
         boundary = t0 + round(end_s * 1e9)
-        ttft = sorted(b["ttft"])
         queue = sorted(b["queue"])
         window = {
             "window_start_s": start_s,
@@ -266,16 +317,10 @@ def request_timeseries(
             "failed_completed_rps": b["failed"] / window_s,
             # Started before the boundary and not ended by it.
             "in_flight_at_end": bisect_left(starts, boundary) - bisect_right(ends, boundary),
-            "ttft_sample_count": len(ttft),
-            "p50_ttft_ms": percentile(ttft, 0.50),
-            "p90_ttft_ms": percentile(ttft, 0.90),
-            "p99_ttft_ms": percentile(ttft, 0.99),
+            **_latency_fields("ttft", sorted(b["ttft"]), ttft_slo_ms),
+            **_latency_fields("itl", sorted(b["itl"]), itl_slo_ms),
             "p50_client_queue_ms": percentile(queue, 0.50),
             "p99_client_queue_ms": percentile(queue, 0.99),
-            "ttft_slo_attainment": (
-                sum(v <= ttft_slo_ms for v in ttft) / len(ttft)
-                if ttft_slo_ms is not None and ttft else None
-            ),
         }
         if by_depth:
             subagent = b["offered"] - b["offered_root"]
@@ -286,11 +331,13 @@ def request_timeseries(
                 "offered_subagent_rps": subagent / window_s,
             })
         if tail_window_s is not None:
-            lo = bisect_left(ttft_starts, boundary - round(tail_window_s * 1e9))
-            hi = bisect_left(ttft_starts, boundary)
-            tail = sorted(v for _, v in ttft_by_start[lo:hi])
-            window["rolling_ttft_sample_count"] = len(tail)
-            window["rolling_p99_ttft_ms"] = percentile(tail, 0.99)
+            for name, pairs in by_start.items():
+                lo = bisect_left(start_keys[name], boundary - round(tail_window_s * 1e9))
+                hi = bisect_left(start_keys[name], boundary)
+                tail = sorted(v for _, v in pairs[lo:hi])
+                window[f"rolling_{name}_sample_count"] = len(tail)
+                window[f"rolling_mean_{name}_ms"] = mean(tail)
+                window[f"rolling_p99_{name}_ms"] = percentile(tail, 0.99)
         windows.append(window)
 
     return {
@@ -298,6 +345,7 @@ def request_timeseries(
         "window_s": window_s,
         "tail_window_s": tail_window_s,
         "ttft_slo_ms": ttft_slo_ms,
+        "itl_slo_ms": itl_slo_ms,
         "profiling_start_ns": t0,
         "time_origin_source": source,
         "malformed_record_count": malformed,

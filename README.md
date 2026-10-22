@@ -492,7 +492,20 @@ The policy is always passed explicitly, including `default`. For `sla`:
   the policy runs in the Serve controller.
 - Until the policy has enough metrics and training coverage, it falls back to
   the default policy's decision. Its `sla_reason` state is logged by the Serve
-  controller.
+  controller, which the harness tails into `telemetry/sla_policy_events.jsonl`.
+  With the policy's defaults the model needs `min_training_rows` (30)
+  observations taken `observation_window_s` (30s) apart while the topology has
+  been stable for `topology_stabilization_s` (60s): about 15 minutes of
+  cumulative stable time before it leaves `model_not_ready`. Size the load
+  so the decisions you want to grade come after that, or lower those kwargs
+  together.
+- `analysis.ttft_slo_ms` and `analysis.itl_slo_ms` default to the policy's
+  `ttft_ms` and `itl_ms`, and must match them if set, so the run is scored
+  against the targets the policy was given. `experiments/b200_sla_smoke.yaml`
+  checks the machinery at a load one replica handles; the
+  `b200_workday_ramp_{default,sla,sla_advisory}.yaml` trio is the same
+  40-minute AgentX ramp under each policy, scored on mean TTFT 3s and mean
+  ITL 50ms.
 
 Before deploying, `run` and `deploy` check that the installed Ray provides the
 policy class and, for `sla`, that `scikit-learn` is installed and Prometheus
@@ -521,8 +534,16 @@ observation:
 - **Prometheus metrics** (every `analysis.metrics_interval_s`, default 2s)
   record what the autoscaler and routers see: desired/target replicas, ongoing
   requests at replicas, router and handle queues, replica health and startup
-  latency. The harness scrapes each Ray node's metrics export port directly;
-  no Prometheus server is required.
+  latency; the SLA policy's gauges (recommendation, model readiness, training
+  rows, predicted TTFT/ITL); and per-replica vLLM engine metrics (TTFT and
+  time-per-output-token histograms, running and waiting requests, prefix-cache
+  hits), which are what the SLA policy learns from. The harness scrapes each
+  Ray node's metrics export port directly; no Prometheus server is required.
+- **SLA policy log** (`sla` policy only, every `analysis.status_interval_s`)
+  tails the Serve controller log for the policy's state transitions
+  (`model_not_ready`, `unsupported_workload`, `capacity`, `safe_scale_down`,
+  `observed_slo_violation`, ...), which Serve exposes nowhere else, into
+  `telemetry/sla_policy_events.jsonl`.
 
 Both are stamped with the same epoch clock as AIPerf and aligned to AIPerf's
 profiling start. Collection failures are recorded as error samples and never
@@ -546,23 +567,33 @@ After the run, the harness derives the analysis from the raw artifacts:
 
 - **Request windows** (default 5s, `analysis.window_s`): offered load by credit
   issue time, actual starts, successful and failed completions, in-flight
-  requests at each boundary, client queue delay, and TTFT percentiles grouped by
-  request start. Windows continue until the last request finishes, or to the
-  end of post-load observation if that is later.
-- **Rolling tail latency**: TTFT p99 over the preceding `analysis.tail_window_s`
-  (default 30s), which is stable even when a 5s window has few samples. Set
-  `analysis.ttft_slo_ms` to also report SLO attainment.
+  requests at each boundary, client queue delay, and TTFT and ITL mean and
+  percentiles grouped by request start. Windows continue until the last
+  request finishes, or to the end of post-load observation if that is later.
+- **Rolling latency**: TTFT and ITL mean and p99 over the preceding
+  `analysis.tail_window_s` (default 30s), which is stable even when a 5s window
+  has few samples and matches the SLA policy's observation window. Set
+  `analysis.ttft_slo_ms` and `analysis.itl_slo_ms` to also report SLO
+  attainment and the [autoscaling evaluation](#autoscaling-evaluation).
+- **Serve-side latency**: vLLM's mean TTFT and ITL per scrape, as the ratio of
+  the histogram counters' increases over the same rolling window summed across
+  the deployment's replicas. This is the policy's view of latency; it excludes
+  router and proxy queueing that the client sees.
 - **Metrics inventory**: every Serve metric the workspace exported, with labels,
   source nodes and sample counts, plus recommended metrics that were absent.
-- **Timeline** (`autoscaling_timeline.png`), four panels on one time axis:
+- **Timeline** (`autoscaling_timeline.png`), five panels on one time axis,
+  six with the SLA policy:
   1. Traffic: offered, started and completed QPS with the configured load:
      QPS for a request-rate series, session concurrency (on a second axis)
      for an AgentX ramp or fixed-concurrency run.
-  2. User experience: TTFT p50/p90/p99, rolling p99, optional SLO.
-  3. Pressure: client in-flight requests and queue delay, Serve ongoing
-     requests and router queue length.
-  4. Autoscaling: desired and target replicas (metrics) with running,
-     starting and stopping replicas (status) as step functions.
+  2. TTFT and 3. ITL: p50/p90/p99 per window, the rolling mean and p99, the
+     SLO, and shading on every window whose rolling mean exceeds it.
+  4. Pressure: client in-flight requests and queue delay, Serve ongoing
+     requests and router queue length, vLLM running and waiting requests.
+  5. Autoscaling: desired, target and SLA-recommended replicas (metrics) with
+     running, starting and stopping replicas (status) as step functions.
+  6. SLA policy: predicted TTFT/ITL against the server (vLLM) and client
+     means, when the model became ready, and each logged state transition.
 
   Vertical lines mark the load curve's control points, or the end of an
   AgentX ramp. Dotted lines mark the end of load issuance, draining, AIPerf's
@@ -570,6 +601,54 @@ After the run, the harness derives the analysis from the raw artifacts:
   orange, and the idle period (no requests) is shaded green. `plot_data.json`
   carries these as `lifecycle.markers` and `lifecycle.periods`. Signals that
   were not collected are omitted with a warning rather than drawn as zero.
+
+## Autoscaling evaluation
+
+Every analyzed continuous run also gets `analysis/autoscaling_evaluation.json`,
+a scorecard for the autoscaling policy, summarized at the end of the run
+summary and by `analyze`. It is computed from `plot_data.json` and the
+per-request records only. Its sections:
+
+- **Periods.** `steady` is the load period after a warmup: the concurrency
+  ramp, or `analysis.warmup_s`, or 120s of a run without a ramp (half the load
+  if shorter). Scores are reported for `steady` and for the `whole_run`; the
+  steady figures are the ones to compare between policies, because no policy
+  can absorb the cold-start burst of a run that opens every session at once.
+- **SLO attainment**, two ways, because they answer different questions.
+  *Per request*: the share of successful requests whose TTFT (and ITL, and
+  both) were within the SLO, with mean/p50/p90/p99 and failures. It is what a
+  user feels and is dominated by the latency tail, which a policy has little
+  control over. *Per window*: the share of rolling windows (ending in the
+  period, with at least one request) whose rolling mean TTFT/ITL met the
+  target, and the seconds spent over it. It is what a mean-latency policy like
+  `sla` actually controls. A healthy single replica on the AgentX workload
+  shows high window attainment with middling request attainment; both low
+  means under-provisioned.
+- **Cost**: running and starting replica-seconds (the integral of the status
+  step function), mean and maximum running replicas, per scoring period and
+  per lifecycle period (load, drain, idle). Attainment against load
+  replica-seconds is the trade-off to iterate on: any policy can meet the SLO
+  at `max_replicas`.
+- **Scale events**: every change of the desired replica count with the time
+  the running count first matched it (reaction plus startup lag), and, for the
+  `sla` policy, the state it was in and its raw recommendation at that moment;
+  summarized as counts, first upscale and mean/max upscale lag.
+- **Latency by replica count**: steady-state mean and p90 TTFT/ITL grouped by
+  the replicas running when each request started.
+- **SLA policy** (when its gauges or log were collected): when the model
+  became ready and first made a `capacity` decision, the state timeline and
+  time spent in each state, and prediction error. Predictions are for the
+  recommended replica count, so only scrapes where that equals the running
+  count (with the model ready) are compared: predicted minus server mean
+  (vLLM, the policy's own input) and minus client mean, as bias, MAE and MAPE;
+  plus client minus server, the queueing the policy cannot see.
+
+Put several analyzed runs side by side; same workload, seed and SLO make the
+rows comparable:
+
+```bash
+autoscale-harness compare runs/<default run> runs/<sla advisory run> runs/<sla run>
+```
 
 Regenerate the analysis with different windows without rerunning the
 experiment; this needs no Ray cluster or GPU:
@@ -603,11 +682,13 @@ deployment/
 └── ...
 telemetry/                        # raw samples, never modified by analysis
 ├── serve_status.jsonl
-└── serve_metrics.jsonl
+├── serve_metrics.jsonl
+└── sla_policy_events.jsonl       # sla policy only: controller log transitions
 analysis/                         # derived; regenerated by `analyze`
 ├── request_timeseries.json
 ├── metrics_inventory.json
 ├── plot_data.json                # aligned data the timeline is drawn from
+├── autoscaling_evaluation.json   # the scorecard (see Autoscaling evaluation)
 └── autoscaling_timeline.png
 ```
 
@@ -633,6 +714,7 @@ autoscale-harness status <config>
 autoscale-harness teardown <config>
 autoscale-harness run <config> [--replace] [--keep-deployment]
 autoscale-harness analyze <run-directory> [--window-s S] [--tail-window-s S] [--no-plot]
+autoscale-harness compare <run-directory>...
 ```
 
 `benchmark` runs against an existing deployment. For a continuous run it

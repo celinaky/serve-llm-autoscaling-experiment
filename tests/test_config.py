@@ -76,6 +76,10 @@ def _benchmark(**benchmark):
         "experiments/step_rate.yaml",
         "experiments/step_rate_autoscaling.yaml",
         "experiments/smoke_rate_series.yaml",
+        "experiments/b200_sla_smoke.yaml",
+        "experiments/b200_workday_ramp_default.yaml",
+        "experiments/b200_workday_ramp_sla.yaml",
+        "experiments/b200_workday_ramp_sla_advisory.yaml",
     ],
 )
 def test_checked_in_experiments_are_valid(path):
@@ -167,7 +171,40 @@ def test_analysis_defaults():
     assert (analysis.window_s, analysis.tail_window_s) == (5, 30)
     assert (analysis.status_interval_s, analysis.metrics_interval_s) == (1, 2)
     assert analysis.prometheus_enabled and analysis.generate_plots
-    assert analysis.ttft_slo_ms is None
+    assert (analysis.ttft_slo_ms, analysis.itl_slo_ms, analysis.warmup_s) == (None, None, None)
+
+
+def _sla(analysis=None, **kwargs):
+    return ExperimentConfig.model_validate({
+        "name": "sla", "deployment": {
+            "model_id": "model",
+            "autoscaling": {"policy": {"name": "sla", "kwargs": {"ttft_ms": 3000, "itl_ms": 50, **kwargs}}},
+        },
+        **({"analysis": analysis} if analysis else {}),
+    })
+
+
+def test_sla_policy_fills_slo_targets():
+    analysis = _sla().analysis
+    assert (analysis.ttft_slo_ms, analysis.itl_slo_ms) == (3000.0, 50.0)
+    assert _sla({"ttft_slo_ms": 3000, "itl_slo_ms": 50}).analysis.itl_slo_ms == 50
+
+
+def test_sla_policy_rejects_mismatched_slo_targets():
+    with pytest.raises(ValidationError, match="analysis.itl_slo_ms 40 differs from the sla policy's itl_ms 50"):
+        _sla({"itl_slo_ms": 40})
+
+
+def test_b200_workday_ramp_experiments_differ_only_in_policy():
+    default = load_config(Path("experiments/b200_workday_ramp_default.yaml"))
+    active = load_config(Path("experiments/b200_workday_ramp_sla.yaml"))
+    advisory = load_config(Path("experiments/b200_workday_ramp_sla_advisory.yaml"))
+    assert default.deployment.autoscaling.policy.name == "default"
+    assert active.deployment.autoscaling.policy.kwargs["advisory"] is False
+    assert advisory.deployment.autoscaling.policy.kwargs["advisory"] is True
+    assert default.benchmark == active.benchmark == advisory.benchmark
+    assert default.analysis == active.analysis == advisory.analysis
+    assert (active.analysis.ttft_slo_ms, active.analysis.itl_slo_ms) == (3000, 50)
 
 
 def test_rejects_tail_window_shorter_than_window():

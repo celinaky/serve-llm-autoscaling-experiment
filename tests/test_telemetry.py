@@ -1,5 +1,6 @@
 import json
 import threading
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
@@ -11,9 +12,11 @@ from serve_llm_autoscaling.telemetry import (
     discover_endpoints,
     fetch_serve_status,
     parse_metrics,
+    parse_sla_policy_event,
     prometheus_collector,
     serve_status_collector,
     serve_status_sample,
+    sla_policy_log_collector,
 )
 
 APP = "ttft-benchmark"
@@ -263,3 +266,91 @@ def test_prometheus_collector_records_empty_discovery(tmp_path: Path):
     records = _read(path)
     assert all(r["error"] == "RuntimeError: No live Ray metrics endpoints discovered"
                for r in records)
+
+
+VLLM_EXPOSITION = """\
+# TYPE ray_vllm_time_to_first_token_seconds histogram
+ray_vllm_time_to_first_token_seconds_bucket{ReplicaId="r0",le="+Inf",model_name="m"} 3.0
+ray_vllm_time_to_first_token_seconds_sum{ReplicaId="r0",model_name="m"} 1.5
+ray_vllm_time_to_first_token_seconds_count{ReplicaId="r0",model_name="m"} 3.0
+# TYPE ray_vllm_prefix_cache_hits_total counter
+ray_vllm_prefix_cache_hits_total{ReplicaId="r0",model_name="m"} 7.0
+# TYPE ray_vllm_num_requests_running gauge
+ray_vllm_num_requests_running{ReplicaId="r0",model_name="m"} 2.0
+# TYPE ray_vllm_gpu_cache_usage_perc gauge
+ray_vllm_gpu_cache_usage_perc{ReplicaId="r0",model_name="m"} 0.5
+# TYPE ray_serve_sla_autoscaling_predicted_ttft_ms gauge
+ray_serve_sla_autoscaling_predicted_ttft_ms{application="ttft-benchmark",deployment="LLMServer:x"} 1200.0
+"""
+
+
+def test_parse_metrics_selects_vllm_and_sla_families():
+    samples, families = parse_metrics(VLLM_EXPOSITION)
+    assert [s["name"] for s in samples] == [
+        "ray_vllm_time_to_first_token_seconds_bucket",
+        "ray_vllm_time_to_first_token_seconds_sum",
+        "ray_vllm_time_to_first_token_seconds_count",
+        "ray_vllm_prefix_cache_hits_total",
+        "ray_vllm_num_requests_running",
+        "ray_serve_sla_autoscaling_predicted_ttft_ms",
+    ]
+    assert samples[1]["normalized_name"] == "vllm_time_to_first_token_seconds"
+    assert samples[1]["labels"]["ReplicaId"] == "r0"
+    # Unselected vLLM families are neither sampled nor listed as Serve metrics.
+    assert families == ["serve_sla_autoscaling_predicted_ttft_ms"]
+
+
+SLA_LOG_LINE = (
+    "INFO 2026-10-20 12:34:56,789 controller 4242 -- SLA autoscaling policy for "
+    "Deployment(name='LLMServer:x', app='ttft-benchmark') changed state to capacity "
+    "(recommended=2.0, advisory=False).\n"
+)
+
+
+def test_parse_sla_policy_event():
+    event = parse_sla_policy_event(SLA_LOG_LINE)
+    assert event["deployment"] == "Deployment(name='LLMServer:x', app='ttft-benchmark')"
+    assert (event["reason"], event["recommended_replicas"], event["advisory"]) == (
+        "capacity", 2.0, False
+    )
+    expected = datetime(2026, 10, 20, 12, 34, 56, 789000).timestamp()
+    assert event["logged_at_ns"] == round(expected * 1e9)
+    assert parse_sla_policy_event("INFO 2026-10-20 12:34:56,789 controller -- hello\n") is None
+
+
+def test_sla_policy_log_collector_tails_controller_logs(tmp_path: Path):
+    logs = tmp_path / "serve"
+    logs.mkdir()
+    log = logs / "controller_4242.log"
+    log.write_text("INFO 2026-10-20 12:34:50,000 controller 4242 -- started\n" + SLA_LOG_LINE)
+    path = tmp_path / "sla_policy_events.jsonl"
+    collector = sla_policy_log_collector(path, 0.01, lambda: logs)
+    _wait_for_records(collector, 1)
+    (first,) = _read(path)
+    assert first["reason"] == "capacity" and first["error"] is None
+    assert first["timestamp_ns"] > 0 and first["logged_at_ns"] < first["timestamp_ns"]
+    # Later ticks read only what was appended since.
+    with log.open("a") as fh:
+        fh.write(SLA_LOG_LINE.replace("capacity", "safe_scale_down"))
+    (second,) = collector._sample(1, 1)
+    assert second["reason"] == "safe_scale_down"
+    assert collector._sample(2, 2) == []
+
+
+def test_session_collects_sla_log_only_for_sla_policy(tmp_path: Path):
+    config = load_config("experiments/step_rate_autoscaling.yaml")
+    raw = config.resolved_dict()
+    raw["deployment"]["autoscaling"]["policy"] = {
+        "name": "sla", "kwargs": {"ttft_ms": 3000, "itl_ms": 50},
+    }
+    sla = TelemetrySession(
+        config.model_validate(raw), tmp_path / "sla", status_fetch=serve_status,
+        logs_dir=lambda: tmp_path,
+    )
+    assert [Path(c.path).name for c in sla.collectors] == [
+        "serve_status.jsonl", "serve_metrics.jsonl", "sla_policy_events.jsonl",
+    ]
+    default = TelemetrySession(config, tmp_path / "default", status_fetch=serve_status)
+    assert [Path(c.path).name for c in default.collectors] == [
+        "serve_status.jsonl", "serve_metrics.jsonl",
+    ]

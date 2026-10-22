@@ -18,9 +18,12 @@ T0 = 100 * S
 
 
 def _record(credit, end, start=None, ttft=10.0, phase="profiling", error=None,
-            depth=None):
+            depth=None, itl=None):
     """A record with times in seconds since the profiling start."""
     start = credit if start is None else start
+    metrics = {"time_to_first_token": {"value": ttft}} if ttft is not None else {}
+    if itl is not None:
+        metrics["inter_token_latency"] = {"value": itl}
     record = {
         "metadata": {
             "credit_issued_ns": T0 + int(credit * S),
@@ -29,7 +32,7 @@ def _record(credit, end, start=None, ttft=10.0, phase="profiling", error=None,
             "benchmark_phase": phase,
             **({"agent_depth": depth} if depth is not None else {}),
         },
-        "metrics": {"time_to_first_token": {"value": ttft}} if ttft is not None else {},
+        "metrics": metrics,
     }
     if error:
         record["error"] = {"message": error}
@@ -49,7 +52,7 @@ def _write(directory: Path, records, manifest=True, extra_lines=()):
 
 def test_default_window_is_five_seconds(tmp_path: Path):
     result = request_timeseries(_write(tmp_path, [_record(1, 2), _record(7, 8)]))
-    assert result["schema_version"] == 1
+    assert result["schema_version"] == 2
     assert result["window_s"] == 5
     assert result["profiling_start_ns"] == T0
     assert result["time_origin_source"] == "phase_manifest"
@@ -301,3 +304,34 @@ def test_slo_calibration_without_samples(tmp_path: Path):
     result = slo_calibration(tmp_path)
     assert result["successful_request_count"] == 0 and result["failed_request_count"] == 1
     assert result["recommended_ttft_slo_ms"] is None
+
+
+def test_itl_and_means_per_window(tmp_path: Path):
+    records = [_record(1, 2, ttft=100, itl=20), _record(2, 3, ttft=300, itl=40),
+               _record(3, 4, ttft=500)]
+    result = request_timeseries(_write(tmp_path, records), ttft_slo_ms=400, itl_slo_ms=30)
+    window = result["windows"][0]
+    assert (window["ttft_sample_count"], window["mean_ttft_ms"]) == (3, 300)
+    assert (window["itl_sample_count"], window["mean_itl_ms"]) == (2, 30)
+    assert window["p90_itl_ms"] == pytest.approx(38)
+    assert window["ttft_slo_attainment"] == pytest.approx(2 / 3)
+    assert window["itl_slo_attainment"] == 0.5
+    assert (result["ttft_slo_ms"], result["itl_slo_ms"]) == (400, 30)
+
+
+def test_rolling_means_follow_the_tail_window(tmp_path: Path):
+    records = [_record(1, 2, ttft=100, itl=10), _record(6, 7, ttft=300, itl=30),
+               _record(11, 12, ttft=500, itl=50)]
+    result = request_timeseries(_write(tmp_path, records), tail_window_s=10)
+    means = [(w["rolling_mean_ttft_ms"], w["rolling_mean_itl_ms"], w["rolling_itl_sample_count"])
+             for w in result["windows"]]
+    assert means[0] == (100, 10, 1)
+    assert means[1] == (200, 20, 2)
+    assert means[2] == (400, 40, 2)  # the 1s request has left the window
+
+
+def test_failed_requests_carry_no_latency(tmp_path: Path):
+    records = [_record(1, 2, ttft=100, itl=20, error="boom"), _record(2, 3, ttft=300, itl=40)]
+    window = request_timeseries(_write(tmp_path, records))["windows"][0]
+    assert (window["mean_ttft_ms"], window["mean_itl_ms"]) == (300, 40)
+    assert window["failed_completions"] == 1

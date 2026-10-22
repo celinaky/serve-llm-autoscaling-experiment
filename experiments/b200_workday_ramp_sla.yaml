@@ -1,0 +1,93 @@
+# The SLA autoscaling policy under a workday-shaped AgentX ramp on 4 B200s.
+# b200_workday_ramp_default.yaml and b200_workday_ramp_sla_advisory.yaml are
+# identical except for the policy; compare the analyzed runs with
+# `autoscale-harness compare`.
+#
+# Targets are mean TTFT 3s and mean ITL 50ms: on one B200 replica the
+# steady-state mean sits well under both at 8-16 sessions and far over both
+# at 32 (findings-claude-code-overnight/b200_investigation.md), so they
+# separate healthy from overloaded. analysis.ttft_slo_ms/itl_slo_ms default
+# to the same values, so the evaluation scores what the policy was asked for.
+#
+# Load: sessions ramp 1 -> 48 over 40 minutes (~1.2 per minute), then hold
+# for 10. One replica handles ~16 sessions, so the ramp crosses a replica's
+# capacity at ~16 sessions (t ~ 800s) and ~32 (t ~ 1600s) and leans on the
+# fourth GPU at the top; 48 on 4 replicas (12 each) can meet the SLO.
+#
+# The slope is bounded by the policy: its model is first fit after
+# min_training_rows (30) observations taken observation_window_s (30s)
+# apart while the topology has been stable for topology_stabilization_s
+# (60s), i.e. ~15 min of cumulative stable time, so it is ready at
+# ~1000s. The first scale-up (~800s) is therefore the default fallback's;
+# the second and third are the model's. A faster ramp moves the second
+# threshold under the model-ready time and the run evaluates the fallback.
+#
+# Sessions start at random points in their traces (trajectory start 0/1) so
+# the ramp is the only transient; the step to zero load plus the idle
+# observation is the scale-down test.
+#
+# Timeline: load 0-3000s, AIPerf drains for up to 120s, then 300s idle.
+name: b200-workday-ramp-sla
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 32
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: sla
+      kwargs:
+        ttft_ms: 3000
+        itl_ms: 50
+        advisory: false
+    # Keep the policy's exact recommendation rather than rounding it up.
+    upscaling_factor: 1.0
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 4
+    # The fallback until the model is ready, and the floor afterwards.
+    target_ongoing_requests: 8
+    upscale_delay_s: 10
+    downscale_delay_s: 60
+  max_ongoing_requests: 128
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 3000
+  grace_period_s: 120
+  post_load_observation_s: 300
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 48
+    concurrency_ramp_duration_s: 2400
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 1
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true

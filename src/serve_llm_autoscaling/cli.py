@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from .artifacts import format_slo_calibration
+from .artifacts import format_evaluation, format_slo_calibration
 from .backend import (
     RayServeBackend,
     check_autoscaling_support,
@@ -41,6 +41,10 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--window-s", type=float)
     analyze.add_argument("--tail-window-s", type=float)
     analyze.add_argument("--no-plot", action="store_true")
+    compare = subparsers.add_parser(
+        "compare", help="Tabulate the autoscaling evaluation of several analyzed runs"
+    )
+    compare.add_argument("run_dirs", type=Path, nargs="+")
     return parser
 
 
@@ -64,9 +68,16 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Analysis artifacts: {args.run_dir / 'analysis'}")
             if calibration := format_slo_calibration(args.run_dir):
                 print(calibration)
+            if evaluation := format_evaluation(args.run_dir):
+                print(evaluation)
             if result["plot_error"]:
                 print(f"ERROR: plot failed: {result['plot_error']}", file=sys.stderr)
                 return 1
+            return 0
+        if args.command == "compare":
+            from .compare import format_comparison
+
+            print(format_comparison(args.run_dirs))
             return 0
 
         config = load_config(args.config)

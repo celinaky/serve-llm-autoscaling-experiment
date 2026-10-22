@@ -1,0 +1,77 @@
+# Smoke test of the SLA autoscaling policy: 8 AgentX sessions, half of what
+# one B200 replica handles, held for 25 minutes. The right answer is one
+# replica throughout, so the run checks the machinery rather than the
+# policy's judgement:
+#
+# - its gauges and controller-log transitions are collected;
+# - the model becomes ready at ~16-17 min (min_training_rows 30 observations
+#   30s apart, after 60s of topology stabilization) and the state goes
+#   model_not_ready -> capacity, not unsupported_workload;
+# - the recommendation stays at 1 (max_replicas 2 gives it a wrong answer
+#   to pick) and predicted TTFT/ITL track the server means.
+#
+# Sessions start at random points in their traces (trajectory start 0/1) so
+# there is no cold-start burst to dominate the early training rows.
+#
+# Timeline: load 0-1500s, AIPerf drains for up to 120s, then 120s idle.
+name: b200-sla-smoke
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 32
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: sla
+      kwargs:
+        ttft_ms: 3000
+        itl_ms: 50
+        advisory: false
+    upscaling_factor: 1.0
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 2
+    target_ongoing_requests: 8
+    upscale_delay_s: 10
+    downscale_delay_s: 60
+  max_ongoing_requests: 128
+benchmark:
+  generator: aiperf
+  mode: agentx_fixed_concurrency
+  duration_s: 1500
+  grace_period_s: 120
+  post_load_observation_s: 120
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 8
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 1
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
