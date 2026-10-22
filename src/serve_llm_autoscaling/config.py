@@ -429,13 +429,20 @@ class RuntimeConfig(BaseModel):
 
 class AnalysisConfig(BaseModel):
     window_s: float = Field(default=5, gt=0)
-    # Rolling window for tail latency; smooths p99 over sparse request windows.
+    # Rolling window for tail latency and window-mean SLO attainment; smooths
+    # sparse request windows and matches the SLA policy's observation window.
     tail_window_s: float = Field(default=30, gt=0)
     status_interval_s: float = Field(default=1, gt=0)
     metrics_interval_s: float = Field(default=2, gt=0)
     prometheus_enabled: bool = True
     generate_plots: bool = True
+    # Mean-latency targets the run is scored against. With the sla policy
+    # they default to its ttft_ms and itl_ms and must match them.
     ttft_slo_ms: float | None = Field(default=None, gt=0)
+    itl_slo_ms: float | None = Field(default=None, gt=0)
+    # Seconds of load excluded from the steady-state score; by default the
+    # concurrency ramp, or 120s of a run without one.
+    warmup_s: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_tail_window(self) -> "AnalysisConfig":
@@ -472,6 +479,24 @@ class ExperimentConfig(BaseModel):
             and self.deployment.routing.policy != "kv_aware"
         ):
             raise ValueError("autoscaling policy token requires routing policy kv_aware")
+        return self
+
+    @model_validator(mode="after")
+    def validate_slo_targets(self) -> "ExperimentConfig":
+        """Score the sla policy against the targets it was given."""
+        policy = self.deployment.autoscaling.policy
+        if policy.name != "sla":
+            return self
+        for field in ("ttft_slo_ms", "itl_slo_ms"):
+            target = float(policy.kwargs[field.replace("_slo", "")])
+            configured = getattr(self.analysis, field)
+            if configured is None:
+                setattr(self.analysis, field, target)
+            elif configured != target:
+                raise ValueError(
+                    f"analysis.{field} {configured:g} differs from the sla policy's "
+                    f"{field.replace('_slo', '')} {target:g}"
+                )
         return self
 
     @model_validator(mode="after")

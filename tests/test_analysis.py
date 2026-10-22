@@ -10,6 +10,8 @@ from serve_llm_autoscaling.analysis import (
     build_plot_data,
     load_run_config,
     metric_series,
+    read_sla_policy_events,
+    windowed_ratio,
     workload_artifact_dir,
 )
 from serve_llm_autoscaling.artifacts import write_json
@@ -110,7 +112,7 @@ def test_plot_data_aligns_epoch_timestamps(tmp_path: Path):
     root = make_run(tmp_path / "run")
     analyze_run(root, plot=False)
     data = json.loads((root / "analysis" / "plot_data.json").read_text())
-    assert data["schema_version"] == 3
+    assert data["schema_version"] == 4
     assert data["time_origin"] == {"profiling_start_ns": T0, "source": "phase_manifest",
                                    "profiling_end_s": 300.0}
     times = [s["relative_time_s"] for s in data["serve_status_samples"]]
@@ -179,6 +181,7 @@ def test_metric_filters_and_sums_replicas(tmp_path: Path):
     assert data["availability"] == {
         "replica_status": True, "router_queue": True, "ongoing_requests": True,
         "desired_replicas": True, "target_replicas_metric": True, "healthy_replicas": False,
+        "sla_policy_metrics": False, "sla_policy_events": False, "vllm_latency": False,
     }
 
 
@@ -538,3 +541,85 @@ def test_agentx_fixed_plot_renders(agentx_fixed_run: Path):
 def test_analyze_cli_prints_slo_recommendation(agentx_fixed_run: Path, capsys):
     assert main(["analyze", str(agentx_fixed_run), "--no-plot"]) == 0
     assert "analysis.ttft_slo_ms: 100" in capsys.readouterr().out
+
+
+# --- vLLM and SLA policy series ----------------------------------------------
+
+
+def _vllm(name, value, replica="r0", kind="histogram"):
+    family = name.removeprefix("ray_")
+    for suffix in ("_sum", "_count", "_bucket", "_total"):
+        family = family.removesuffix(suffix)
+    return {"name": name, "normalized_name": family, "type": kind,
+            "labels": {"ReplicaId": replica, "model_name": "m"}, "value": value}
+
+
+def _vllm_ticks(values):
+    """(t, [(replica, sum, count)]) rows as windowed_ratio's tick inputs."""
+    numerators, denominators = [], []
+    for t, rows in values:
+        numerators.append((T0 + t * S, [
+            (None, _vllm("ray_vllm_time_to_first_token_seconds_sum", total, replica))
+            for replica, total, _ in rows
+        ]))
+        denominators.append((T0 + t * S, [
+            (None, _vllm("ray_vllm_time_to_first_token_seconds_count", count, replica))
+            for replica, _, count in rows
+        ]))
+    return numerators, denominators
+
+
+def test_windowed_ratio_uses_counter_increases_over_the_window():
+    numerators, denominators = _vllm_ticks([
+        (0, [("r0", 1.0, 1)]), (10, [("r0", 3.0, 2)]), (20, [("r0", 3.0, 2)]),
+        (30, [("r0", 9.0, 4)]), (40, [("r0", 9.0, 4), ("r1", 0.5, 1)]),
+    ])
+    points = windowed_ratio(numerators, denominators, 20, T0, scale=1000)
+    # 10s and 20s: (3-1)/(2-1) against the t=0 sample (the latest at or before
+    # t-20); 30s: (9-3)/(4-2) against t=10; 40s: r0 (9-3)/(4-2) against t=20
+    # plus r1's increase from its first sample, which is itself (none yet).
+    assert [(p["relative_time_s"], p["value"]) for p in points] == [
+        (10.0, 2000.0), (20.0, 2000.0), (30.0, 3000.0), (40.0, 3000.0),
+    ]
+    assert points[-1]["series_count"] == 2
+    assert windowed_ratio(numerators[:1], denominators[:1], 20, T0) == []
+
+
+def test_vllm_series_are_attributed_by_replica_id():
+    labels = {"application": APP, "deployment": LLM}
+    records = [
+        _scrape(t, i, [
+            _sample("ray_serve_replica_processing_queries", 1, replica="r0", **labels),
+            _vllm("ray_vllm_num_requests_running", 2.0 + t, "r0", "gauge"),
+            _vllm("ray_vllm_num_requests_running", 100.0, "other-app", "gauge"),
+            _vllm("ray_vllm_time_to_first_token_seconds_sum", 0.5 * t, "r0"),
+            _vllm("ray_vllm_time_to_first_token_seconds_count", float(t), "r0"),
+        ])
+        for i, t in enumerate(range(0, 11, 5))
+    ]
+    warnings = []
+    series = metric_series(records, APP, {LLM}, 5, T0, warnings, window_s=5)
+    assert [p["value"] for p in series["vllm_running_requests"]["points"]] == [2, 7, 12]
+    assert [p["value"] for p in series["vllm_mean_ttft_ms"]["points"]] == [500.0, 500.0]
+    assert series["vllm_mean_ttft_ms"]["aggregation"] == "windowed_ratio_5s"
+    assert not warnings
+
+
+def test_sla_policy_events_are_aligned_and_filtered(tmp_path: Path):
+    _jsonl(tmp_path / "telemetry" / "sla_policy_events.jsonl", [
+        {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 - 5 * S,
+         "deployment": f"Deployment(name='{LLM}', app='{APP}')", "reason": "model_not_ready",
+         "recommended_replicas": 1.0, "advisory": False},
+        {"timestamp_ns": T0, "error": "OSError: gone"},
+        {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 + 40 * S,
+         "deployment": "Deployment(name='LLMServer:y', app='other')", "reason": "capacity",
+         "recommended_replicas": 3.0, "advisory": False},
+        {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 + 30 * S,
+         "deployment": f"Deployment(name='{LLM}', app='{APP}')", "reason": "capacity",
+         "recommended_replicas": 2.0, "advisory": False},
+    ])
+    events = read_sla_policy_events(tmp_path, APP, T0)
+    assert [(e["relative_time_s"], e["reason"], e["recommended_replicas"]) for e in events] == [
+        (-5.0, "model_not_ready", 1.0), (30.0, "capacity", 2.0),
+    ]
+    assert read_sla_policy_events(tmp_path / "missing", APP, T0) == []

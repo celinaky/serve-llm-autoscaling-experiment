@@ -1,6 +1,7 @@
-"""Background collectors for Serve status and Ray's Prometheus exports.
+"""Background collectors for Serve status, Ray's Prometheus exports and the
+SLA policy's controller log.
 
-Both collectors poll on a ``time.monotonic()`` schedule but stamp samples with
+All collectors poll on a ``time.monotonic()`` schedule but stamp samples with
 ``time.time_ns()`` so they share AIPerf's epoch clock. Collection failures are
 written as error samples and never propagate to the benchmark.
 """
@@ -8,9 +9,11 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -33,10 +36,29 @@ SELECTED_METRICS = (
     "serve_sla_autoscaling_recommended_replicas",
     "serve_sla_autoscaling_model_ready",
     "serve_sla_autoscaling_training_rows",
+    "serve_sla_autoscaling_training_buckets",
     "serve_sla_autoscaling_predicted_ttft_ms",
     "serve_sla_autoscaling_predicted_itl_ms",
+    "serve_sla_autoscaling_fit_duration_ms",
+    "serve_sla_autoscaling_inference_duration_ms",
+    # vLLM engine metrics, exported per replica with a ReplicaId label. The
+    # SLA policy learns from the first two, so they show what it sees.
+    "vllm_time_to_first_token_seconds",
+    "vllm_request_time_per_output_token_seconds",
+    "vllm_num_requests_running",
+    "vllm_num_requests_waiting",
+    "vllm_prefix_cache_hits",
+    "vllm_prefix_cache_queries",
 )
 SCRAPE_TIMEOUT_S = 2.0
+
+# Logged by the SLA policy whenever its decision state changes.
+SLA_POLICY_LOG_PATTERN = re.compile(
+    r"(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}).*"
+    r"SLA autoscaling policy for (?P<deployment>.+?) changed state to "
+    r"(?P<reason>\w+) \(recommended=(?P<recommended>[\d.]+), "
+    r"advisory=(?P<advisory>True|False)\)"
+)
 
 
 def _error(exc: BaseException) -> str:
@@ -233,15 +255,16 @@ def parse_metrics(text: str) -> tuple[list[dict[str, Any]], list[str]]:
     """Selected samples plus the names of every Serve metric family present."""
     from prometheus_client.parser import text_string_to_metric_families
 
-    # Ray exports ~2MB per node; parse only lines that can be Serve metrics.
-    serve_lines = "\n".join(line for line in text.splitlines() if "serve_" in line)
+    # Ray exports ~2MB per node; parse only lines that can be selected.
+    serve_lines = "\n".join(
+        line for line in text.splitlines() if "serve_" in line or "vllm_" in line
+    )
     samples: list[dict[str, Any]] = []
     families: set[str] = set()
     for family in text_string_to_metric_families(serve_lines + "\n"):
         normalized = normalize_metric_name(family.name)
-        if not normalized.startswith("serve_"):
-            continue
-        families.add(normalized)
+        if normalized.startswith("serve_"):
+            families.add(normalized)
         if normalized not in SELECTED_METRICS:
             continue
         for sample in family.samples:
@@ -329,8 +352,77 @@ def prometheus_collector(
     )
 
 
+# --- SLA policy log ---------------------------------------------------------
+
+
+def serve_logs_dir() -> Path:
+    from ray.serve._private.logging_utils import get_serve_logs_dir
+
+    return Path(get_serve_logs_dir())
+
+
+def parse_sla_policy_event(line: str) -> dict[str, Any] | None:
+    """The state transition on one controller log line, if it carries one.
+
+    Serve's text log format stamps local time to the millisecond; it is
+    converted to the epoch clock the other collectors use.
+    """
+    match = SLA_POLICY_LOG_PATTERN.search(line)
+    if match is None:
+        return None
+    logged = datetime.strptime(match["time"], "%Y-%m-%d %H:%M:%S,%f")
+    return {
+        "logged_at_ns": round(logged.timestamp() * 1e9),
+        "deployment": match["deployment"],
+        "reason": match["reason"],
+        "recommended_replicas": float(match["recommended"]),
+        "advisory": match["advisory"] == "True",
+    }
+
+
+class _ControllerLogTail:
+    """Reads lines appended to the controller logs since the previous tick.
+
+    The first tick reads each log from the start, so transitions logged
+    between deployment and the start of telemetry are kept.
+    """
+
+    def __init__(self, logs_dir: Callable[[], Path]):
+        self._logs_dir = logs_dir
+        self._offsets: dict[Path, int] = {}
+
+    def __call__(self, timestamp_ns: int, tick: int) -> list[dict[str, Any]]:
+        records = []
+        for path in sorted(self._logs_dir().glob("controller_*.log")):
+            with path.open() as fh:
+                fh.seek(self._offsets.get(path, 0))
+                lines = fh.readlines()
+                self._offsets[path] = fh.tell()
+            for line in lines:
+                event = parse_sla_policy_event(line)
+                if event is not None:
+                    records.append({"timestamp_ns": timestamp_ns, "error": None, **event})
+        return records
+
+
+def sla_policy_log_collector(
+    path: Path, interval_s: float, logs_dir: Callable[[], Path] = serve_logs_dir
+) -> JsonlCollector:
+    return JsonlCollector(
+        path,
+        interval_s,
+        _ControllerLogTail(logs_dir),
+        lambda ts, error: {"timestamp_ns": ts, "error": error},
+        name="sla-policy-log-collector",
+    )
+
+
 class TelemetrySession:
-    """Runs the status and Prometheus collectors for the lifetime of a block."""
+    """Runs the collectors for the lifetime of a block.
+
+    Serve status and Prometheus metrics are always collected; the SLA policy
+    log only when that policy is configured.
+    """
 
     def __init__(
         self,
@@ -340,6 +432,7 @@ class TelemetrySession:
         status_fetch: Callable[[], dict[str, Any]] = fetch_serve_status,
         discover: Callable[[], list[dict[str, Any]]] = ray_nodes,
         fetch_metrics: Callable[[str], str] = fetch_metrics_text,
+        logs_dir: Callable[[], Path] = serve_logs_dir,
     ):
         analysis = config.analysis
         telemetry_dir = root / "telemetry"
@@ -358,6 +451,12 @@ class TelemetrySession:
                 analysis.metrics_interval_s,
                 discover,
                 fetch_metrics,
+            ))
+        if config.deployment.autoscaling.policy.name == "sla":
+            self.collectors.append(sla_policy_log_collector(
+                telemetry_dir / "sla_policy_events.jsonl",
+                analysis.status_interval_s,
+                logs_dir,
             ))
         self._stop_timeout_s = (
             max(analysis.status_interval_s, analysis.metrics_interval_s) + SCRAPE_TIMEOUT_S + 5

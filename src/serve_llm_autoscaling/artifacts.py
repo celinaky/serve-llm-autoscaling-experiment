@@ -94,6 +94,61 @@ def format_slo_calibration(root: Path) -> str | None:
     )
 
 
+def _pct(value: Any) -> str:
+    return "-" if value is None else f"{value * 100:.0f}%"
+
+
+def format_evaluation(root: Path) -> str | None:
+    """The autoscaling scorecard of a continuous run, if it was evaluated."""
+    evaluation = _read_json(root / "analysis" / "autoscaling_evaluation.json")
+    if not evaluation:
+        return None
+    steady = evaluation["periods"]["steady"]
+    requests = evaluation["slo_attainment"]["steady"]["requests"]
+    windows = evaluation["slo_attainment"]["steady"]["windows"]
+    slo = evaluation["slo"]
+    lines = [
+        f"=== Autoscaling evaluation: policy {evaluation['autoscaling_policy']}, "
+        f"steady state {steady['start_s']:.0f}-{steady['end_s']:.0f}s, "
+        f"{requests['requests']} requests ({requests['failed_requests']} failed) ===",
+    ]
+    for name, label in (("ttft", "TTFT"), ("itl", "ITL ")):
+        latency = requests[name]
+        target = slo[f"{name}_ms"]
+        line = f"{label}: mean {_fmt(latency['mean_ms'], '.0f', 'ms')}, p90 {_fmt(latency['p90_ms'], '.0f', 'ms')}"
+        if target is not None:
+            line += (
+                f" · {_pct(latency['slo_attainment'])} of requests <= {target:g}ms"
+                f" · mean within SLO {_pct(windows[f'{name}_within_slo'])} of the time"
+                f" ({_fmt(windows[f'{name}_violation_s'], '.0f', 's')} over)"
+            )
+        lines.append(line)
+    load = evaluation["cost"].get("load") or evaluation["cost"]["whole_run"]
+    lines.append(
+        f"Cost: {load['running_replica_seconds']:.0f} replica-s during load "
+        f"(mean {_fmt(load['mean_running_replicas'], '.1f')}, "
+        f"max {_fmt(load['max_running_replicas'])}) · "
+        f"{load['starting_replica_seconds']:.0f} replica-s starting"
+    )
+    scaling = evaluation["scaling"]
+    lines.append(
+        f"Scaling: {scaling['upscales']} up / {scaling['downscales']} down · "
+        f"first up at {_fmt(scaling['first_upscale_at_s'], '.0f', 's')} · "
+        f"upscale lag mean {_fmt(scaling['mean_upscale_lag_s'], '.0f', 's')}, "
+        f"max {_fmt(scaling['max_upscale_lag_s'], '.0f', 's')}"
+    )
+    if sla := evaluation.get("sla_policy"):
+        ttft = sla["prediction"]["ttft"]
+        lines.append(
+            f"SLA policy: model ready at {_fmt(sla['model_ready_at_s'], '.0f', 's')} · "
+            f"first capacity decision at {_fmt(sla['first_capacity_decision_at_s'], '.0f', 's')} · "
+            f"TTFT predicted-server bias {_fmt(ttft['predicted_vs_server']['bias_ms'], '+.0f', 'ms')} "
+            f"(n={ttft['predicted_vs_server']['samples']}) · "
+            f"client-server {_fmt(ttft['client_vs_server']['bias_ms'], '+.0f', 'ms')}"
+        )
+    return "\n".join(lines)
+
+
 def format_run_summary(root: Path) -> str:
     """Render a human-readable summary of a run directory for the terminal."""
     manifest = _read_json(root / "manifest.json") or {}
@@ -178,6 +233,8 @@ def format_run_summary(root: Path) -> str:
     calibration_line = format_slo_calibration(root)
     if calibration_line:
         lines += ["", calibration_line]
+    if evaluation := format_evaluation(root):
+        lines += ["", evaluation]
     analysis = manifest.get("analysis") or {}
     if analysis:
         lines.append("")

@@ -56,3 +56,6 @@ analysis:
   status_interval_s: 1
   metrics_interval_s: 2
   generate_plots: true
+  # The targets the sla experiments use, so runs compare on one score.
+  ttft_slo_ms: 3000
+  itl_slo_ms: 50
