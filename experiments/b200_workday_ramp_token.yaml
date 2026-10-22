@@ -15,14 +15,18 @@
 # decoding each (8 sessions ran 1-3 at once), so ~5-6 concurrent decodes
 # is where ITL breaks.
 #
-# Load: sessions ramp 1 -> 48 over 40 minutes, then hold for 10. One
-# replica handles ~16 sessions, so the ramp crosses a replica's capacity at
-# ~16 sessions (t ~ 800s) and ~32 (t ~ 1600s) and leans on the fourth GPU at
-# the top. Sessions start at random points in their traces (trajectory start
-# 0/1) so the ramp is the only transient; the step to zero load plus the idle
-# observation is the scale-down test.
+# Load, a quick version of a workday morning: sessions ramp 1 -> 32 over 10
+# minutes, every one starting cold at turn 0 (its first request is a
+# 64K-170K-token prompt, 10-15s of prefill that no replica count shortens;
+# later turns of the session hit the prefix cache), then hold at 32 for 5
+# minutes. One replica handles ~16 sessions, so the ramp crosses a
+# replica's capacity at ~16 sessions (t ~ 300s) and ~32 at the top. The step
+# to zero load plus the idle observation is the scale-down test.
 #
-# Timeline: load 0-3000s, AIPerf drains for up to 120s, then 300s idle.
+# The cold first turns are ~5-10% of requests, so p95 TTFT includes them
+# for any policy; compare policies on ITL and on the follow-up turns.
+#
+# Timeline: load 0-900s, AIPerf drains for up to 120s, then 180s idle.
 name: b200-workday-ramp-token
 deployment:
   application_name: ttft-benchmark
@@ -62,16 +66,18 @@ deployment:
 benchmark:
   generator: aiperf
   mode: agentx_concurrency_ramp
-  duration_s: 3000
+  duration_s: 900
   grace_period_s: 120
-  post_load_observation_s: 300
+  post_load_observation_s: 180
   workload:
     type: agentx
     public_dataset: semianalysis_cc_traces_weka_062126_256k
-    target_concurrency: 48
-    concurrency_ramp_duration_s: 2400
+    target_concurrency: 32
+    # One cold session start every ~19s; 32 sessions is two replicas' worth.
+    concurrency_ramp_duration_s: 600
+    # Every session begins at turn 0: its first request is a cold prompt.
     trajectory_start_min_ratio: 0
-    trajectory_start_max_ratio: 1
+    trajectory_start_max_ratio: 0
     seed: 42
   streaming: true
   fail_fast: true
@@ -88,3 +94,5 @@ analysis:
   generate_plots: true
   ttft_slo_ms: 3000
   itl_slo_ms: 50
+  # Score the whole ramp; the cold session starts are the point.
+  warmup_s: 0

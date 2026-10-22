@@ -198,14 +198,22 @@ def test_sla_policy_rejects_mismatched_slo_targets():
 
 def test_b200_workday_ramp_experiments_differ_only_in_policy():
     default = load_config(Path("experiments/b200_workday_ramp_default.yaml"))
+    token = load_config(Path("experiments/b200_workday_ramp_token.yaml"))
+    assert default.deployment.autoscaling.policy.name == "default"
+    assert token.deployment.autoscaling.policy.name == "token"
+    assert default.benchmark == token.benchmark
+    assert default.analysis == token.analysis
+    assert (token.analysis.ttft_slo_ms, token.analysis.itl_slo_ms) == (3000, 50)
+    assert token.analysis.warmup_s == 0
+    workload = token.benchmark.workload
+    assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0, 0)
+
     active = load_config(Path("experiments/b200_workday_ramp_sla.yaml"))
     advisory = load_config(Path("experiments/b200_workday_ramp_sla_advisory.yaml"))
-    assert default.deployment.autoscaling.policy.name == "default"
     assert active.deployment.autoscaling.policy.kwargs["advisory"] is False
     assert advisory.deployment.autoscaling.policy.kwargs["advisory"] is True
-    assert default.benchmark == active.benchmark == advisory.benchmark
-    assert default.analysis == active.analysis == advisory.analysis
-    assert (active.analysis.ttft_slo_ms, active.analysis.itl_slo_ms) == (3000, 50)
+    assert active.benchmark == advisory.benchmark
+    assert active.analysis == advisory.analysis
 
 
 def test_rejects_tail_window_shorter_than_window():

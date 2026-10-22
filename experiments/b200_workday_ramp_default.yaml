@@ -1,5 +1,5 @@
 # The default (ongoing-request) autoscaling policy under the workday ramp of
-# b200_workday_ramp_sla.yaml: the baseline it is compared against, scored
+# b200_workday_ramp_token.yaml: the baseline it is compared against, scored
 # on the same SLO. The policy has one knob, target_ongoing_requests; a run
 # at 6 and at 12 beside this one gives the baseline's attainment-vs-cost
 # frontier rather than a single point.
@@ -34,16 +34,18 @@ deployment:
 benchmark:
   generator: aiperf
   mode: agentx_concurrency_ramp
-  duration_s: 3000
+  duration_s: 900
   grace_period_s: 120
-  post_load_observation_s: 300
+  post_load_observation_s: 180
   workload:
     type: agentx
     public_dataset: semianalysis_cc_traces_weka_062126_256k
-    target_concurrency: 48
-    concurrency_ramp_duration_s: 2400
+    target_concurrency: 32
+    # One cold session start every ~19s; 32 sessions is two replicas' worth.
+    concurrency_ramp_duration_s: 600
+    # Every session begins at turn 0: its first request is a cold prompt.
     trajectory_start_min_ratio: 0
-    trajectory_start_max_ratio: 1
+    trajectory_start_max_ratio: 0
     seed: 42
   streaming: true
   fail_fast: true
@@ -60,3 +62,5 @@ analysis:
   generate_plots: true
   ttft_slo_ms: 3000
   itl_slo_ms: 50
+  # Score the whole ramp; the cold session starts are the point.
+  warmup_s: 0
