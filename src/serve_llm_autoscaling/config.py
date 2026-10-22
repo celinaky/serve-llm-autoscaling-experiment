@@ -57,6 +57,13 @@ class EngineConfig(BaseModel):
 AUTOSCALING_POLICIES = {
     "default": "ray.serve.autoscaling_policy:default_autoscaling_policy",
     "sla": "ray.serve.experimental.llm_sla_autoscaling_policy:SLAOnlineAutoscalingPolicy",
+    "token": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+}
+# kwargs each policy's constructor requires.
+REQUIRED_POLICY_KWARGS = {
+    "default": set(),
+    "sla": {"ttft_ms", "itl_ms"},
+    "token": {"target_prefill_tokens_per_replica", "target_decode_requests_per_replica"},
 }
 
 
@@ -65,24 +72,27 @@ class AutoscalingPolicyConfig(BaseModel):
 
     ``kwargs`` go to the policy unchanged, except that ``sla`` defaults
     ``advisory`` to false: an advisory SLA policy only reports its
-    recommendation and scales exactly like ``default``.
+    recommendation and scales exactly like ``default``. ``token`` scales on
+    the KV-aware router's outstanding prefill tokens and active decode
+    requests, so it requires ``routing.policy: kv_aware``.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Literal["default", "sla"] = "default"
+    name: Literal["default", "sla", "token"] = "default"
     kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_kwargs(self) -> "AutoscalingPolicyConfig":
-        if self.name == "default":
-            if self.kwargs:
-                raise ValueError("autoscaling policy default takes no kwargs")
-            return self
-        missing = {"ttft_ms", "itl_ms"} - set(self.kwargs)
+        if self.name == "default" and self.kwargs:
+            raise ValueError("autoscaling policy default takes no kwargs")
+        missing = REQUIRED_POLICY_KWARGS[self.name] - set(self.kwargs)
         if missing:
-            raise ValueError(f"autoscaling policy sla requires kwargs {sorted(missing)}")
-        self.kwargs.setdefault("advisory", False)
+            raise ValueError(
+                f"autoscaling policy {self.name} requires kwargs {sorted(missing)}"
+            )
+        if self.name == "sla":
+            self.kwargs.setdefault("advisory", False)
         return self
 
     @property
@@ -451,6 +461,17 @@ class ExperimentConfig(BaseModel):
                 "extra_args cannot override --session-header; consistent_hash "
                 f"routing sets it to {SESSION_HEADER}"
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_token_policy_routing(self) -> "ExperimentConfig":
+        # Engine replicas relay the KV-aware router's work snapshot; any
+        # other router reports nothing and the policy holds the replica count.
+        if (
+            self.deployment.autoscaling.policy.name == "token"
+            and self.deployment.routing.policy != "kv_aware"
+        ):
+            raise ValueError("autoscaling policy token requires routing policy kv_aware")
         return self
 
     @model_validator(mode="after")

@@ -76,6 +76,7 @@ def _benchmark(**benchmark):
         "experiments/step_rate.yaml",
         "experiments/step_rate_autoscaling.yaml",
         "experiments/smoke_rate_series.yaml",
+        "experiments/b200_workday_ramp_token.yaml",
     ],
 )
 def test_checked_in_experiments_are_valid(path):
