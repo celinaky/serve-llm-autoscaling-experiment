@@ -9,14 +9,15 @@ from .artifacts import _fmt, _pct, _read_json
 # (header, width, extractor)
 COLUMNS: list[tuple[str, int, Any]] = [
     ("policy", 18, lambda e: _policy(e)),
+    ("SLO", 5, lambda e: {True: "PASS", False: "FAIL"}.get(_requests(e).get("slo_met"), "-")),
+    ("TTFT pN", 9, lambda e: _fmt(_requests(e)["ttft"].get("slo_percentile_ms"), ".0f", "ms")),
+    ("ITL pN", 8, lambda e: _fmt(_requests(e)["itl"].get("slo_percentile_ms"), ".0f", "ms")),
     ("TTFT req", 9, lambda e: _pct(_requests(e)["ttft"]["slo_attainment"])),
-    ("TTFT time", 10, lambda e: _pct(_windows(e)["ttft_within_slo"])),
     ("ITL req", 8, lambda e: _pct(_requests(e)["itl"]["slo_attainment"])),
-    ("ITL time", 9, lambda e: _pct(_windows(e)["itl_within_slo"])),
     ("TTFT mean", 10, lambda e: _fmt(_requests(e)["ttft"]["mean_ms"], ".0f", "ms")),
     ("ITL mean", 9, lambda e: _fmt(_requests(e)["itl"]["mean_ms"], ".0f", "ms")),
     ("failed", 7, lambda e: str(_requests(e)["failed_requests"])),
-    ("replica-s", 10, lambda e: _fmt(_load(e)["running_replica_seconds"], ".0f")),
+    ("GPU-h", 7, lambda e: _fmt(_load(e).get("gpu_hours"), ".2f")),
     ("mean", 5, lambda e: _fmt(_load(e)["mean_running_replicas"], ".1f")),
     ("max", 4, lambda e: _fmt(_load(e)["max_running_replicas"])),
     ("up/down", 8, lambda e: f"{e['scaling']['upscales']}/{e['scaling']['downscales']}"),
@@ -64,12 +65,17 @@ def format_comparison(roots: list[Path]) -> str:
             + "".join(f"{extract(evaluation):>{w}}" for _, w, extract in COLUMNS)
         )
     slos = {
-        (e["slo"]["ttft_ms"], e["slo"]["itl_ms"])
+        (e["slo"]["ttft_ms"], e["slo"]["itl_ms"], e["slo"].get("percentile", 0.95))
         for root in roots if (e := _read_json(root / "analysis" / "autoscaling_evaluation.json"))
     }
     if len(slos) == 1:
-        ttft, itl = slos.pop()
-        lines.append(f"SLO: mean TTFT <= {_fmt(ttft, 'g', 'ms')}, mean ITL <= {_fmt(itl, 'g', 'ms')}")
+        ttft, itl, pct = slos.pop()
+        pct = f"p{round(pct * 100)}"
+        lines.append(
+            f"SLO ({pct} of requests): TTFT <= {_fmt(ttft, 'g', 'ms')}, "
+            f"ITL <= {_fmt(itl, 'g', 'ms')}; pN columns are the measured {pct}, "
+            "req columns the share of requests within the target; GPU-h over the load period"
+        )
     elif slos:
         lines.append("WARNING: runs were scored against different SLOs")
     return "\n".join(lines)

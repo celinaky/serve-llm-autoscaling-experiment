@@ -37,21 +37,33 @@ def scoring_periods(experiment: dict[str, Any], lifecycle: dict[str, Any]) -> di
 # --- SLO attainment -----------------------------------------------------------
 
 
-def _latency_summary(values: list[float], slo_ms: float | None) -> dict[str, Any]:
+def _latency_summary(
+    values: list[float], slo_ms: float | None, slo_percentile: float
+) -> dict[str, Any]:
+    """Distribution plus the SLO verdict: the configured percentile within target.
+
+    ``slo_met`` is equivalent to ``slo_attainment >= slo_percentile``.
+    """
     ordered = sorted(values)
+    at_percentile = percentile(ordered, slo_percentile)
     return {
         "sample_count": len(ordered),
         "mean_ms": mean(ordered),
         "p50_ms": percentile(ordered, 0.50),
         "p90_ms": percentile(ordered, 0.90),
+        "p95_ms": percentile(ordered, 0.95),
         "p99_ms": percentile(ordered, 0.99),
         "slo_attainment": attainment(ordered, slo_ms),
+        "slo_percentile_ms": at_percentile,
+        "slo_met": (
+            at_percentile <= slo_ms if slo_ms is not None and at_percentile is not None else None
+        ),
     }
 
 
 def score_requests(
     requests: list[Request], t0: int, period: dict[str, float],
-    ttft_slo_ms: float | None, itl_slo_ms: float | None,
+    ttft_slo_ms: float | None, itl_slo_ms: float | None, slo_percentile: float = 0.95,
 ) -> dict[str, Any]:
     """Per-request attainment for requests that started in ``period``."""
     started = [
@@ -65,12 +77,21 @@ def score_requests(
         both_within = sum(
             r.ttft_ms <= ttft_slo_ms and r.itl_ms <= itl_slo_ms for r in both
         ) / len(both)
+    ttft = _latency_summary(
+        [r.ttft_ms for r in ok if r.ttft_ms is not None], ttft_slo_ms, slo_percentile
+    )
+    itl = _latency_summary(
+        [r.itl_ms for r in ok if r.itl_ms is not None], itl_slo_ms, slo_percentile
+    )
+    verdicts = [v for v in (ttft["slo_met"], itl["slo_met"]) if v is not None]
     return {
         "requests": len(started),
         "failed_requests": len(started) - len(ok),
-        "ttft": _latency_summary([r.ttft_ms for r in ok if r.ttft_ms is not None], ttft_slo_ms),
-        "itl": _latency_summary([r.itl_ms for r in ok if r.itl_ms is not None], itl_slo_ms),
+        "ttft": ttft,
+        "itl": itl,
         "both_slo_attainment": both_within,
+        "slo_percentile": slo_percentile,
+        "slo_met": all(verdicts) if verdicts else None,
     }
 
 
@@ -116,11 +137,14 @@ def score_windows(
 # --- Cost -----------------------------------------------------------------------
 
 
-def replica_usage(status: list[dict[str, Any]], period: dict[str, float]) -> dict[str, Any]:
+def replica_usage(
+    status: list[dict[str, Any]], period: dict[str, float], gpus_per_replica: int = 1
+) -> dict[str, Any]:
     """Replica-seconds in ``period``, integrating the status step function.
 
     A failed status sample holds the previous counts; time before the first
-    good sample is not covered.
+    good sample is not covered. GPU time counts starting replicas too: a
+    replica loading weights holds its GPUs without serving.
     """
     samples = [s for s in status if s.get("error") is None]
     start, end = period["start_s"], period["end_s"]
@@ -142,6 +166,7 @@ def replica_usage(status: list[dict[str, Any]], period: dict[str, float]) -> dic
         "starting_replica_seconds": starting_s,
         "mean_running_replicas": running_s / covered_s if covered_s else None,
         "max_running_replicas": peak if covered_s else None,
+        "gpu_hours": (running_s + starting_s) * gpus_per_replica / 3600,
     }
 
 
@@ -346,6 +371,8 @@ def evaluate_run(plot_data: dict[str, Any], requests: list[Request]) -> dict[str
     series = plot_data["serve_metric_series"]
     windows = plot_data["request_windows"]
     ttft_slo, itl_slo = experiment["ttft_slo_ms"], experiment["itl_slo_ms"]
+    slo_percentile = experiment.get("slo_percentile", 0.95)
+    gpus = experiment.get("gpus_per_replica", 1)
     periods = scoring_periods(experiment, plot_data["lifecycle"])
     events = scale_events(series, status, plot_data["sla_policy_events"])
     return {
@@ -353,18 +380,20 @@ def evaluate_run(plot_data: dict[str, Any], requests: list[Request]) -> dict[str
         "experiment": experiment["name"],
         "autoscaling_policy": experiment["autoscaling_policy"],
         "autoscaling_policy_kwargs": experiment["autoscaling_policy_kwargs"],
-        "slo": {"ttft_ms": ttft_slo, "itl_ms": itl_slo},
+        "slo": {"ttft_ms": ttft_slo, "itl_ms": itl_slo, "percentile": slo_percentile},
         "periods": periods,
         "slo_attainment": {
             name: {
-                "requests": score_requests(requests, t0, period, ttft_slo, itl_slo),
+                "requests": score_requests(
+                    requests, t0, period, ttft_slo, itl_slo, slo_percentile
+                ),
                 "windows": score_windows(windows, period, experiment["tail_window_s"], ttft_slo, itl_slo),
             }
             for name, period in periods.items()
         },
         "cost": {
-            **{name: replica_usage(status, period) for name, period in periods.items()},
-            **{p["name"]: replica_usage(status, p) for p in plot_data["lifecycle"]["periods"]},
+            **{name: replica_usage(status, period, gpus) for name, period in periods.items()},
+            **{p["name"]: replica_usage(status, p, gpus) for p in plot_data["lifecycle"]["periods"]},
         },
         "scale_events": events,
         "scaling": scale_summary(events),

@@ -617,7 +617,11 @@ per-request records only. Its sections:
   can absorb the cold-start burst of a run that opens every session at once.
 - **SLO attainment**, two ways, because they answer different questions.
   *Per request*: the share of successful requests whose TTFT (and ITL, and
-  both) were within the SLO, with mean/p50/p90/p99 and failures. It is what a
+  both) were within the SLO, with mean/p50/p90/p95/p99 and failures. The
+  verdict (`slo_met`, "SLO PASS/FAIL" in the summary) is whether the
+  `analysis.slo_percentile` (default 0.95) of requests was within the target,
+  i.e. measured p95 <= `ttft_slo_ms`; the measured percentile is reported
+  beside the target. It is what a
   user feels and is dominated by the latency tail, which a policy has little
   control over. *Per window*: the share of rolling windows (ending in the
   period, with at least one request) whose rolling mean TTFT/ITL met the
@@ -626,10 +630,11 @@ per-request records only. Its sections:
   shows high window attainment with middling request attainment; both low
   means under-provisioned.
 - **Cost**: running and starting replica-seconds (the integral of the status
-  step function), mean and maximum running replicas, per scoring period and
-  per lifecycle period (load, drain, idle). Attainment against load
-  replica-seconds is the trade-off to iterate on: any policy can meet the SLO
-  at `max_replicas`.
+  step function), mean and maximum running replicas, and GPU-hours (running
+  plus starting replicas times `tensor_parallel_size`), per scoring period and
+  per lifecycle period (load, drain, idle). Attainment against load GPU-hours
+  is the trade-off to iterate on: any policy can meet the SLO at
+  `max_replicas`.
 - **Scale events**: every change of the desired replica count with the time
   the running count first matched it (reaction plus startup lag), and, for the
   `sla` policy, the state it was in and its raw recommendation at that moment;

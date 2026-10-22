@@ -712,7 +712,9 @@ def build_plot_data(
             "metrics_interval_s": analysis.metrics_interval_s,
             "ttft_slo_ms": analysis.ttft_slo_ms,
             "itl_slo_ms": analysis.itl_slo_ms,
+            "slo_percentile": analysis.slo_percentile,
             "warmup_s": analysis.warmup_s,
+            "gpus_per_replica": config.deployment.engine.tensor_parallel_size,
             "mode": config.benchmark.mode,
         },
         "time_origin": {

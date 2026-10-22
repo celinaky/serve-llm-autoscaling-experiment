@@ -107,27 +107,36 @@ def format_evaluation(root: Path) -> str | None:
     requests = evaluation["slo_attainment"]["steady"]["requests"]
     windows = evaluation["slo_attainment"]["steady"]["windows"]
     slo = evaluation["slo"]
+    pct = f"p{round(slo.get('percentile', 0.95) * 100)}"
+    verdict = {True: "PASS", False: "FAIL", None: "no SLO"}[requests.get("slo_met")]
     lines = [
         f"=== Autoscaling evaluation: policy {evaluation['autoscaling_policy']}, "
         f"steady state {steady['start_s']:.0f}-{steady['end_s']:.0f}s, "
-        f"{requests['requests']} requests ({requests['failed_requests']} failed) ===",
+        f"{requests['requests']} requests ({requests['failed_requests']} failed): "
+        f"SLO {verdict} ===",
     ]
     for name, label in (("ttft", "TTFT"), ("itl", "ITL ")):
         latency = requests[name]
         target = slo[f"{name}_ms"]
-        line = f"{label}: mean {_fmt(latency['mean_ms'], '.0f', 'ms')}, p90 {_fmt(latency['p90_ms'], '.0f', 'ms')}"
+        line = f"{label}: {pct} {_fmt(latency.get('slo_percentile_ms'), '.0f', 'ms')}"
         if target is not None:
             line += (
-                f" · {_pct(latency['slo_attainment'])} of requests <= {target:g}ms"
-                f" · mean within SLO {_pct(windows[f'{name}_within_slo'])} of the time"
+                f" vs SLO {target:g}ms: {'PASS' if latency['slo_met'] else 'FAIL'}"
+                f" · {_pct(latency['slo_attainment'])} of requests within"
+            )
+        line += f" · mean {_fmt(latency['mean_ms'], '.0f', 'ms')}"
+        if target is not None:
+            line += (
+                f", within SLO {_pct(windows[f'{name}_within_slo'])} of the time"
                 f" ({_fmt(windows[f'{name}_violation_s'], '.0f', 's')} over)"
             )
         lines.append(line)
     load = evaluation["cost"].get("load") or evaluation["cost"]["whole_run"]
     lines.append(
-        f"Cost: {load['running_replica_seconds']:.0f} replica-s during load "
+        f"GPU time: {load['gpu_hours']:.2f} GPU-h during load · "
+        f"{load['running_replica_seconds']:.0f} replica-s running "
         f"(mean {_fmt(load['mean_running_replicas'], '.1f')}, "
-        f"max {_fmt(load['max_running_replicas'])}) · "
+        f"max {_fmt(load['max_running_replicas'])}), "
         f"{load['starting_replica_seconds']:.0f} replica-s starting"
     )
     scaling = evaluation["scaling"]

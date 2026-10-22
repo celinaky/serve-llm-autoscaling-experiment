@@ -80,7 +80,13 @@ def test_score_requests_counts_attainment_per_request():
     assert score["itl"]["slo_attainment"] == pytest.approx(2 / 3)
     assert score["both_slo_attainment"] == pytest.approx(1 / 3)
     assert score["ttft"]["mean_ms"] == pytest.approx(4600 / 3)
-    assert score_requests(requests, T0, {"start_s": 0, "end_s": 200}, None, None)["ttft"]["slo_attainment"] is None
+    # p95 of TTFT [100, 500, 4000] is 3650 and of ITL [20, 20, 80] is 74: both fail.
+    assert score["ttft"]["slo_percentile_ms"] == pytest.approx(3650)
+    assert (score["ttft"]["slo_met"], score["itl"]["slo_met"], score["slo_met"]) == (False, False, False)
+    lenient = score_requests(requests, T0, {"start_s": 0, "end_s": 200}, 3000, 50, slo_percentile=0.5)
+    assert (lenient["ttft"]["slo_met"], lenient["slo_met"]) == (True, True)
+    unscored = score_requests(requests, T0, {"start_s": 0, "end_s": 200}, None, None)
+    assert (unscored["ttft"]["slo_attainment"], unscored["slo_met"]) == (None, None)
 
 
 def test_score_windows_is_the_share_of_time_within_slo():
@@ -104,6 +110,8 @@ def test_replica_usage_integrates_running_replicas():
     assert usage["starting_replica_seconds"] == pytest.approx(100)
     assert usage["mean_running_replicas"] == pytest.approx(2)
     assert (usage["max_running_replicas"], usage["covered_s"]) == (3, 200)
+    assert usage["gpu_hours"] == pytest.approx(500 / 3600)
+    assert replica_usage(status, {"start_s": 0, "end_s": 200}, gpus_per_replica=2)["gpu_hours"] == pytest.approx(1000 / 3600)
     assert replica_usage(status[3:], {"start_s": 0, "end_s": 50})["max_running_replicas"] is None
 
 
@@ -212,10 +220,13 @@ def test_evaluate_run_assembles_the_scorecard():
     requests = [_request(t, 1000 + t, 20) for t in range(0, 200, 10)]
     evaluation = evaluate_run(_plot_data(), requests)
     assert evaluation["autoscaling_policy"] == "sla"
-    assert evaluation["slo"] == {"ttft_ms": 3000, "itl_ms": 50}
+    assert evaluation["slo"] == {"ttft_ms": 3000, "itl_ms": 50, "percentile": 0.95}
     assert evaluation["periods"]["steady"] == {"start_s": 60.0, "end_s": 200.0}
     steady = evaluation["slo_attainment"]["steady"]
     assert steady["requests"]["requests"] == 14
+    assert steady["requests"]["ttft"]["slo_met"] and steady["requests"]["slo_met"]
+    # Running replica-seconds plus the two replicas that spent 100s starting.
+    assert evaluation["cost"]["load"]["gpu_hours"] == pytest.approx((160 + 40 * 3 + 200) / 3600)
     assert steady["windows"]["ttft_within_slo"] == 1.0
     assert set(evaluation["cost"]) == {"steady", "whole_run", "load", "drain", "idle"}
     assert evaluation["cost"]["load"]["running_replica_seconds"] == pytest.approx(160 + 40 * 3)
@@ -324,7 +335,7 @@ def test_analyze_run_writes_the_evaluation_and_sla_panel(sla_run: Path):
     assert series["vllm_waiting_requests"]["points"][0]["value"] == 3
 
     evaluation = json.loads((sla_run / "analysis" / "autoscaling_evaluation.json").read_text())
-    assert evaluation["slo"] == {"ttft_ms": 3000.0, "itl_ms": 50.0}
+    assert evaluation["slo"] == {"ttft_ms": 3000.0, "itl_ms": 50.0, "percentile": 0.95}
     assert evaluation["periods"]["steady"] == {"start_s": 60.0, "end_s": 200.0}
     steady = evaluation["slo_attainment"]["steady"]
     assert steady["requests"]["itl"]["slo_attainment"] == 1.0

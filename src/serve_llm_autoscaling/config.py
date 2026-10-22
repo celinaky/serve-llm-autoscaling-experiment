@@ -440,6 +440,9 @@ class AnalysisConfig(BaseModel):
     # they default to its ttft_ms and itl_ms and must match them.
     ttft_slo_ms: float | None = Field(default=None, gt=0)
     itl_slo_ms: float | None = Field(default=None, gt=0)
+    # The SLO holds when this percentile of requests is within the target:
+    # 0.95 means "p95 TTFT <= ttft_slo_ms", i.e. 95% of requests within it.
+    slo_percentile: float = Field(default=0.95, gt=0, lt=1)
     # Seconds of load excluded from the steady-state score; by default the
     # concurrency ramp, or 120s of a run without one.
     warmup_s: float | None = Field(default=None, ge=0)
