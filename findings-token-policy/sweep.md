@@ -103,6 +103,18 @@ prompts' own prefill, which no replica count shortens.
 - Signal strength is unchanged across shapes: decodes -> ITL +0.28..+0.51;
   prefill backlog -> TTFT within +-0.08 of zero in every run.
 
+## Prefill chunk size (chain 3): is the TTFT above the floor a chunking effect?
+
+| run | max_num_batched_tokens | TTFT p95 (warm / cold) | ITL p95 | GPU-h |
+| --- | --- | --- | --- | --- |
+| 6 | 16384 | 5212 (3172 / 7801) | 42 | 0.66 |
+| 15 (`...-chunk8k`) | 8192 | 5466 (3720 / 9316) | 39 | 0.67 |
+| 16 (`...-chunk32k`) | 32768 | 6101 (4227 / 9371) | 51 | 0.67 |
+
+Smaller chunks slow the cold prompts (9.3s p95) without relieving the warm
+turns (3.7s); larger chunks make every step that carries a cold chunk longer, so both the warm turns (4.2s) and the cold ones (9.4s) wait more, and ITL slips to 51ms. 16K is the better of the three. The ~1.2s between the cold ramp's TTFT p95
+and the queue-free floor is not a chunking artefact.
+
 ## Conclusion (5 runs, 2026-10-22)
 
 **Chosen setting: P = 120000, D = 8** (committed in
