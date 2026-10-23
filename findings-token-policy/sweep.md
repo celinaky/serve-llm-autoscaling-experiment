@@ -18,6 +18,53 @@ Goal: the loosest (cheapest) `P`, `D` that meets the SLO.
 | 5 (`runs/20261023T015316Z-b200-workday-ramp-token`) | 120000 | 8 | 5118ms FAIL (warm 3370ms, cold 7681ms) | 40ms PASS | FAIL | 0.66 | 4 | 1->2 at 237s, 2->3 at 407s, 3->4 at 607s; 851 requests, 10 failed |
 | 6 (`runs/20261023T082719Z-b200-workday-ramp-token`) | 120000 | 8 | 5212ms FAIL vs 4500 (warm 3172ms, cold 7801ms) | 42ms PASS | FAIL | 0.66 | 4 | gauged policy; all three scale-ups decided by the decode term (prefill term wanted 0/1/2 when decode wanted 2/3/4); 846 requests, 8 failed |
 
+## Signal isolation (2026-10-23, `experiments/sweep/`, SLO TTFT p95 <= 4500ms, ITL p95 <= 50ms)
+
+| run | policy terms | TTFT p95 (warm / cold) | ITL p95 | GPU-h | replicas | scale-ups (binding term) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 6 (`runs/20261023T082719Z-...-token`) | P=120K, D=8 | 5212 FAIL (3172 / 7801) | 42 PASS | 0.66 | 1->2->3->4 | 237s, 417s, 597s (all decode) |
+| 7 (`runs/20261023T084942Z-...-p60k-donly-off`) | P=60K only | 4986 FAIL (3258 / 6660) | **75 FAIL** | 0.25 | 1 throughout | none |
+| 8 (`runs/20261023T091204Z-...-p30k-donly-off`) | P=30K only | 5984 FAIL (4002 / 10271) | **66 FAIL** | 0.51 | 1->2->4 | 537s, 627s (prefill), after the replica was saturated |
+| 9 (`runs/20261023T093428Z-...-d8-ponly-off`) | D=8 only | 4933 FAIL (2775 / 8073) | 42 PASS | 0.57 | 1->2->3 | 237s, 407s (decode) |
+
+Why the prefill term does not scale in time: its input is the instantaneous
+global backlog of uncached tokens, and one replica clears a cold prompt in
+5-15s. The backlog is therefore a spike train (run 6: p50 38K, p90 183K,
+max 340K tokens, each spike a few scrapes wide). Serve only acts on a
+desired count that persists for `upscale_delay_s` (10s):
+
+| run | prefill term > running replicas | stretches | longest | stretches >= 10s |
+| --- | --- | --- | --- | --- |
+| P=60K only | 16% of scrapes | 14 | 8s | 0 |
+| P=30K only | 33% of scrapes | 16 | 98s | 4 |
+| P=120K, D=8 | 1% of scrapes | 1 | 8s | 0 |
+
+At P=60K the term asked for a second replica fourteen times and never for
+10s running, so the deployment stayed at one replica for the whole ramp and
+ITL went to 75ms. At P=30K the term only persisted once the single replica
+was saturated and the backlog stopped clearing (t=537s, ~28 sessions): by
+then it is a lagging signal, and TTFT/ITL were already past the targets.
+The decode term asks for the second replica at 237s in every run it is
+active, before either target is breached.
+
+Signal strength (Spearman, policy input per running replica at request
+start vs. the latency that request saw):
+
+| run | decodes -> ITL | prefill backlog -> warm TTFT | prefill backlog -> excess TTFT |
+| --- | --- | --- | --- |
+| 6 | +0.43 | +0.17 | +0.13 |
+| 7 | +0.53 | +0.07 | +0.03 |
+| 8 | +0.73 | +0.10 | +0.07 |
+| 9 | +0.26 | +0.19 | +0.17 |
+
+Active decode requests is a moderate predictor of ITL (strongest when a
+replica is allowed to saturate). The uncached-prefill backlog is a weak
+predictor of TTFT, even of the part of TTFT above each prompt's own prefill
+floor. Two reasons: a request's TTFT depends on the queue *on its replica*
+(kv_aware pins a session to the replica holding its cache), and the global
+backlog says nothing about that; and the backlog is dominated by the cold
+prompts' own prefill, which no replica count shortens.
+
 ## Conclusion (5 runs, 2026-10-22)
 
 **Chosen setting: P = 120000, D = 8** (committed in
