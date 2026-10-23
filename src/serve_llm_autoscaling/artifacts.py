@@ -131,6 +131,14 @@ def format_evaluation(root: Path) -> str | None:
                 f" ({_fmt(windows[f'{name}_violation_s'], '.0f', 's')} over)"
             )
         lines.append(line)
+    if by_cache := requests.get("ttft_by_cache"):
+        cold, warm = by_cache["cold"], by_cache["warm"]
+        if cold["sample_count"] or warm["sample_count"]:
+            lines.append(
+                f"TTFT by prompt: warm {pct} {_fmt(warm['slo_percentile_ms'], '.0f', 'ms')} "
+                f"({warm['sample_count']} requests) · cold (<50% cached) {pct} "
+                f"{_fmt(cold['slo_percentile_ms'], '.0f', 'ms')} ({cold['sample_count']} requests)"
+            )
     load = evaluation["cost"].get("load") or evaluation["cost"]["whole_run"]
     lines.append(
         f"GPU time: {load['gpu_hours']:.2f} GPU-h during load · "

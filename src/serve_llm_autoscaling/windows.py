@@ -22,6 +22,17 @@ class Request(NamedTuple):
     itl_ms: float | None
     # 0 for root agents, > 0 for subagents; None if the record does not say.
     agent_depth: int | None
+    # Prompt tokens and the share of them the server read from its prefix
+    # cache (``usage.prompt_tokens_details.cached_tokens``); None if absent.
+    input_tokens: float | None = None
+    cached_tokens: float | None = None
+
+    @property
+    def cold(self) -> bool | None:
+        """Whether most of the prompt had to be prefilled from scratch."""
+        if self.input_tokens is None or self.cached_tokens is None or not self.input_tokens:
+            return None
+        return self.cached_tokens < 0.5 * self.input_tokens
 
 
 def percentile(ordered: list[float], q: float) -> float | None:
@@ -72,7 +83,7 @@ def profiling_start_ns(artifact_dir: Path) -> int | None:
 
 
 def _latency_ms(metrics: Any, name: str) -> float | None:
-    """A latency metric's value in ms; None when absent or not a number."""
+    """A per-request metric's value; None when absent or not a number."""
     metric = (metrics or {}).get(name) or {}
     value = metric.get("value") if isinstance(metric, dict) else None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -111,6 +122,8 @@ def _parse(line: str) -> Request | None:
         _latency_ms(metrics, "time_to_first_token"),
         _latency_ms(metrics, "inter_token_latency"),
         depth,
+        _latency_ms(metrics, "input_sequence_length"),
+        _latency_ms(metrics, "usage_prompt_cache_read_tokens"),
     )
 
 

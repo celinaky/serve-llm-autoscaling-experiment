@@ -348,3 +348,18 @@ def test_analyze_run_writes_the_evaluation_and_sla_panel(sla_run: Path):
     assert sla["prediction"]["ttft"]["predicted_vs_server"]["bias_ms"] == pytest.approx(100)
     assert sla["prediction"]["itl"]["predicted_vs_server"]["bias_ms"] == pytest.approx(5)
     assert sla["prediction"]["ttft"]["client_vs_server"]["samples"] > 0
+
+
+def test_score_requests_splits_ttft_by_prompt_cache():
+    def req(start_s, ttft, cached):
+        ns = T0 + int(start_s * S)
+        return Request(ns, ns, ns + S, False, ttft, 20, 0, 64000.0, cached)
+
+    requests = [req(10, 12000, 0.0), req(20, 500, 60000.0), req(30, 700, 64000.0),
+                req(40, 900, None)]
+    score = score_requests(requests, T0, {"start_s": 0, "end_s": 200}, 3000, 50)
+    cold, warm = score["ttft_by_cache"]["cold"], score["ttft_by_cache"]["warm"]
+    assert (cold["sample_count"], cold["slo_met"]) == (1, False)
+    assert (warm["sample_count"], warm["slo_met"]) == (2, True)
+    assert warm["p95_ms"] == pytest.approx(690)
+    assert score["ttft"]["sample_count"] == 4  # unknown cache state still counts overall

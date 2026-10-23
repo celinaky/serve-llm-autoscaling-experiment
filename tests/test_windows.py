@@ -335,3 +335,16 @@ def test_failed_requests_carry_no_latency(tmp_path: Path):
     window = request_timeseries(_write(tmp_path, records))["windows"][0]
     assert (window["mean_ttft_ms"], window["mean_itl_ms"]) == (300, 40)
     assert window["failed_completions"] == 1
+
+
+def test_prompt_cache_fields_classify_cold_requests(tmp_path: Path):
+    from serve_llm_autoscaling.windows import read_requests
+
+    records = [_record(1, 2), _record(2, 3), _record(3, 4)]
+    records[0]["metrics"].update({"input_sequence_length": {"value": 64000},
+                                  "usage_prompt_cache_read_tokens": {"value": 0}})
+    records[1]["metrics"].update({"input_sequence_length": {"value": 64000},
+                                  "usage_prompt_cache_read_tokens": {"value": 60000}})
+    requests, _ = read_requests(_write(tmp_path, records) / "profile_export.jsonl")
+    assert [r.cold for r in requests] == [True, False, None]
+    assert (requests[0].input_tokens, requests[1].cached_tokens) == (64000, 60000)

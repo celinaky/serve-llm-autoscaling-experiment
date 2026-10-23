@@ -84,11 +84,21 @@ def score_requests(
         [r.itl_ms for r in ok if r.itl_ms is not None], itl_slo_ms, slo_percentile
     )
     verdicts = [v for v in (ttft["slo_met"], itl["slo_met"]) if v is not None]
+    # A cold prompt (under half of it cached) costs seconds of prefill that
+    # no replica count shortens; the warm TTFT is what autoscaling can move.
+    by_cache = {
+        name: _latency_summary(
+            [r.ttft_ms for r in ok if r.cold is cold and r.ttft_ms is not None],
+            ttft_slo_ms, slo_percentile,
+        )
+        for name, cold in (("cold", True), ("warm", False))
+    }
     return {
         "requests": len(started),
         "failed_requests": len(started) - len(ok),
         "ttft": ttft,
         "itl": itl,
+        "ttft_by_cache": by_cache,
         "both_slo_attainment": both_within,
         "slo_percentile": slo_percentile,
         "slo_met": all(verdicts) if verdicts else None,

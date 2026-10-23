@@ -621,7 +621,10 @@ per-request records only. Its sections:
   verdict (`slo_met`, "SLO PASS/FAIL" in the summary) is whether the
   `analysis.slo_percentile` (default 0.95) of requests was within the target,
   i.e. measured p95 <= `ttft_slo_ms`; the measured percentile is reported
-  beside the target. It is what a
+  beside the target. TTFT is also split into cold prompts (under half of the
+  prompt read from the prefix cache, per the server's usage report) and warm
+  ones: a cold 100K-token prompt costs seconds of prefill whatever the
+  replica count, so the warm figure is the one autoscaling can move. It is what a
   user feels and is dominated by the latency tail, which a policy has little
   control over. *Per window*: the share of rolling windows (ending in the
   period, with at least one request) whose rolling mean TTFT/ITL met the
