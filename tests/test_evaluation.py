@@ -418,9 +418,9 @@ def test_excess_ttft_is_measured_against_the_bucket_floor():
     def req(ttft, uncached):
         return Request(T0, T0, T0 + S, False, ttft, 10, 0, 100000.0, 100000.0 - uncached)
 
-    # Two buckets: ~1K uncached (floor 100) and ~64K uncached (floor 4000).
-    requests = [req(100, 1000), req(150, 1100), req(900, 1200),
-                req(4000, 65000), req(4500, 66000), req(9000, 70000),
+    # Two factor-of-two buckets: 1024-2047 and 65536-131071 uncached tokens.
+    requests = [req(100, 1100), req(150, 1200), req(900, 1300),
+                req(4000, 70000), req(4500, 72000), req(9000, 80000),
                 Request(T0, T0, T0 + S, False, 500, 10, 0, None, None)]
     excess = excess_ttft(requests)
     # The floor is the interpolated 5th percentile of each bucket: 105 and 4050.
