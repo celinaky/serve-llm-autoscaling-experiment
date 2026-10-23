@@ -1,8 +1,10 @@
 # The default (ongoing-request) autoscaling policy under the workday ramp of
-# b200_workday_ramp_token.yaml: the baseline it is compared against, scored
-# on the same SLO. The policy has one knob, target_ongoing_requests; a run
-# at 6 and at 12 beside this one gives the baseline's attainment-vs-cost
-# frontier rather than a single point.
+# b200_workday_ramp_token.yaml: the baseline it is compared against, with
+# everything but the policy held equal -- same engine, routing, load, SLO,
+# upscale/downscale delays and metric delivery cadence. Its one knob is
+# target_ongoing_requests; experiments/sweep/default_target{4,6,12}.yaml are
+# this file at other values, so the comparison is against the best the
+# queue-based policy can do, not one point.
 name: b200-workday-ramp-default
 deployment:
   application_name: ttft-benchmark
@@ -28,8 +30,10 @@ deployment:
     initial_replicas: 1
     max_replicas: 4
     target_ongoing_requests: 8
-    upscale_delay_s: 10
-    downscale_delay_s: 60
+    upscale_delay_s: 0
+    downscale_delay_s: 300
+    metrics_interval_s: 2
+    look_back_period_s: 10
   max_ongoing_requests: 128
 benchmark:
   generator: aiperf
@@ -41,9 +45,7 @@ benchmark:
     type: agentx
     public_dataset: semianalysis_cc_traces_weka_062126_256k
     target_concurrency: 32
-    # One cold session start every ~19s; 32 sessions is two replicas' worth.
     concurrency_ramp_duration_s: 600
-    # Every session begins at turn 0: its first request is a cold prompt.
     trajectory_start_min_ratio: 0
     trajectory_start_max_ratio: 0
     seed: 42
@@ -60,8 +62,6 @@ analysis:
   status_interval_s: 1
   metrics_interval_s: 2
   generate_plots: true
-  # Same target as b200_workday_ramp_token.yaml (see there for how it was set).
   ttft_slo_ms: 5000
   itl_slo_ms: 50
-  # Score the whole ramp; the cold session starts are the point.
   warmup_s: 0

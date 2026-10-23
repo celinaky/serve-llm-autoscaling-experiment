@@ -90,7 +90,7 @@ benchmark:
     target_concurrency: 32
     concurrency_ramp_duration_s: 150
     trajectory_start_min_ratio: 0
-    trajectory_start_max_ratio: 0
+    trajectory_start_max_ratio: 1
     seed: 42
     # The scenario requires 900s runs; this is a short development run.
     unsafe_override: true
