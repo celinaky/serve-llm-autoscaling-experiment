@@ -75,6 +75,34 @@ floor. Two reasons: a request's TTFT depends on the queue *on its replica*
 backlog says nothing about that; and the backlog is dominated by the cold
 prompts' own prefill, which no replica count shortens.
 
+## Other shapes and no upscale delay (2026-10-23, chain 2)
+
+| run | shape | policy | TTFT p95 (warm / cold) | ITL p95 | SLO | GPU-h | replicas | scale-ups |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 11 (`...-p60k-donly-off-nodelay`) | ramp 32/600s cold | P=60K only, `upscale_delay_s: 0` | **4480 PASS** (2513 / 6152) | 32 PASS | **PASS** | 0.80 | 1->2->3->4 | 46s, 206s, 476s (prefill); desired flapped 4<->5 at the top (capped at 4) |
+| 12 (`...-storm-token-p60k-d8`) | storm 32/150s cold | P=60K, D=8 | 5392 FAIL (3081 / 7251) | 54 FAIL | FAIL | 0.94 | 1->2->4 | 28s, 108s (prefill) |
+| 13 (`...-storm-default`) | storm 32/150s cold | default, target 8 | 6039 FAIL (3056 / 9995) | 70 FAIL | FAIL | 0.84 | 1->2->3->4->2->3 | 78s, 110s, 138s |
+| 14 (`...-warm24-token-p120k-d8`) | fixed 24 warm | P=120K, D=8 | 3234 PASS (2039 / 7368) | 21 PASS | PASS | 0.49 | 2 | prefill during priming, 2->1->2 mid-run |
+
+- **Without the 10s persistence filter the prefill term leads and the SLO
+  is met.** Run 11's first scale-up came at 46s (vs 237s for the decode
+  term and 175s for the default policy), the second at 206s, and the run
+  is the only one on the cold ramp to pass TTFT p95 <= 4.5s. It costs 0.80
+  GPU-h, about 30% more than the decode-driven runs (0.57-0.66), because
+  it reaches 4 replicas by 476s instead of ~600s. The desired count
+  flapped 4<->5 at the top but running replicas never did (max_replicas
+  4; downscale delay 300s).
+- **Under a sustained backlog (the storm) the prefill term beats the request
+  count** even with the filter: 1->2 at 28s and 2->4 at 108s, versus
+  78/110/138s for the default policy; cold p95 7.3s vs 10.0s, ITL p95 54
+  vs 70ms, fewer failed requests (7 vs 14). Neither meets the SLO: 32 cold
+  64K-170K prompts in 150s exceed four replicas' prefill throughput
+  whatever the policy, and replicas take ~65s to start.
+- **On a warm workload the policy is quiet and right**: 24 primed sessions
+  sit at 2 replicas (ITL p95 21ms, TTFT p95 3.2s, 0.49 GPU-h).
+- Signal strength is unchanged across shapes: decodes -> ITL +0.28..+0.51;
+  prefill backlog -> TTFT within +-0.08 of zero in every run.
+
 ## Conclusion (5 runs, 2026-10-22)
 
 **Chosen setting: P = 120000, D = 8** (committed in
