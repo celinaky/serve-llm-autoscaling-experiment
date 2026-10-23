@@ -16,6 +16,7 @@ Goal: the loosest (cheapest) `P`, `D` that meets the SLO.
 | 3 (`runs/20261023T010742Z-b200-workday-ramp-token`) | 240000 | 6 | 4655ms FAIL (warm 2800ms, cold 6906ms) | 33ms PASS | FAIL | 0.75 | 4 | 1->2 at 157s, 2->3 at 347s, 3->4 at 407s; 891 requests, 5 failed. Same timing as run 2: P is not the binding term |
 | 4 (`runs/20261023T013031Z-b200-workday-ramp-token`) | 120000 | 10 | 5335ms FAIL (warm 3011ms, cold 7353ms) | 46ms PASS | FAIL | 0.54 | 3 | 1->2 at 257s, 2->3 at 527s; never 4; 802 requests, 7 failed. Both warm TTFT and ITL at the edge |
 | 5 (`runs/20261023T015316Z-b200-workday-ramp-token`) | 120000 | 8 | 5118ms FAIL (warm 3370ms, cold 7681ms) | 40ms PASS | FAIL | 0.66 | 4 | 1->2 at 237s, 2->3 at 407s, 3->4 at 607s; 851 requests, 10 failed |
+| 6 (`runs/20261023T082719Z-b200-workday-ramp-token`) | 120000 | 8 | 5212ms FAIL vs 4500 (warm 3172ms, cold 7801ms) | 42ms PASS | FAIL | 0.66 | 4 | gauged policy; all three scale-ups decided by the decode term (prefill term wanted 0/1/2 when decode wanted 2/3/4); 846 requests, 8 failed |
 
 ## Conclusion (5 runs, 2026-10-22)
 

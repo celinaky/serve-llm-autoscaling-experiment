@@ -161,7 +161,9 @@ def format_evaluation(root: Path) -> str | None:
             "Token policy: scale-ups decided by " + (", ".join(f"{k}: {v}" for k, v in terms.items()) or "-")
             + " · Spearman prefill backlog vs warm TTFT "
             + _fmt(strength["prefill_backlog_vs_warm_ttft"]["spearman"], "+.2f")
-            + f" (n={strength['prefill_backlog_vs_warm_ttft']['samples']}), decodes vs ITL "
+            + f" (n={strength['prefill_backlog_vs_warm_ttft']['samples']}), vs excess TTFT "
+            + _fmt(strength["prefill_backlog_vs_excess_ttft"]["spearman"], "+.2f")
+            + ", decodes vs ITL "
             + _fmt(strength["decodes_vs_itl"]["spearman"], "+.2f")
             + f" (n={strength['decodes_vs_itl']['samples']})"
         )

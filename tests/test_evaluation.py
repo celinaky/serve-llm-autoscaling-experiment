@@ -410,3 +410,20 @@ def test_token_policy_evaluation_attributes_scale_ups_and_scores_signals():
     assert strength["decodes_vs_itl"]["spearman"] > 0.9
     assert len(strength["decodes_vs_itl"]["quartiles"]) == 4
     assert token_policy_evaluation({**plot_data, "serve_metric_series": {}}, requests, [], {"start_s": 0, "end_s": 200}) is None
+
+
+def test_excess_ttft_is_measured_against_the_bucket_floor():
+    from serve_llm_autoscaling.evaluation import excess_ttft
+
+    def req(ttft, uncached):
+        return Request(T0, T0, T0 + S, False, ttft, 10, 0, 100000.0, 100000.0 - uncached)
+
+    # Two buckets: ~1K uncached (floor 100) and ~64K uncached (floor 4000).
+    requests = [req(100, 1000), req(150, 1100), req(900, 1200),
+                req(4000, 65000), req(4500, 66000), req(9000, 70000),
+                Request(T0, T0, T0 + S, False, 500, 10, 0, None, None)]
+    excess = excess_ttft(requests)
+    # The floor is the interpolated 5th percentile of each bucket: 105 and 4050.
+    assert excess[0] == pytest.approx(-5) and excess[2] == pytest.approx(795)
+    assert excess[3] == pytest.approx(-50) and excess[5] == pytest.approx(4950)
+    assert 6 not in excess  # unknown cache state

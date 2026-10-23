@@ -9,6 +9,7 @@ time the mean latency met the target; what a mean-latency policy controls).
 from __future__ import annotations
 
 import collections
+import math
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from typing import Any
@@ -416,6 +417,31 @@ def _quartile_table(pairs: list[tuple[float, float]]) -> list[dict[str, Any]]:
     return rows
 
 
+def excess_ttft(requests: list[Request]) -> dict[int, float]:
+    """Per request index, TTFT above the run's own queue-free floor.
+
+    The floor for a request is the 5th percentile TTFT of the requests in
+    its factor-of-two bucket of uncached prompt tokens: the cost of the
+    prefill itself. What remains is waiting, which is what scaling can cut.
+    """
+    def bucket(r: Request) -> int | None:
+        if r.input_tokens is None or r.cached_tokens is None:
+            return None
+        uncached = r.input_tokens - r.cached_tokens
+        return 0 if uncached < 1 else int(math.log2(uncached))
+
+    by_bucket: dict[int, list[float]] = defaultdict(list)
+    for r in requests:
+        if not r.failed and r.ttft_ms is not None and (b := bucket(r)) is not None:
+            by_bucket[b].append(r.ttft_ms)
+    floors = {b: percentile(sorted(v), 0.05) for b, v in by_bucket.items()}
+    return {
+        i: r.ttft_ms - floors[b]
+        for i, r in enumerate(requests)
+        if not r.failed and r.ttft_ms is not None and (b := bucket(r)) is not None
+    }
+
+
 def token_policy_evaluation(
     plot_data: dict[str, Any], requests: list[Request], events: list[dict[str, Any]],
     period: dict[str, float],
@@ -425,9 +451,9 @@ def token_policy_evaluation(
     Signal strength is judged per request: the policy's input per running
     replica at the moment the request started against the latency the
     request then saw. Prefill backlog is held against warm-request TTFT (a
-    cold prompt's own prefill is not queueing) and active decodes against
-    ITL; the cross pairs show whether the signals are telling the two
-    latencies apart.
+    cold prompt's own prefill is not queueing) and against every request's
+    TTFT in excess of its prefill floor; active decodes against ITL. The
+    cross pairs show whether the signals tell the two latencies apart.
     """
     series = plot_data["serve_metric_series"]
     if "token_prefill_backlog" not in series:
@@ -456,10 +482,12 @@ def token_policy_evaluation(
             )
 
     pairs: dict[str, list[tuple[float, float]]] = {
-        "prefill_backlog_vs_warm_ttft": [], "decodes_vs_itl": [],
-        "prefill_backlog_vs_itl": [], "decodes_vs_warm_ttft": [],
+        "prefill_backlog_vs_warm_ttft": [], "prefill_backlog_vs_excess_ttft": [],
+        "decodes_vs_itl": [], "prefill_backlog_vs_itl": [], "decodes_vs_warm_ttft": [],
+        "decodes_vs_excess_ttft": [],
     }
-    for r in requests:
+    excess = excess_ttft(requests)
+    for i, r in enumerate(requests):
         start_s = (r.start_ns - t0) / 1e9
         if r.failed or not period["start_s"] <= start_s < period["end_s"]:
             continue
@@ -472,6 +500,9 @@ def token_policy_evaluation(
         if r.ttft_ms is not None and r.cold is False:
             pairs["prefill_backlog_vs_warm_ttft"].append((backlog, r.ttft_ms))
             pairs["decodes_vs_warm_ttft"].append((decodes, r.ttft_ms))
+        if i in excess:
+            pairs["prefill_backlog_vs_excess_ttft"].append((backlog, excess[i]))
+            pairs["decodes_vs_excess_ttft"].append((decodes, excess[i]))
         if r.itl_ms is not None:
             pairs["decodes_vs_itl"].append((decodes, r.itl_ms))
             pairs["prefill_backlog_vs_itl"].append((backlog, r.itl_ms))
