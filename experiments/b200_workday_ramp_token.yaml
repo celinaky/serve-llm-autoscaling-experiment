@@ -6,14 +6,14 @@
 # active decode requests) and asks for
 #   max(ceil(prefill_tokens / target_prefill_tokens_per_replica),
 #       ceil(decode_requests / target_decode_requests_per_replica), 1)
-# replicas. Starting targets, from findings-claude-code-overnight/
-# b200_investigation.md: a B200 replica prefills ~20K cold tokens/s in
-# isolation, so 60K outstanding tokens per replica is ~3s of prefill
-# backlog (effective prefill under the real mix was ~6K tok/s, so 18K is
-# the pessimistic end; sweep down from 60K until p95 TTFT passes). ITL p90
-# crosses 50ms at ~16 sessions, and agent sessions keep ~0.3 requests
-# decoding each (8 sessions ran 1-3 at once), so ~5-6 concurrent decodes
-# is where ITL breaks.
+# replicas. Targets from the sweep in findings-token-policy/sweep.md (five
+# runs of this file): the decode term is what scales on this workload
+# (~0.7 requests decoding per session at 32 sessions), and ITL p95 was
+# 33ms at D=6, 40ms at D=8 and 46ms at D=10, so D=8 meets the 50ms target
+# with margin at 0.66 GPU-h (D=10 is the cost floor at 0.54). P never bound
+# at 120K or 240K; 120K is twice the 3s x 20K tok/s derivation and left
+# warm TTFT unchanged. TTFT p95 fails at any setting because 22-25% of
+# requests are cold prompts (see the sweep notes).
 #
 # Load, a quick version of a workday morning: sessions ramp 1 -> 32 over 10
 # minutes, every one starting cold at turn 0 (its first request is a
@@ -51,8 +51,8 @@ deployment:
     policy:
       name: token
       kwargs:
-        target_prefill_tokens_per_replica: 60000
-        target_decode_requests_per_replica: 6
+        target_prefill_tokens_per_replica: 120000
+        target_decode_requests_per_replica: 8
     min_replicas: 1
     initial_replicas: 1
     max_replicas: 4
