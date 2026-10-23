@@ -442,6 +442,26 @@ def excess_ttft(requests: list[Request]) -> dict[int, float]:
     }
 
 
+def in_flight_prefill(requests: list[Request], t0: int) -> dict[int, float]:
+    """Per request index, the uncached tokens of other requests still in
+    prefill (started, no first token yet) when this one started.
+
+    This is what the policy's prefill backlog measures, rebuilt from the
+    request records, so it is free of the metric path's export latency.
+    """
+    spans = sorted(
+        ((r.start_ns - t0) / 1e9, (r.start_ns - t0) / 1e9 + r.ttft_ms / 1000,
+         r.input_tokens - r.cached_tokens, i)
+        for i, r in enumerate(requests)
+        if not r.failed and r.ttft_ms is not None
+        and r.input_tokens is not None and r.cached_tokens is not None
+    )
+    result = {}
+    for start, _, _, i in spans:
+        result[i] = sum(u for s, e, u, j in spans if j != i and s <= start < e)
+    return result
+
+
 def token_policy_evaluation(
     plot_data: dict[str, Any], requests: list[Request], events: list[dict[str, Any]],
     period: dict[str, float],
@@ -483,10 +503,12 @@ def token_policy_evaluation(
 
     pairs: dict[str, list[tuple[float, float]]] = {
         "prefill_backlog_vs_warm_ttft": [], "prefill_backlog_vs_excess_ttft": [],
+        "in_flight_prefill_vs_warm_ttft": [], "in_flight_prefill_vs_excess_ttft": [],
         "decodes_vs_itl": [], "prefill_backlog_vs_itl": [], "decodes_vs_warm_ttft": [],
         "decodes_vs_excess_ttft": [],
     }
     excess = excess_ttft(requests)
+    in_flight = in_flight_prefill(requests, t0)
     for i, r in enumerate(requests):
         start_s = (r.start_ns - t0) / 1e9
         if r.failed or not period["start_s"] <= start_s < period["end_s"]:
@@ -497,12 +519,17 @@ def token_policy_evaluation(
         if not replicas or backlog is None or decodes is None:
             continue
         backlog, decodes = backlog / replicas, decodes / replicas
+        truth = in_flight.get(i)
         if r.ttft_ms is not None and r.cold is False:
             pairs["prefill_backlog_vs_warm_ttft"].append((backlog, r.ttft_ms))
             pairs["decodes_vs_warm_ttft"].append((decodes, r.ttft_ms))
+            if truth is not None:
+                pairs["in_flight_prefill_vs_warm_ttft"].append((truth / replicas, r.ttft_ms))
         if i in excess:
             pairs["prefill_backlog_vs_excess_ttft"].append((backlog, excess[i]))
             pairs["decodes_vs_excess_ttft"].append((decodes, excess[i]))
+            if truth is not None:
+                pairs["in_flight_prefill_vs_excess_ttft"].append((truth / replicas, excess[i]))
         if r.itl_ms is not None:
             pairs["decodes_vs_itl"].append((decodes, r.itl_ms))
             pairs["prefill_backlog_vs_itl"].append((backlog, r.itl_ms))

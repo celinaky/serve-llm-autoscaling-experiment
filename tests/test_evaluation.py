@@ -427,3 +427,17 @@ def test_excess_ttft_is_measured_against_the_bucket_floor():
     assert excess[0] == pytest.approx(-5) and excess[2] == pytest.approx(795)
     assert excess[3] == pytest.approx(-50) and excess[5] == pytest.approx(4950)
     assert 6 not in excess  # unknown cache state
+
+
+def test_in_flight_prefill_counts_other_requests_still_in_prefill():
+    from serve_llm_autoscaling.evaluation import in_flight_prefill
+
+    def req(start_s, ttft_ms, uncached):
+        ns = T0 + int(start_s * S)
+        return Request(ns, ns, ns + 10 * S, False, ttft_ms, 10, 0, 100000.0, 100000.0 - uncached)
+
+    # A: 0-5s prefill of 60K; B starts at 2s (inside A's prefill); C at 8s (after).
+    requests = [req(0, 5000, 60000), req(2, 1000, 1000), req(8, 500, 2000),
+                Request(T0, T0, T0 + S, True, None, None, 0, None, None)]
+    result = in_flight_prefill(requests, T0)
+    assert result == {0: 0, 1: 60000, 2: 0}

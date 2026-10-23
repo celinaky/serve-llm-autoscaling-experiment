@@ -648,8 +648,12 @@ per-request records only. Its sections:
   or decode, asked for each scale-up, and how strongly each input predicts
   latency: Spearman rank correlation and a quartile table of the policy's
   input per running replica at each request's start against the latency
-  that request saw (prefill backlog against warm-request TTFT, active
-  decodes against ITL, plus the cross pairs).
+  that request saw (prefill backlog against warm-request TTFT and against
+  TTFT in excess of the prompt's own prefill floor, active decodes against
+  ITL, plus the cross pairs). Because Ray exports gauges only every ~10s,
+  the in-flight prefill is also rebuilt from the request records (uncached
+  tokens of requests started but not yet at their first token) and scored
+  the same way, as `in_flight_prefill_vs_*`.
 - **SLA policy** (when its gauges or log were collected): when the model
   became ready and first made a `capacity` decision, the state timeline and
   time spent in each state, and prediction error. Predictions are for the

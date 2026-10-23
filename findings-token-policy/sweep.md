@@ -48,22 +48,43 @@ Relevant, yes; correct as implemented, only in part.
   ITL went to 75ms (P=60K, decode term off). At P=30K it only persisted
   once the single replica had saturated and the backlog stopped clearing
   (t=537s): by then it is a lagging indicator.
-- *It does not predict a request's TTFT.* Spearman between the backlog per
-  running replica at a request's start and that request's TTFT (warm only,
-  or in excess of its own prefill floor) was within +-0.2 of zero in every
-  run (median +0.07). Two reasons: the backlog is global, but a request's
-  queueing happens on its own replica, where kv_aware pins its session;
-  and TTFT is dominated by each prompt's own prefill, which the backlog
-  says nothing about.
+- *Measured against the ground truth, it does predict waiting; measured
+  against the scraped gauge, it appears not to.* Spearman between the gauge
+  value at a request's start and that request's waiting (TTFT above its own
+  prefill floor) was +0.01..+0.17. But the gauge lags reality: Ray exports
+  `ray.util.metrics` gauges every `metrics_report_interval_ms` = 10s, and
+  cross-correlating the scraped gauge against the in-flight prefill rebuilt
+  from the request records peaks at a 12-14s lag (rho +0.46..+0.49) in both
+  the default and the 2s-push runs. Rebuilding the policy's own quantity
+  from the records (uncached tokens of requests started but not yet at
+  their first token, which is exactly what the tracker counts between
+  routing and `on_prefill_complete`) and pairing it with each request's
+  waiting gives **+0.20..+0.36** across runs (`in_flight_prefill_vs_excess_
+  ttft` in the evaluation) -- the same order as decodes -> ITL. So the
+  prefill backlog is a real, if moderate, predictor of queueing; the earlier
+  "it predicts nothing" reading was an artefact of the metric export delay.
+- *Delivering it faster to the policy changes when it scales, not the
+  result.* The replica records the router snapshot every
+  `min(0.2 x look_back_period_s, metrics_interval_s)` = 6s and pushes it
+  every `metrics_interval_s` = 10s by default (`replica.py:695-710`), against
+  spikes that last 2-8s. Run 19 set both to 2s: first scale-up at 10s and
+  second at 99s (vs 50s and 259s), TTFT p95 4956ms (same band as 4924 /
+  4985), ITL 29ms, 0.84 GPU-h (the costliest run). Earlier replicas do not
+  lower TTFT p95 further; the waiting that remains is on each request's own
+  replica, behind other prefills (kv_aware pins a session to the replica
+  holding its cache), which another replica cannot absorb.
 
-So the quantity is right and early; the form is wrong. A rate --
-uncached tokens *arriving* per second over the last 30-60s, divided by a
-replica's prefill throughput (~16K tok/s here) -- would be persistent
-under a ramp, lead the decode signal by the same margin, and need no
-delay-zero trick. Whatever the form, a global token count cannot see
-per-replica queues; a per-replica backlog from the KV tracker (it already
+So the quantity is right, early, and genuinely informative about queueing.
+Its two problems are the delivery path (6s/10s record/push, then a 10s
+export interval for anyone observing it) and the shape (a spike train that
+the persistence filter discards). A rate -- uncached tokens *arriving* per
+second over the last 30-60s, divided by a replica's prefill throughput
+(~16K tok/s here) -- would be persistent under a ramp, lead the decode
+signal by the same margin, and survive both the record/push cadence and
+`upscale_delay_s`. A per-replica backlog from the KV tracker (it already
 knows which replica each request went to) would let the policy scale on
-the *max* replica queue rather than the sum.
+the *max* replica queue rather than the sum, which is where the remaining
+waiting lives.
 
 **3. Is active decode requests a relevant and correct signal?** Yes, and
 it is the one that actually scaled every run that used it. It rises
@@ -113,6 +134,7 @@ is a rescoring of the same numbers):
 | 16 | token (chunk 32K) | 120K | 8 | 10 | 6101 | 51 | 0.67 | FAIL |
 | 17 | **token** | **60K** | **8** | **0** | **4924** | **29** | **0.79** | **PASS** |
 | 18 | token | 60K | 8 | 5 | 4985 | 36 | 0.75 | PASS |
+| 19 (`...-fastpush`) | token, snapshot recorded+pushed every 2s | 60K | 8 | 0 | 4956 | 29 | 0.84 | PASS |
 | (user's own, 60K/6/10) | token | 60K | 6 | 10 | 5299 | 37 | 0.78 | FAIL |
 
 Run directories: `runs/2026102*`. Each has `analysis/autoscaling_evaluation.json`
@@ -170,20 +192,19 @@ active, before either target is breached.
 Signal strength (Spearman, policy input per running replica at request
 start vs. the latency that request saw):
 
-| run | decodes -> ITL | prefill backlog -> warm TTFT | prefill backlog -> excess TTFT |
+| run | decodes -> ITL | scraped backlog gauge -> excess TTFT | in-flight prefill from records -> excess TTFT |
 | --- | --- | --- | --- |
-| 6 | +0.43 | +0.17 | +0.13 |
-| 7 | +0.53 | +0.07 | +0.03 |
-| 8 | +0.73 | +0.10 | +0.07 |
-| 9 | +0.26 | +0.19 | +0.17 |
+| 6 | +0.43 | +0.13 | +0.36 |
+| 9 | +0.26 | +0.17 | +0.36 |
+| 17 | +0.26 | +0.01 | +0.29 |
+| 19 | +0.46 | +0.07 | +0.20 |
 
 Active decode requests is a moderate predictor of ITL (strongest when a
-replica is allowed to saturate). The uncached-prefill backlog is a weak
-predictor of TTFT, even of the part of TTFT above each prompt's own prefill
-floor. Two reasons: a request's TTFT depends on the queue *on its replica*
-(kv_aware pins a session to the replica holding its cache), and the global
-backlog says nothing about that; and the backlog is dominated by the cold
-prompts' own prefill, which no replica count shortens.
+replica is allowed to saturate). The scraped prefill gauge looks like a
+weak predictor of waiting, but it lags reality by ~10s (Ray's metrics
+export interval); the same quantity rebuilt from the request records
+predicts waiting at +0.20..+0.36, i.e. about as well as decodes predict
+ITL. See the answers section.
 
 ## Other shapes and no upscale delay (2026-10-23, chain 2)
 
