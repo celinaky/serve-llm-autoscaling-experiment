@@ -203,7 +203,7 @@ def test_b200_workday_ramp_experiments_differ_only_in_policy():
     assert token.deployment.autoscaling.policy.name == "token"
     assert default.benchmark == token.benchmark
     assert default.analysis == token.analysis
-    assert (token.analysis.ttft_slo_ms, token.analysis.itl_slo_ms) == (4500, 50)
+    assert (token.analysis.ttft_slo_ms, token.analysis.itl_slo_ms) == (5000, 50)
     assert token.analysis.warmup_s == 0
     workload = token.benchmark.workload
     assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0, 0)

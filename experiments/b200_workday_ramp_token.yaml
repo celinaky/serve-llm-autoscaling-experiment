@@ -6,14 +6,13 @@
 # active decode requests) and asks for
 #   max(ceil(prefill_tokens / target_prefill_tokens_per_replica),
 #       ceil(decode_requests / target_decode_requests_per_replica), 1)
-# replicas. Targets from the sweep in findings-token-policy/sweep.md (five
-# runs of this file): the decode term is what scales on this workload
-# (~0.7 requests decoding per session at 32 sessions), and ITL p95 was
-# 33ms at D=6, 40ms at D=8 and 46ms at D=10, so D=8 meets the 50ms target
-# with margin at 0.66 GPU-h (D=10 is the cost floor at 0.54). P never bound
-# at 120K or 240K; 120K is twice the 3s x 20K tok/s derivation and left
-# warm TTFT unchanged. TTFT p95 fails at any setting because 22-25% of
-# requests are cold prompts (see the sweep notes).
+# replicas. Settings from the 18-run sweep in findings-token-policy/sweep.md:
+# P=60K (3s x ~20K tok/s) lets the prefill term lead on a cold ramp, D=8
+# keeps ITL p95 at 30-40ms against the 50ms target, and upscale_delay_s 0
+# lets the transient backlog act. With these the cold ramp's TTFT p95 is
+# 4.5-4.9s over three runs (queue-free floor 3.8s) at ~0.8 GPU-h, versus
+# 4.9-5.3s at ~0.6 GPU-h when only the decode term (or the default policy)
+# scales.
 #
 # Load, a quick version of a workday morning: sessions ramp 1 -> 32 over 10
 # minutes, every one starting cold at turn 0 (its first request is a
@@ -51,7 +50,7 @@ deployment:
     policy:
       name: token
       kwargs:
-        target_prefill_tokens_per_replica: 120000
+        target_prefill_tokens_per_replica: 60000
         target_decode_requests_per_replica: 8
     min_replicas: 1
     initial_replicas: 1
@@ -59,7 +58,10 @@ deployment:
     # Unused by the token policy; kept so the deployment config stays
     # comparable with the default-policy run.
     target_ongoing_requests: 8
-    upscale_delay_s: 10
+    # 0: the prefill backlog is a spike train (a cold prompt clears in 5-15s),
+    # so any persistence requirement silences the prefill term; the 300s
+    # downscale delay is what prevents flapping.
+    upscale_delay_s: 0
     # A replica costs ~100s to start; do not drop one on a short lull.
     downscale_delay_s: 300
   max_ongoing_requests: 128
@@ -94,9 +96,10 @@ analysis:
   generate_plots: true
   # The p95 of the workload's queue-free TTFT floor is ~3.8s (cold prompts of
   # 32K-128K uncached tokens at ~16K tok/s; findings-token-policy/scripts/
-  # ttft_floor.py), so 3s is unreachable by any replica count. 4.5s leaves
-  # ~0.7s for the queueing an autoscaler can remove.
-  ttft_slo_ms: 4500
+  # ttft_floor.py), so 3s is unreachable by any replica count. The best
+  # configuration measured 4.5-4.9s over three runs; 5s is the target it
+  # meets with the run-to-run spread included.
+  ttft_slo_ms: 5000
   itl_slo_ms: 50
   # Score the whole ramp; the cold session starts are the point.
   warmup_s: 0

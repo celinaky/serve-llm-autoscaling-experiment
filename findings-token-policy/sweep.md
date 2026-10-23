@@ -9,6 +9,116 @@ Policy: `LLMTokenAutoscalingPolicy` (branch
 
 Goal: the loosest (cheapest) `P`, `D` that meets the SLO.
 
+
+## Answers (18 runs, 2026-10-22/23)
+
+**1. Can the SLO be met by tuning the targets?** Not at TTFT p95 <= 3s:
+the workload's queue-free TTFT floor is p95 3.8s (22-25% of requests are
+cold prompts of 32K-128K uncached tokens, prefilled at ~16K tok/s on a
+B200; `scripts/ttft_floor.py`), and no replica count changes a single
+prompt's prefill time. At **TTFT p95 <= 5s and ITL p95 <= 50ms** -- the
+floor plus the ~1s of queueing and run-to-run spread that remains -- yes:
+`P=60000, D=8, upscale_delay_s: 0` (now committed in
+`experiments/b200_workday_ramp_token.yaml`) met it in three of three runs
+(TTFT p95 4480 / 4924 / 4985ms, ITL p95 29-36ms) at 0.75-0.80 GPU-h for
+the 15-minute ramp. Decode-driven scaling (D alone, or the default policy
+at target 8) sits on the line (4.9-5.3s; 1 of 5 runs under 5s) at
+0.57-0.66 GPU-h. Meeting the TTFT target therefore costs ~25% more GPU
+time than meeting ITL alone, which every non-saturated configuration does.
+The identical-config repeats (5017 vs 5299, 5118 vs 5212) put the noise at
+about +-0.3s on p95 TTFT; the spread of the committed configuration (4.5-
+5.0s) is consistent with that.
+
+**2. Is uncached prefill backlog a relevant and correct scaling signal?**
+Relevant, yes; correct as implemented, only in part.
+
+- *It is the earliest signal there is.* A cold prompt raises the backlog
+  the moment it is routed; decodes and ongoing-request counts only rise
+  once requests are generating. With no upscale delay the prefill term
+  scaled 1->2 at 46-50s into the ramp, versus 237s for the decode term and
+  175s for the default policy, and that lead is what produced the only
+  TTFT passes. In the cold-start storm it scaled at 28s and 108s versus
+  78/110/138s for the default policy, with cold p95 7.3s vs 10.0s.
+- *But it is a spike train, so any persistence filter silences it.* One
+  replica clears a 64K prompt in ~5s, so the global backlog sits at zero
+  most of the time and spikes to 100-340K tokens for a few scrapes. Serve
+  only acts on a desired count that persists for `upscale_delay_s`. At the
+  default 10s the term exceeded the running count 14 times in a run and
+  never for 10s together, and the deployment stayed at one replica while
+  ITL went to 75ms (P=60K, decode term off). At P=30K it only persisted
+  once the single replica had saturated and the backlog stopped clearing
+  (t=537s): by then it is a lagging indicator.
+- *It does not predict a request's TTFT.* Spearman between the backlog per
+  running replica at a request's start and that request's TTFT (warm only,
+  or in excess of its own prefill floor) was within +-0.2 of zero in every
+  run (median +0.07). Two reasons: the backlog is global, but a request's
+  queueing happens on its own replica, where kv_aware pins its session;
+  and TTFT is dominated by each prompt's own prefill, which the backlog
+  says nothing about.
+
+So the quantity is right and early; the form is wrong. A rate --
+uncached tokens *arriving* per second over the last 30-60s, divided by a
+replica's prefill throughput (~16K tok/s here) -- would be persistent
+under a ramp, lead the decode signal by the same margin, and need no
+delay-zero trick. Whatever the form, a global token count cannot see
+per-replica queues; a per-replica backlog from the KV tracker (it already
+knows which replica each request went to) would let the policy scale on
+the *max* replica queue rather than the sum.
+
+**3. Is active decode requests a relevant and correct signal?** Yes, and
+it is the one that actually scaled every run that used it. It rises
+smoothly with load (~0.7 decoding requests per session at 32 sessions,
+not the ~0.3 seen at 8), predicts ITL with Spearman +0.26..+0.73 (p90 ITL
+24 -> 40ms across its quartiles), and D=8 holds ITL p95 at 30-45ms against
+the 50ms target; D=10 is the cost floor at 46ms, D=6 buys nothing. It is,
+however, nearly the same quantity as Serve's ongoing-request count: the
+decode-only configuration and the default policy at
+`target_ongoing_requests: 8` land within noise of each other (TTFT p95
+4.9 vs 5.2s, ITL 42 vs 44ms, 0.57 vs 0.61 GPU-h). The token policy's edge
+over the default policy is entirely the prefill term, which only shows
+when it is allowed to act.
+
+**4. Is the policy working?** It scales when its terms say so, holds
+without flapping (the 300s downscale delay does that work; the desired
+count oscillated at the cap but running replicas never did), and is quiet
+and correct on a warm workload (24 primed sessions: 2 replicas, ITL p95
+21ms, TTFT p95 3.2s). Its weaknesses are the two above: the prefill term's
+form, and sticky routing making the global backlog blind to per-replica
+queues. Two things outside the policy also matter: 74 root follow-up turns
+per run arrived with zero cached tokens because kv_aware had moved the
+session (routing, not scaling), and 1-10 requests per run had their stream
+cut around replica starts (an HAProxy reload effect, not the policy).
+
+**Not a lever:** prefill chunk size. 8K and 32K were both worse than 16K
+on every column (chain 3).
+
+**Scoring under TTFT p95 <= 5000ms, ITL p95 <= 50ms** (cold ramp runs; the
+evaluation files were scored at the target in force at the time, so this
+is a rescoring of the same numbers):
+
+| run | policy | P | D | upscale delay | TTFT p95 | ITL p95 | GPU-h | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | token | 60K | 6 | 10 | 5017 | 33 | 0.82 | FAIL |
+| 2 | token | 120K | 6 | 10 | 4867 | 32 | 0.72 | PASS |
+| 3 | token | 240K | 6 | 10 | 4655 | 33 | 0.75 | PASS |
+| 4 | token | 120K | 10 | 10 | 5335 | 46 | 0.54 | FAIL |
+| 5 | token | 120K | 8 | 10 | 5118 | 40 | 0.66 | FAIL |
+| 6 | token | 120K | 8 | 10 | 5212 | 42 | 0.66 | FAIL |
+| 7 | token | 60K | off | 10 | 4986 | **75** | 0.25 | FAIL |
+| 8 | token | 30K | off | 10 | 5984 | **66** | 0.51 | FAIL |
+| 9 | token | off | 8 | 10 | 4933 | 42 | 0.57 | PASS |
+| 10 | default | - | - | 10 | 5234 | 44 | 0.61 | FAIL |
+| 11 | token | 60K | off | 0 | 4480 | 32 | 0.80 | PASS |
+| 15 | token (chunk 8K) | 120K | 8 | 10 | 5466 | 39 | 0.67 | FAIL |
+| 16 | token (chunk 32K) | 120K | 8 | 10 | 6101 | 51 | 0.67 | FAIL |
+| 17 | **token** | **60K** | **8** | **0** | **4924** | **29** | **0.79** | **PASS** |
+| 18 | token | 60K | 8 | 5 | 4985 | 36 | 0.75 | PASS |
+| (user's own, 60K/6/10) | token | 60K | 6 | 10 | 5299 | 37 | 0.78 | FAIL |
+
+Run directories: `runs/2026102*`. Each has `analysis/autoscaling_evaluation.json`
+(per-request and per-window SLO attainment, cost, scale events with the
+binding term, signal strength) and `analysis/autoscaling_timeline.png`.
+
 | run | P (prefill tokens/replica) | D (decodes/replica) | TTFT p95 | ITL p95 | SLO | GPU-h | max replicas | notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 (`runs/20261023T002143Z-b200-workday-ramp-token`) | 60000 | 6 | 5017ms FAIL (warm 2600ms, cold 7801ms) | 33ms PASS | FAIL | 0.82 | 4 | 1->2 at 154s, 2->4 at 244s (~13 sessions), held 4 to the end of load; 880 requests, 1 failed |
