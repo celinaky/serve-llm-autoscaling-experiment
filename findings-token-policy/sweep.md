@@ -26,6 +26,16 @@ Goal: the loosest (cheapest) `P`, `D` that meets the SLO.
 | 7 (`runs/20261023T084942Z-...-p60k-donly-off`) | P=60K only | 4986 FAIL (3258 / 6660) | **75 FAIL** | 0.25 | 1 throughout | none |
 | 8 (`runs/20261023T091204Z-...-p30k-donly-off`) | P=30K only | 5984 FAIL (4002 / 10271) | **66 FAIL** | 0.51 | 1->2->4 | 537s, 627s (prefill), after the replica was saturated |
 | 9 (`runs/20261023T093428Z-...-d8-ponly-off`) | D=8 only | 4933 FAIL (2775 / 8073) | 42 PASS | 0.57 | 1->2->3 | 237s, 407s (decode) |
+| 10 (`runs/20261023T095652Z-...-default`) | default, target_ongoing 8 | 5234 FAIL (3478 / 6622) | 44 PASS | 0.61 | 1->2->3->4->3 | 175s, 416s, 605s (ongoing requests), down at 686s |
+
+The default policy (ongoing requests per replica, target 8) lands in the
+same place as the token policy: TTFT p95 5.2s, ITL p95 44ms, 0.61 GPU-h.
+That is expected: active decode requests and Serve's ongoing-request count
+are nearly the same quantity on this workload (a request is "ongoing" from
+routing to completion, "decoding" from first token to completion, and
+decode is most of a request's life), so D=8 and target_ongoing_requests=8
+make the same decisions a minute apart. The token policy's distinct input,
+the prefill backlog, is the term that does not fire.
 
 Why the prefill term does not scale in time: its input is the instantaneous
 global backlog of uncached tokens, and one replica clears a cold prompt in
