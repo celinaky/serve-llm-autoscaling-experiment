@@ -92,7 +92,11 @@ analysis:
   status_interval_s: 1
   metrics_interval_s: 2
   generate_plots: true
-  ttft_slo_ms: 3000
+  # The p95 of the workload's queue-free TTFT floor is ~3.8s (cold prompts of
+  # 32K-128K uncached tokens at ~16K tok/s; findings-token-policy/scripts/
+  # ttft_floor.py), so 3s is unreachable by any replica count. 4.5s leaves
+  # ~0.7s for the queueing an autoscaler can remove.
+  ttft_slo_ms: 4500
   itl_slo_ms: 50
   # Score the whole ramp; the cold session starts are the point.
   warmup_s: 0

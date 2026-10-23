@@ -182,6 +182,7 @@ def test_metric_filters_and_sums_replicas(tmp_path: Path):
         "replica_status": True, "router_queue": True, "ongoing_requests": True,
         "desired_replicas": True, "target_replicas_metric": True, "healthy_replicas": False,
         "sla_policy_metrics": False, "sla_policy_events": False, "vllm_latency": False,
+        "token_policy_metrics": False,
     }
 
 

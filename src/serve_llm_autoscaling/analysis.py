@@ -62,6 +62,11 @@ METRIC_SERIES = {
     "sla_training_buckets": ("serve_sla_autoscaling_training_buckets", "sum", ()),
     "sla_predicted_ttft_ms": ("serve_sla_autoscaling_predicted_ttft_ms", "sum", ()),
     "sla_predicted_itl_ms": ("serve_sla_autoscaling_predicted_itl_ms", "sum", ()),
+    "token_prefill_backlog": ("serve_token_autoscaling_outstanding_prefill_tokens", "sum", ()),
+    "token_active_decodes": ("serve_token_autoscaling_active_decode_requests", "sum", ()),
+    "token_prefill_replicas": ("serve_token_autoscaling_prefill_required_replicas", "sum", ()),
+    "token_decode_replicas": ("serve_token_autoscaling_decode_required_replicas", "sum", ()),
+    "token_desired_replicas": ("serve_token_autoscaling_desired_replicas", "sum", ()),
     "vllm_running_requests": ("vllm_num_requests_running", "sum", ("ReplicaId",)),
     "vllm_waiting_requests": ("vllm_num_requests_waiting", "sum", ("ReplicaId",)),
 }
@@ -668,6 +673,8 @@ def build_plot_data(
                 warnings.append(f"{METRIC_SERIES[key][0]} was not exported; omitted from the plot")
     autoscaling = config.deployment.autoscaling
     sla_events = read_sla_policy_events(root, application, t0)
+    if autoscaling.policy.name == "token" and "token_prefill_backlog" not in series:
+        warnings.append("token policy gauges were not exported; policy panel is empty")
     if autoscaling.policy.name == "sla":
         if "sla_recommended_replicas" not in series:
             warnings.append("SLA policy gauges were not exported; policy panel is empty")
@@ -736,6 +743,7 @@ def build_plot_data(
             "target_replicas_metric": "target_replicas" in series,
             "healthy_replicas": "healthy_replicas" in series,
             "sla_policy_metrics": "sla_recommended_replicas" in series,
+            "token_policy_metrics": "token_prefill_backlog" in series,
             "sla_policy_events": bool(sla_events),
             "vllm_latency": "vllm_mean_ttft_ms" in series,
         },

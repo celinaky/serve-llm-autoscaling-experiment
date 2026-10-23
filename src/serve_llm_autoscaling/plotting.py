@@ -150,6 +150,26 @@ def _sla_panel(ax: Any, data: dict[str, Any]) -> dict[Any, Any]:
     return {ax: right}
 
 
+def _token_panel(ax: Any, data: dict[str, Any]) -> dict[Any, Any]:
+    """The token policy's inputs beside the replicas each term asked for."""
+    metrics = data["serve_metric_series"]
+    right = ax.twinx()
+    xs, ys = _series(metrics, "token_prefill_backlog")
+    ax.plot(xs, [y / 1000 for y in ys], color="tab:blue", lw=1.5, label="outstanding prefill (K tokens)")
+    xs, ys = _series(metrics, "token_active_decodes")
+    right.plot(xs, ys, color="tab:orange", lw=1.5, label="active decode requests")
+    for key, label, style in (("token_prefill_replicas", "prefill term wants", {"color": "tab:blue"}),
+                              ("token_decode_replicas", "decode term wants", {"color": "tab:orange"})):
+        xs, ys = _series(metrics, key, step=True)
+        right.step(xs, ys, where="post", ls=":", lw=1.2, label=label, **style)
+    ax.set_ylabel("K tokens")
+    right.set_ylabel("requests / replicas")
+    ax.set_ylim(bottom=0)
+    right.set_ylim(bottom=0)
+    ax.set_title("Token policy inputs", loc="left", fontsize=10)
+    return {ax: right}
+
+
 def plot_timeline(plot_data_path: Path, out_path: Path) -> None:
     data = json.loads(Path(plot_data_path).read_text())
     experiment = data["experiment"]
@@ -158,8 +178,9 @@ def plot_timeline(plot_data_path: Path, out_path: Path) -> None:
     metrics = data["serve_metric_series"]
     availability = data.get("availability") or {}
     with_sla = availability.get("sla_policy_metrics") or availability.get("sla_policy_events")
+    with_token = availability.get("token_policy_metrics")
 
-    panels = 6 if with_sla else 5
+    panels = 5 + bool(with_sla) + bool(with_token)
     fig, axes = plt.subplots(panels, 1, figsize=(14, 3.6 * panels), sharex=True)
     traffic, ttft, itl, pressure, replicas = axes[:5]
     twins = {}
@@ -246,9 +267,13 @@ def plot_timeline(plot_data_path: Path, out_path: Path) -> None:
     replicas.set_ylabel("replicas")
     replicas.set_title("Autoscaling", loc="left", fontsize=10)
 
-    # Panel 6: the SLA policy's predictions, readiness and state transitions.
+    # Policy panels: the SLA policy's predictions, readiness and state
+    # transitions; the token policy's inputs and per-term demand.
+    extra = iter(axes[5:])
     if with_sla:
-        twins.update(_sla_panel(axes[5], data))
+        twins.update(_sla_panel(next(extra), data))
+    if with_token:
+        twins.update(_token_panel(next(extra), data))
 
     # Draining still has requests in flight; idle has none, so it shows
     # recovery and downscaling on their own.

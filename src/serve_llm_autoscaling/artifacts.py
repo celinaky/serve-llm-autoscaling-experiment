@@ -154,6 +154,17 @@ def format_evaluation(root: Path) -> str | None:
         f"upscale lag mean {_fmt(scaling['mean_upscale_lag_s'], '.0f', 's')}, "
         f"max {_fmt(scaling['max_upscale_lag_s'], '.0f', 's')}"
     )
+    if token := evaluation.get("token_policy"):
+        terms = token["scale_up_binding_terms"]
+        strength = token["signal_strength"]
+        lines.append(
+            "Token policy: scale-ups decided by " + (", ".join(f"{k}: {v}" for k, v in terms.items()) or "-")
+            + " · Spearman prefill backlog vs warm TTFT "
+            + _fmt(strength["prefill_backlog_vs_warm_ttft"]["spearman"], "+.2f")
+            + f" (n={strength['prefill_backlog_vs_warm_ttft']['samples']}), decodes vs ITL "
+            + _fmt(strength["decodes_vs_itl"]["spearman"], "+.2f")
+            + f" (n={strength['decodes_vs_itl']['samples']})"
+        )
     if sla := evaluation.get("sla_policy"):
         ttft = sla["prediction"]["ttft"]
         lines.append(

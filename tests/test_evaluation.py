@@ -363,3 +363,50 @@ def test_score_requests_splits_ttft_by_prompt_cache():
     assert (warm["sample_count"], warm["slo_met"]) == (2, True)
     assert warm["p95_ms"] == pytest.approx(690)
     assert score["ttft"]["sample_count"] == 4  # unknown cache state still counts overall
+
+
+# --- Token policy -------------------------------------------------------------
+
+
+def test_spearman_ranks_with_ties():
+    from serve_llm_autoscaling.evaluation import spearman
+
+    assert spearman([(1, 10), (2, 20), (3, 30)]) == pytest.approx(1.0)
+    assert spearman([(1, 30), (2, 20), (3, 10)]) == pytest.approx(-1.0)
+    assert spearman([(1, 5), (1, 5), (2, 5)]) is None  # no variance in y
+    assert spearman([(1, 1), (2, 2)]) is None
+    assert -1 <= spearman([(1, 2), (2, 1), (3, 4), (4, 3)]) <= 1
+
+
+def test_token_policy_evaluation_attributes_scale_ups_and_scores_signals():
+    from serve_llm_autoscaling.evaluation import token_policy_evaluation
+
+    def req(start_s, ttft, itl, cached):
+        ns = T0 + int(start_s * S)
+        return Request(ns, ns, ns + S, False, ttft, itl, 0, 64000.0, cached)
+
+    # Backlog rises over time and so does warm TTFT; decodes rise and ITL with them.
+    series = {
+        "token_prefill_backlog": _points(*[(t, 10000.0 * t) for t in range(0, 200, 10)]),
+        "token_active_decodes": _points(*[(t, t / 10) for t in range(0, 200, 10)]),
+        "token_prefill_replicas": _points((0, 1), (60, 3), (150, 3)),
+        "token_decode_replicas": _points((0, 1), (60, 2), (150, 4)),
+        "desired_replicas": _points((0, 1), (60, 3), (150, 4)),
+    }
+    # One replica throughout, so per-replica inputs stay monotone in time.
+    status = [_status(0, 1)]
+    plot_data = {"serve_metric_series": series, "serve_status_samples": status,
+                 "time_origin": {"profiling_start_ns": T0}}
+    requests = [req(t, 200 + 5 * t, 10 + t / 10, 64000.0) for t in range(5, 200, 10)]
+    requests.append(req(100, 9000, 20, 0.0))  # a cold prompt: excluded from the TTFT pairs
+    events = scale_events(series, status, [])
+    result = token_policy_evaluation(plot_data, requests, events, {"start_s": 0, "end_s": 200})
+    assert [(e["to_replicas"], e["binding_term"]) for e in events] == [(3, "prefill"), (4, "decode")]
+    assert result["scale_up_binding_terms"] == {"prefill": 1, "decode": 1}
+    strength = result["signal_strength"]
+    assert strength["prefill_backlog_vs_warm_ttft"]["samples"] == 20
+    assert strength["prefill_backlog_vs_warm_ttft"]["spearman"] == pytest.approx(1.0)
+    assert strength["decodes_vs_itl"]["samples"] == 21
+    assert strength["decodes_vs_itl"]["spearman"] > 0.9
+    assert len(strength["decodes_vs_itl"]["quartiles"]) == 4
+    assert token_policy_evaluation({**plot_data, "serve_metric_series": {}}, requests, [], {"start_s": 0, "end_s": 200}) is None

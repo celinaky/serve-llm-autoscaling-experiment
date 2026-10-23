@@ -8,6 +8,7 @@ time the mean latency met the target; what a mean-latency policy controls).
 """
 from __future__ import annotations
 
+import collections
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from typing import Any
@@ -371,6 +372,120 @@ def sla_evaluation(plot_data: dict[str, Any], horizon_s: float) -> dict[str, Any
     }
 
 
+# --- Token policy -----------------------------------------------------------------
+
+
+def spearman(pairs: list[tuple[float, float]]) -> float | None:
+    """Spearman rank correlation of (x, y) pairs; None below three points."""
+    if len(pairs) < 3:
+        return None
+
+    def ranks(values: list[float]) -> list[float]:
+        order = sorted(range(len(values)), key=lambda i: values[i])
+        result = [0.0] * len(values)
+        i = 0
+        while i < len(order):
+            j = i
+            while j + 1 < len(order) and values[order[j + 1]] == values[order[i]]:
+                j += 1
+            for k in range(i, j + 1):
+                result[order[k]] = (i + j) / 2 + 1
+            i = j + 1
+        return result
+
+    xs = ranks([p[0] for p in pairs])
+    ys = ranks([p[1] for p in pairs])
+    mx, my = mean(xs), mean(ys)
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    vx = sum((x - mx) ** 2 for x in xs)
+    vy = sum((y - my) ** 2 for y in ys)
+    return cov / (vx * vy) ** 0.5 if vx and vy else None
+
+
+def _quartile_table(pairs: list[tuple[float, float]]) -> list[dict[str, Any]]:
+    """Median y per quartile of x: the shape of the relation, not just its rank."""
+    ordered = sorted(pairs)
+    rows = []
+    for q in range(4):
+        chunk = ordered[q * len(ordered) // 4:(q + 1) * len(ordered) // 4]
+        if chunk:
+            ys = sorted(y for _, y in chunk)
+            rows.append({"quartile": q + 1, "x_min": chunk[0][0], "x_max": chunk[-1][0],
+                         "samples": len(chunk), "median_y": percentile(ys, 0.5),
+                         "p90_y": percentile(ys, 0.9)})
+    return rows
+
+
+def token_policy_evaluation(
+    plot_data: dict[str, Any], requests: list[Request], events: list[dict[str, Any]],
+    period: dict[str, float],
+) -> dict[str, Any] | None:
+    """Which term decided each scale-up, and how well each input predicts latency.
+
+    Signal strength is judged per request: the policy's input per running
+    replica at the moment the request started against the latency the
+    request then saw. Prefill backlog is held against warm-request TTFT (a
+    cold prompt's own prefill is not queueing) and active decodes against
+    ITL; the cross pairs show whether the signals are telling the two
+    latencies apart.
+    """
+    series = plot_data["serve_metric_series"]
+    if "token_prefill_backlog" not in series:
+        return None
+    t0 = plot_data["time_origin"]["profiling_start_ns"]
+    status = [s for s in plot_data["serve_status_samples"] if s.get("error") is None]
+    running_at = _step_lookup(status, "running_replicas")
+    lookups = {
+        key: _step_lookup(series[key]["points"]) if key in series else (lambda t: None)
+        for key in ("token_prefill_backlog", "token_active_decodes",
+                    "token_prefill_replicas", "token_decode_replicas")
+    }
+
+    for event in events:
+        prefill = lookups["token_prefill_replicas"](event["time_s"])
+        decode = lookups["token_decode_replicas"](event["time_s"])
+        event["prefill_term_replicas"] = prefill
+        event["decode_term_replicas"] = decode
+        if prefill is None or decode is None:
+            event["binding_term"] = None
+        elif event["direction"] == "down":
+            event["binding_term"] = "both" if prefill == decode else ("prefill" if prefill > decode else "decode")
+        else:
+            event["binding_term"] = (
+                "both" if prefill == decode else ("prefill" if prefill > decode else "decode")
+            )
+
+    pairs: dict[str, list[tuple[float, float]]] = {
+        "prefill_backlog_vs_warm_ttft": [], "decodes_vs_itl": [],
+        "prefill_backlog_vs_itl": [], "decodes_vs_warm_ttft": [],
+    }
+    for r in requests:
+        start_s = (r.start_ns - t0) / 1e9
+        if r.failed or not period["start_s"] <= start_s < period["end_s"]:
+            continue
+        replicas = running_at(start_s)
+        backlog = lookups["token_prefill_backlog"](start_s)
+        decodes = lookups["token_active_decodes"](start_s)
+        if not replicas or backlog is None or decodes is None:
+            continue
+        backlog, decodes = backlog / replicas, decodes / replicas
+        if r.ttft_ms is not None and r.cold is False:
+            pairs["prefill_backlog_vs_warm_ttft"].append((backlog, r.ttft_ms))
+            pairs["decodes_vs_warm_ttft"].append((decodes, r.ttft_ms))
+        if r.itl_ms is not None:
+            pairs["decodes_vs_itl"].append((decodes, r.itl_ms))
+            pairs["prefill_backlog_vs_itl"].append((backlog, r.itl_ms))
+    return {
+        "scale_up_binding_terms": dict(collections.Counter(
+            e["binding_term"] for e in events if e["direction"] == "up"
+        )),
+        "signal_strength": {
+            name: {"samples": len(p), "spearman": spearman(p), "quartiles": _quartile_table(p)}
+            for name, p in pairs.items()
+        },
+    }
+
+
 # --- Entry point ------------------------------------------------------------------
 
 
@@ -411,4 +526,5 @@ def evaluate_run(plot_data: dict[str, Any], requests: list[Request]) -> dict[str
             requests, t0, status, periods["steady"]
         ),
         "sla_policy": sla_evaluation(plot_data, periods["whole_run"]["end_s"]),
+        "token_policy": token_policy_evaluation(plot_data, requests, events, periods["steady"]),
     }
