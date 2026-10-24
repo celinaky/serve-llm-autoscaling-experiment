@@ -441,3 +441,21 @@ def test_in_flight_prefill_counts_other_requests_still_in_prefill():
                 Request(T0, T0, T0 + S, True, None, None, 0, None, None)]
     result = in_flight_prefill(requests, T0)
     assert result == {0: 0, 1: 60000, 2: 0}
+
+
+def test_ttft_decomposition_splits_floor_and_waiting():
+    from serve_llm_autoscaling.evaluation import ttft_decomposition
+
+    def req(start_s, ttft, uncached):
+        ns = T0 + int(start_s * S)
+        return Request(ns, ns, ns + S, False, ttft, 10, 0, 100000.0, 100000.0 - uncached)
+
+    # One bucket (1024-2047 uncached): floor is the 5th percentile, 100.
+    requests = [req(t, 100 + (t if t < 100 else 0) + (900 if 100 <= t < 160 else 0), 1500)
+                for t in range(0, 200, 10)]
+    events = [{"direction": "up", "time_s": 100, "running_matched_at_s": 160}]
+    d = ttft_decomposition(requests, T0, events, {"start_s": 0, "end_s": 200}, 0.95)
+    assert d["samples"] == 20 and d["requests_during_startup"] == 6
+    assert d["own_prefill_floor_ms"] == pytest.approx(d["actual_ms"] - d["waiting_ms"])
+    # The slowest requests are the ones during the startup; giving them the floor pulls the p95 down.
+    assert d["instant_startup_ms"] < d["actual_ms"]

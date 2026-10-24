@@ -154,6 +154,12 @@ def format_evaluation(root: Path) -> str | None:
         f"upscale lag mean {_fmt(scaling['mean_upscale_lag_s'], '.0f', 's')}, "
         f"max {_fmt(scaling['max_upscale_lag_s'], '.0f', 's')}"
     )
+    if (d := evaluation.get("ttft_decomposition")) and d.get("actual_ms") is not None:
+        lines.append(
+            f"TTFT {pct} {d['actual_ms']:.0f}ms = own prefill {d['own_prefill_floor_ms']:.0f}ms"
+            f" + waiting {d['waiting_ms']:.0f}ms · with instant replica startup "
+            f"{d['instant_startup_ms']:.0f}ms ({d['requests_during_startup']} requests started during a startup)"
+        )
     if token := evaluation.get("token_policy"):
         terms = token["scale_up_binding_terms"]
         strength = token["signal_strength"]

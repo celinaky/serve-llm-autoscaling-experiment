@@ -544,6 +544,52 @@ def token_policy_evaluation(
     }
 
 
+# --- TTFT decomposition -----------------------------------------------------------
+
+
+def ttft_decomposition(
+    requests: list[Request], t0: int, events: list[dict[str, Any]], period: dict[str, float],
+    slo_percentile: float,
+) -> dict[str, Any]:
+    """Split the scored TTFT percentile into the prompt's own prefill and waiting.
+
+    The floor is each request's bucket floor (see ``excess_ttft``); what
+    remains is waiting. ``instant_startup_ms`` replaces the TTFT of requests
+    that started while a replica was starting (between a scale-up decision
+    and the running count matching it) with their floor: the percentile an
+    autoscaler with zero startup lag could have reached. The rest of the
+    waiting happens with no replica on the way, which more replicas do not
+    touch.
+    """
+    excess = excess_ttft(requests)
+    lags = [
+        (e["time_s"], e["running_matched_at_s"]) for e in events
+        if e["direction"] == "up" and e.get("running_matched_at_s") is not None
+    ]
+    actual, floors, ideal, in_lag = [], [], [], 0
+    for i, r in enumerate(requests):
+        start_s = (r.start_ns - t0) / 1e9
+        if i not in excess or not period["start_s"] <= start_s < period["end_s"]:
+            continue
+        floor = r.ttft_ms - excess[i]
+        starting = any(a <= start_s < b for a, b in lags)
+        in_lag += starting
+        actual.append(r.ttft_ms)
+        floors.append(floor)
+        ideal.append(floor if starting else r.ttft_ms)
+    q = slo_percentile
+    at = lambda v: percentile(sorted(v), q)  # noqa: E731
+    return {
+        "samples": len(actual),
+        "requests_during_startup": in_lag,
+        "percentile": q,
+        "actual_ms": at(actual),
+        "own_prefill_floor_ms": at(floors),
+        "waiting_ms": (at(actual) - at(floors)) if actual else None,
+        "instant_startup_ms": at(ideal),
+    }
+
+
 # --- Entry point ------------------------------------------------------------------
 
 
@@ -580,6 +626,9 @@ def evaluate_run(plot_data: dict[str, Any], requests: list[Request]) -> dict[str
         },
         "scale_events": events,
         "scaling": scale_summary(events),
+        "ttft_decomposition": ttft_decomposition(
+            requests, t0, events, periods["steady"], slo_percentile
+        ),
         "latency_by_replica_count": latency_by_replica_count(
             requests, t0, status, periods["steady"]
         ),
