@@ -40,3 +40,44 @@ request a full 32K prefill) and the series scaled down to 0.05 -> 0.65 so
 the effective peak stays inside four replicas. Even in the broken form
 the two policies ranked the same way as elsewhere (token p95 7.3s vs
 default-t3 8.1s, ITL 71 vs 84ms), but nothing from those runs is used.
+
+## Storm: 32 cold sessions in 150s (chain 7, aligned)
+
+| run | policy | TTFT p95 | ITL p95 | GPU-h | replicas 2/3/4 asked for at | p95 = own prefill + waiting | instant-startup p95 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `runs/20261024T050550Z-...-storm-token-p30k` | **token P=30K D=8** | **5042** | **37** | 0.99 | 13 / 13 / 31s (prefill term) | 3747 + 1295 | 4753 |
+| `...-storm-token` | token P=60K D=8 | 5645 | 41 | 0.96 | 12 / 90 / 90s (prefill term) | 3820 + 1826 | 5645 |
+| `...-storm-default-t4` | default target 4 | 5462 | 50 | 0.96 | 42 / 60 / 73s | 3660 + 1802 | 5462 |
+| `...-storm-default` | default target 8 | 5729 | 60 FAIL | 0.87 | 60 / 90 / 120s | 4125 + 1604 | 5729 |
+
+**Best of each: token P=30K vs default target 4. Token wins both latencies
+(0.4s on TTFT p95, 13ms on ITL p95) for 3% more GPU time. Neither meets
+the 5s target; nothing can on this shape** -- even an instant-startup
+autoscaler would land at ~4.75s, because 32 cold 64K-170K prompts in 150s
+outrun four replicas' prefill throughput for the first few minutes.
+
+Why the token policy wins here, and why by less than on the ramp:
+
+- In a storm the request count explodes almost as fast as the prefill
+  backlog, so the prefill term's lead shrinks from ~140s (ramp) to
+  30-60s: default-t4 asked for its second replica at 42s, the token policy
+  at 12-13s. Both reach four replicas within the first 2.5 minutes.
+- The win comes from asking for *all four at once*. At P=30K the first
+  cold prompts (a few concurrent 64K prefills = 200K+ tokens) make the
+  prefill term demand 3-4 replicas in one step at 13-31s, so all three new
+  replicas load in parallel and are serving by ~95s. The default policy
+  steps 1->2->3->4 as ongoing requests climb (42/60/73s), and P=60K stepped
+  2->4 only at 90s. Waiting at p95: 1295ms vs 1802ms (default-t4) vs
+  1826ms (P=60K).
+- Tighter P costs almost nothing on this shape (0.99 vs 0.96 GPU-h)
+  because every configuration ends at four replicas anyway; the only
+  difference is how soon. On the gradual ramp P=30K would over-provision
+  (see sweep.md run 8, where P=30K alone scaled late *and* the ramp runs
+  where P=60K already reached the cap), so the right P is shape-dependent:
+  the backlog a single replica can absorb before the policy should act.
+- The default policy's own knob trades the same way: target 8 is cheaper
+  (0.87) but fails ITL (60ms) and waits 1604ms; target 4 is its best.
+
+Verdict on this shape: token > default on latency at equal cost; the SLO
+is unreachable for both; the token policy's advantage is parallel scale-out
+from a sustained backlog, which a request count cannot express as early.
