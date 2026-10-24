@@ -1,0 +1,79 @@
+# Paired token-vs-default experiment: synthetic 32K-token prompts with prefix caching OFF, so
+# every request is a full 32K prefill (~2s on a B200); Poisson arrivals. The first attempt
+# (synth32k_*) delivered ~2.4x the configured rate and 80% cache hits; the series here is
+# scaled down so the effective peak stays inside four replicas' prefill capacity.
+name: b200-synthcold32k-token-p30k
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 32
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: false
+    kv_cache_dtype: fp8
+    language_model_only: true
+    enable_prompt_tokens_details: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 30000
+        target_decode_requests_per_replica: 8
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 4
+    target_ongoing_requests: 8
+    upscale_delay_s: 0
+    downscale_delay_s: 300
+    metrics_interval_s: 2
+    look_back_period_s: 10
+  max_ongoing_requests: 128
+benchmark:
+  generator: aiperf
+  mode: request_rate_series
+  duration_s: 900
+  grace_period_s: 120
+  post_load_observation_s: 180
+  arrival_pattern: poisson
+  rate_series:
+  - time_s: 0
+    qps: 0.05
+  - time_s: 600
+    qps: 0.65
+  - time_s: 900
+    qps: 0.65
+  warmup:
+    enabled: true
+    duration_s: 30
+  workload:
+    type: synthetic
+    input_tokens: 32000
+    output_tokens: 256
+    seed: 42
+    ignore_eos: true
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  warmup_s: 0
