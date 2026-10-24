@@ -81,3 +81,22 @@ Why the token policy wins here, and why by less than on the ramp:
 Verdict on this shape: token > default on latency at equal cost; the SLO
 is unreachable for both; the token policy's advantage is parallel scale-out
 from a sustained backlog, which a request count cannot express as early.
+
+## Mixed warm/cold ramp: not a scaling test as configured, dropped
+
+`mixed_token` (sessions start anywhere in the first half of their trace)
+ran at four replicas for the entire measured period (mean 4.0, 1.00 GPU-h,
+zero starting time): the policy scaled 1->3->4 at t=-460s and -400s,
+*before profiling began*. AIPerf primes every session that starts
+mid-trace by replaying its earlier turns at full speed first, and that
+priming burst (dozens of cold 64K prefills at once) is a storm any policy
+scales to the cap on. The default policy would do the same, so the pair
+would compare two deployments pinned at four replicas. The shape is
+dropped; its remaining two runs were cancelled to give the time to the
+big ramp and the synthetic cold-prefill shape. A realistic warm/cold mix
+needs AIPerf to prime sessions *without* counting the priming as load the
+autoscaler sees, which it cannot do today.
+
+For the record, token on this shape: TTFT p95 5146ms (own prefill 3669 +
+waiting 1476), ITL p95 16ms, 465 requests, cold p95 11.3s (resumed
+sessions carry 100K+ contexts, so their first measured turns are large).
