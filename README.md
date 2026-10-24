@@ -131,6 +131,11 @@ autoscale-harness run experiments/step_rate_autoscaling.yaml
 ```
 
 The harness translates the YAML curve into the JSON format expected by AIPerf.
+Caution (AIPerf 0.13.0): a linearly interpolated *ramp* segment was delivered
+at several times its configured rate in every run that used one, while flat
+segments were delivered correctly. Until that is understood, express a rising
+load as steps (two points 0.1s apart, as in `experiments/step_rate.yaml`) and
+check `analysis/request_timeseries.json`'s `offered_rps` against the curve.
 
 ## Ramp AgentX session concurrency
 
