@@ -150,6 +150,35 @@ binding term, signal strength) and `analysis/autoscaling_timeline.png`.
 | 5 (`runs/20261023T015316Z-b200-workday-ramp-token`) | 120000 | 8 | 5118ms FAIL (warm 3370ms, cold 7681ms) | 40ms PASS | FAIL | 0.66 | 4 | 1->2 at 237s, 2->3 at 407s, 3->4 at 607s; 851 requests, 10 failed |
 | 6 (`runs/20261023T082719Z-b200-workday-ramp-token`) | 120000 | 8 | 5212ms FAIL vs 4500 (warm 3172ms, cold 7801ms) | 42ms PASS | FAIL | 0.66 | 4 | gauged policy; all three scale-ups decided by the decode term (prefill term wanted 0/1/2 when decode wanted 2/3/4); 846 requests, 8 failed |
 
+## Best-of-each on the workday ramp (2026-10-23 evening, chain 5)
+
+Both policies with `upscale_delay_s: 0`, `downscale_delay_s: 300`,
+`metrics_interval_s: 2`, `look_back_period_s: 10`; same load and SLO.
+
+| run | policy | TTFT p95 | ITL p95 | GPU-h | scale-ups at | p95 = own prefill + waiting | instant-startup p95 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 20 (`runs/20261023T230816Z-...-token`) | token P=60K D=8 | **4511** PASS | **28** | 0.87 | 11, 99, 371s | 3698 + 813 | 4452 |
+| 21 (`...-default`) | default target 8 | 4829 PASS | 38 | 0.70 | 149, 381, 561s | 3801 + 1028 | 4493 |
+| 22 (`...-default-target4`) | default target 4 | 4932 PASS | 30 | 0.85 | 15 up-steps (flapping) | 3718 + 1214 | 4893 |
+| 23 (`...-default-target6`) | default target 6 | 4943 PASS | 32 | 0.79 | 147, 247, 387s | 3779 + 1164 | 4941 |
+| 24 (`...-default-target12`) | default target 12 | 5653 FAIL | 47 | 0.53 | 257, 557s | 4284 + 1369 | 5247 |
+
+- Aligning the default policy's delays and delivery with the token
+  config helped it a lot: target 8 went from 5234ms (run 10, 10s delay,
+  10s push) to 4829ms and now passes. Part of what looked like the token
+  policy's margin in the overnight sweep was the delivery path.
+- The default policy's best is target 8 (cheapest pass). Lower targets
+  cost more and wait more: target 4 at 0.85 GPU-h waits 1214ms vs the
+  token policy's 813ms at 0.87, because with no upscale delay a low
+  target flaps (15 up-steps), and every step is a replica start, an
+  HAProxy reload and sessions re-mapped away from their cache.
+- The token policy's three decisions came 140-200s before the default's
+  and held. Its 0.3s gain over the best default is entirely waiting
+  removed (813 vs 1028ms); it is within 60ms of the instant-startup
+  ceiling for this shape (4452ms).
+- Verdict on this shape: token wins on both latencies; costs 24% more
+  than the default's best, but at equal cost the default is 0.4s worse.
+
 ## Signal isolation (2026-10-23, `experiments/sweep/`, SLO TTFT p95 <= 4500ms, ITL p95 <= 50ms)
 
 | run | policy terms | TTFT p95 (warm / cold) | ITL p95 | GPU-h | replicas | scale-ups (binding term) |
