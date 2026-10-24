@@ -100,3 +100,29 @@ autoscaler sees, which it cannot do today.
 For the record, token on this shape: TTFT p95 5146ms (own prefill 3669 +
 waiting 1476), ITL p95 16ms, 465 requests, cold p95 11.3s (resumed
 sessions carry 100K+ contexts, so their first measured turns are large).
+
+## Big ramp: 64 cold sessions over 20 min, 5 min hold (chain 8, aligned)
+
+| run | policy | TTFT p95 | ITL p95 | GPU-h | replicas 2/3/4 asked for at | p95 = own prefill + waiting |
+| --- | --- | --- | --- | --- | --- | --- |
+| `runs/20261024T055946Z-...-bigramp-token` | **token P=60K D=8** | **5536** | **42** | 1.62 | 13 / 103 / 103s (prefill, then both terms) | 3877 + 1659 |
+| `...-bigramp-default-t6` | default target 6 | 5778 | 47 | 1.45 | 149 / 263 / 401s | 3829 + 1949 |
+| `...-bigramp-default` | default target 8 | 5974 | 46 | 1.36 | 151 / 385 / 595s | 3849 + 2124 |
+
+**Best of each: token vs default target 6. Token ahead on both latencies
+(0.24s TTFT p95, 5ms ITL p95) for 12% more GPU time; the TTFT margin is
+at the edge of the +-0.3s run-to-run noise, the waiting ordering (1659 <
+1949 < 2124ms) is not.** Neither meets 5s: 64 sessions is 16 per replica
+at the cap, the per-replica load the overnight notes identified as the
+ITL/TTFT knee, and the decomposition shows no startup-lag waiting left
+to remove in any of the three runs (instant-startup p95 = actual).
+
+Why: the token policy reached the cap at ~100s with 6 sessions running,
+six to eight minutes before either default setting (401s / 595s), so
+sessions 7-30 arrived to four replicas instead of two or three. That is
+the whole latency difference and the whole cost difference. The prefill
+term made the first two steps (13s, 103s); from 480s on, the decode term
+asked for 5-7 replicas it could not have (D=8 at 40+ concurrent decodes),
+which is the ITL margin shrinking toward the knee, not a policy fault.
+On this shape "scale to the cap immediately" is simply right, and a
+request-count policy cannot know that until the requests have arrived.
