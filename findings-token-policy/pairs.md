@@ -126,3 +126,35 @@ asked for 5-7 replicas it could not have (D=8 at 40+ concurrent decodes),
 which is the ITL margin shrinking toward the knee, not a policy fault.
 On this shape "scale to the cap immediately" is simply right, and a
 request-count policy cannot know that until the requests have arrived.
+
+## Synthetic cold prefill, ramped (synthcold32k): an overload-recovery test by accident
+
+AIPerf 0.13 delivered the configured 0.05 -> 0.65 req/s ramp at 0.75 ->
+2.5 req/s while holding the 0.65 plateau correctly (the ramp segment of
+`--request-rate-series` overshoots by 3-15x; the first synthetic attempt
+showed the same thing and was misread as a constant factor). One replica
+prefills 32K-token prompts at ~0.5 req/s, so every run was saturated from
+its first second. What remains is a comparison of recovery from an
+initial overload, which is a real scenario but not the one designed.
+
+| run | policy | TTFT p95 | ITL p95 | GPU-h | replicas 2/3/4 asked for at | starting replica-s | failed |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `runs/20261024T073727Z-...-synthcold32k-token` | token P=60K D=8 | 42986 | 202 | 0.98 | 23 / 35 / 41s | 436 | 54 |
+| `...-synthcold32k-default-t3` | default target 3 | 9538 | 201 | 0.99 | 21 / 33 / 39s | 209 | 0 |
+| `...-synthcold32k-default-t5` | default target 5 | 10981 | 201 | 0.98 | 29 / 42 / 42s | 207 | 1 |
+
+Both policies ask for the cap within 40s of the first request, within a
+few seconds of each other: when the load is already past one replica's
+capacity, the prefill backlog and the ongoing-request count both scream
+at once and there is nothing left for a signal to add. The token run's
+far worse p95 is not the policy: its three new replicas took twice as
+long to come up (436 vs ~208 starting replica-seconds, i.e. ~140s instead
+of ~70s each), so 130 requests queued on one replica instead of 69. The
+rest of each run, at four replicas, is identical (mean TTFT 2.5-2.6s,
+ITL p95 201ms in all three: 32K prefills interleaving with decodes at
+~1.6 req/s per replica is simply past the ITL target).
+
+Verdict: no difference attributable to the policy; replica boot time
+decides overload recovery. The intended shape (load crossing one, then
+two, then three replicas' capacity) is `synthstep32k_*`, which uses rate
+plateaus AIPerf delivers correctly.
