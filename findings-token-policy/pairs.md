@@ -158,3 +158,76 @@ Verdict: no difference attributable to the policy; replica boot time
 decides overload recovery. The intended shape (load crossing one, then
 two, then three replicas' capacity) is `synthstep32k_*`, which uses rate
 plateaus AIPerf delivers correctly.
+
+## Synthetic cold prefill, stepped (synthstep32k, chain 9): a tie
+
+Load delivered as configured this time: 0.3, 0.8 and 1.3 req/s of 32K
+cold prompts for five minutes each (one, two and three replicas' worth).
+
+| run | policy | TTFT p95 | ITL p95 | GPU-h | replicas 2/3/4 asked for at | p95 = own prefill + waiting |
+| --- | --- | --- | --- | --- | --- | --- |
+| `runs/20261024T084125Z-...-synthstep32k-token` | token P=60K D=8 | 3015 PASS | 48 | 0.80 | 18 / 122 / 618s (prefill, prefill, decode) | 1609 + 1406 |
+| `...-synthstep32k-default-t3` | **default target 3** | **2861 PASS** | **41** | 0.82 | 32 / 332 / 332s | 1607 + 1254 |
+| `...-synthstep32k-default-t5` | default target 5 | 15789 FAIL | 199 | 0.81 | 34 / 330 / 338s, then **4->2 at 638s** | 1611 + 14179 |
+
+**Best of each: a tie.** Default target 3 is marginally ahead on both
+latencies (0.15s, 7ms) at the same cost; both inside the +-0.3s noise.
+Why no token advantage here: on a stream of same-sized cold prompts the
+request count is as good a measure of prefill work as the token backlog.
+Each request lives ~4.5s (2s prefill + 2.5s decode), so ongoing requests
+= rate x 4.5 tracks the arrival rate faithfully, and a target of 3 per
+replica maps onto one replica's ~0.6 req/s of prefill capacity. The
+prefill term's edge, seeing work before it starts, carries no extra
+information when every arrival is the same known-size prefill. The token
+policy also over-provisioned early (three replicas by 122s under a load
+one replica could serve) because every lone 32K prompt is a 32K spike
+against P=60K; it cost nothing here only because the default ran at
+three replicas too.
+
+The default's other setting shows its failure mode: target 5 scaled to
+four on the step-2 transient, then saw ongoing requests (~3.6 at 0.8
+req/s) below target for 300s and dropped to two replicas at 638s, just as
+the 1.3 req/s step arrived. Thirty seconds later it was asking for six.
+The 300s downscale delay that protects a ramp does not protect a step
+that lands at the end of a lull.
+
+## Across all shapes: when the token policy wins, and why
+
+| shape | token (best) | default (best) | token vs default | mechanism |
+| --- | --- | --- | --- | --- |
+| workday ramp, 32 cold sessions / 10 min | 4511 / 28 / 0.87 | t8: 4829 / 38 / 0.70 | token wins both latencies, +24% GPU; at equal cost default is 0.4s worse | first replica at ~70s vs 169s: sessions arriving in between queued on one replica |
+| storm, 32 cold sessions / 150s | P=30K: 5042 / 37 / 0.99 | t4: 5462 / 50 / 0.96 | token wins both, +3% GPU | asks for all four at 13-31s vs 42/60/73s; parallel start-up |
+| big ramp, 64 cold sessions / 20 min | 5536 / 42 / 1.62 | t6: 5778 / 47 / 1.45 | token ahead (TTFT within noise, ITL not), +12% GPU | at the cap by ~100s vs 401s |
+| stepped synthetic 32K prefill | 3015 / 48 / 0.80 | t3: 2861 / 41 / 0.82 | tie | request count tracks same-size prefill work as well as tokens do |
+| synthetic overload from t=0 | 42986 / 202 / 0.98 | t3: 9538 / 201 / 0.99 | no policy difference | both at the cap in 40s; replica boot time decides |
+| mixed warm/cold | dropped | dropped | -- | AIPerf priming pins both at the cap before measurement |
+
+(TTFT p95 ms / ITL p95 ms / GPU-h; SLO p95 TTFT <= 5s, ITL <= 50ms.)
+
+1. **The token policy's advantage is the prefill term, and it shows
+   exactly when a request count is slow to express new work**: agent
+   sessions arriving one at a time, each a large cold prefill that takes
+   seconds before it registers as a "request in progress" anywhere a
+   count would see it, and bursts where the backlog asks for several
+   replicas in one step. That is the agent ramp and the storm.
+2. **It brings nothing when the request count already measures the
+   work**: same-sized prefills at a steady rate (stepped synthetic), or
+   an overload that saturates everything at once. There the two policies
+   make the same decisions within seconds of each other.
+3. **Its cost is earlier replicas** (+3% to +24% GPU time over the
+   default's cheapest passing setting). At matched cost it is never
+   worse and usually clearly better, because a default policy tuned to
+   spend the same amount spends it later.
+4. **The remaining latency is not scalable.** In every shape the
+   decomposition puts most of p95 TTFT in the prompt's own prefill
+   (1.6-4.1s) and most of the rest in waiting on the request's own
+   replica behind other prefills; startup-lag waiting is 0-0.3s. Both
+   policies sit within ~0.1s of the instant-startup ceiling on the agent
+   ramp. Below that is routing or engine scheduling, not autoscaling.
+5. **Tuning matters as much as the policy.** The default policy with the
+   same delays and 2s metric delivery passed the ramp SLO it had failed
+   with its defaults; its best target differs per shape (8, 4, 6, 3) and
+   a wrong one fails outright (target 12 on the ramp, target 5 on the
+   steps). The token policy's P also wants to be shape-aware (60K on a
+   ramp, 30K in a storm): the right P is the backlog one replica can
+   absorb before a second one is worth starting.
