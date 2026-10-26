@@ -727,6 +727,15 @@ contains the original and resolved configuration, environment metadata,
 deployment status snapshots, AIPerf logs and native exports, and a normalized
 `sweep_summary.json`.
 
+Findings from past investigations, with the runs and configs behind them:
+
+- `findings-token-policy/README.md`: the token-based autoscaling policy
+  versus Serve's default, best-of-each on five workload shapes, which term
+  binds, signal strength, tuning, and recommended next steps. Evidence in
+  `sweep.md` and `pairs.md` beside it.
+- `findings-claude-code-overnight/b200_investigation.md`: replica limits,
+  prefix-cache hit rates, and routing on 4x B200.
+
 ## Commands
 
 ```text
