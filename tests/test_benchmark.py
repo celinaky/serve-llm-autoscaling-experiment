@@ -366,3 +366,60 @@ def test_build_agentx_command_trajectory_start_window(
     command = AIPerfRunner(config, tmp_path).build_agentx_command(tmp_path / "ramp")
     assert _arg(command, "--trajectory-start-min-ratio") == "0.0"
     assert _arg(command, "--trajectory-start-max-ratio") == "1.0"
+
+
+# --- AgentX concurrency series ----------------------------------------------
+
+CURVE = [{"time_s": 0, "sessions": 1}, {"time_s": 600, "sessions": 16},
+         {"time_s": 1200, "sessions": 4}]
+
+
+def _curve_config(agentx_config, **benchmark):
+    return agentx_config(
+        {"concurrency_ramp_duration_s": None, "concurrency_series": CURVE}, **benchmark
+    )
+
+
+def test_build_agentx_series_command(agentx_config, monkeypatch, tmp_path: Path):
+    config = _curve_config(agentx_config)
+    config.runtime.aiperf_source = "/opt/aiperf-fork"
+    monkeypatch.setattr(benchmark.shutil, "which", lambda name: f"/bin/{name}")
+    command = AIPerfRunner(config, tmp_path).build_agentx_command(tmp_path / "ramp")
+    assert command[:7] == [
+        "uvx", "--python", "3.11", "--from", "/opt/aiperf-fork", "aiperf", "profile"
+    ]
+    assert _arg(command, "--concurrency") == "16"
+    assert _arg(command, "--concurrency-series") == str(
+        (tmp_path / "ramp" / "concurrency_series.json").resolve()
+    )
+    assert "--concurrency-ramp-duration" not in command
+
+
+def test_run_agentx_series_writes_curve_and_row(agentx_config, monkeypatch, tmp_path: Path):
+    config = _curve_config(agentx_config)
+    runner = AIPerfRunner(config, tmp_path)
+    monkeypatch.setattr(benchmark.shutil, "which", lambda name: f"/bin/{name}")
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        artifact_dir = Path(cmd[cmd.index("--artifact-dir") + 1])
+        seen["series"] = json.loads(Path(cmd[cmd.index("--concurrency-series") + 1]).read_text())
+        (artifact_dir / "profile_export_aiperf.json").write_text(json.dumps({
+            "request_count": {"avg": 0}, "request_throughput": {"avg": 0.0},
+        }))
+        (artifact_dir / "profile_export.jsonl").write_text("")
+        return benchmark.subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(benchmark.subprocess, "run", fake_run)
+    row = runner.run_agentx()
+    # The file AIPerf read is the curve in its own point shape.
+    assert seen["series"] == {"points": [
+        {"time_s": 0.0, "concurrency": 1}, {"time_s": 600.0, "concurrency": 16},
+        {"time_s": 1200.0, "concurrency": 4},
+    ]}
+    assert row["concurrency_series"] == [
+        {"time_s": 0.0, "sessions": 1}, {"time_s": 600.0, "sessions": 16},
+        {"time_s": 1200.0, "sessions": 4},
+    ]
+    assert "ramp_duration_s" not in row
+    assert row["target_concurrency"] == 16

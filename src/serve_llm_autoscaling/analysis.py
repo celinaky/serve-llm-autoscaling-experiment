@@ -23,6 +23,7 @@ from .evaluation import evaluate_run
 from .telemetry import SELECTED_METRICS, normalize_metric_name
 from .windows import (
     configured_concurrency_at,
+    configured_series_concurrency_at,
     profiling_requests,
     request_timeseries,
     slo_calibration,
@@ -201,6 +202,15 @@ def configured_load(config: ExperimentConfig, artifact_dir: Path) -> dict[str, A
                            {"time_s": benchmark.duration_s, "value": target},
                            {"time_s": benchmark.duration_s, "value": 0.0}],
                 "markers": []}
+    if isinstance(workload, AgentXWorkloadConfig) and workload.concurrency_series is not None:
+        # The curve's control points, held at the last value until load ends.
+        curve = workload.concurrency_series
+        points = [{"time_s": p.time_s, "value": float(p.sessions)} for p in curve]
+        if benchmark.duration_s > curve[-1].time_s:
+            points.append({"time_s": benchmark.duration_s, "value": float(curve[-1].sessions)})
+        return {"dimension": "session_concurrency", "unit": "session trees",
+                "label": "configured session concurrency", "points": points,
+                "markers": [p.time_s for p in curve[1:]]}
     if isinstance(workload, AgentXWorkloadConfig):
         ramp = workload.concurrency_ramp_duration_s
         points = [{"time_s": 0.0, "value": 1.0},
@@ -231,11 +241,17 @@ def concurrency_qps(
     configured once load issuance ends at ``duration_s``.
     """
     ramp = workload.concurrency_ramp_duration_s
+    curve = (
+        [(p.time_s, float(p.sessions)) for p in workload.concurrency_series]
+        if workload.concurrency_series is not None else None
+    )
     rows = []
     for w in timeseries["windows"]:
         mid = (w["window_start_s"] + w["window_end_s"]) / 2
         if mid >= duration_s:
             sessions = 0.0
+        elif curve is not None:
+            sessions = configured_series_concurrency_at(mid, curve)
         elif ramp is None:
             sessions = float(workload.target_concurrency)
         else:
@@ -249,6 +265,8 @@ def concurrency_qps(
             "successful_completed_qps": w["successful_completed_rps"],
             "failed_completed_qps": w["failed_completed_rps"],
             "in_flight_at_end": w["in_flight_at_end"],
+            **({"live_session_trees_at_end": w["live_session_trees_at_end"]}
+               if "live_session_trees_at_end" in w else {}),
             # A diagnostic only: it varies with trace mix, think time,
             # latency and subagent activity.
             "requests_per_second_per_configured_session": (
@@ -263,7 +281,9 @@ def concurrency_qps(
         "schema_version": SCHEMA_VERSION,
         "target_concurrency": workload.target_concurrency,
     }
-    if ramp is not None:
+    if workload.concurrency_series is not None:
+        result["concurrency_series"] = [p.model_dump() for p in workload.concurrency_series]
+    elif ramp is not None:
         result["ramp_duration_s"] = ramp
     return {
         **result,

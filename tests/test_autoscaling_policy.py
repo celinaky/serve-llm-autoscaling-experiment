@@ -266,7 +266,7 @@ def _run(monkeypatch, tmp_path, config, applied):
     from serve_llm_autoscaling import runner
 
     config.runtime.results_dir = tmp_path / "runs"
-    monkeypatch.setattr(runner, "environment_check", lambda connect: {})
+    monkeypatch.setattr(runner, "environment_check", lambda connect, **kwargs: {})
     monkeypatch.setattr(runner, "check_routing_support", lambda c: {"policy": "p"})
     monkeypatch.setattr(runner, "check_autoscaling_support",
                         lambda c: {"policy": c.deployment.autoscaling.policy.name,

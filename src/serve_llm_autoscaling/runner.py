@@ -19,6 +19,7 @@ from .backend import (
 )
 from .benchmark import AIPerfRunner, agentx_row_fields, aiperf_command
 from .config import (
+    AIPERF_SOURCE_DEFAULT,
     CONTINUOUS_MODE_DIRS,
     CONTINUOUS_MODES,
     AgentXWorkloadConfig,
@@ -31,14 +32,16 @@ from .windows import profiling_phase_ns
 LIFECYCLE_SCHEMA_VERSION = 1
 
 
-def _aiperf_version() -> str:
+def _aiperf_version(source: str = AIPERF_SOURCE_DEFAULT) -> str:
     completed = subprocess.run(
-        [*aiperf_command(), "--version"], capture_output=True, text=True, check=True
+        [*aiperf_command(source), "--version"], capture_output=True, text=True, check=True
     )
     return completed.stdout.strip()
 
 
-def environment_check(connect: bool = True) -> dict[str, Any]:
+def environment_check(
+    connect: bool = True, aiperf_source: str = AIPERF_SOURCE_DEFAULT
+) -> dict[str, Any]:
     # The driver must share the workers' environment.
     if sys.prefix != sys.base_prefix:
         raise RuntimeError(f"run on the Ray image's Python, not a venv ({sys.prefix})")
@@ -49,7 +52,8 @@ def environment_check(connect: bool = True) -> dict[str, Any]:
     result: dict[str, Any] = {
         "python_version": platform.python_version(),
         "python_executable": sys.executable,
-        "aiperf_version": _aiperf_version(),
+        "aiperf_source": aiperf_source,
+        "aiperf_version": _aiperf_version(aiperf_source),
     }
     result.update({"ray_version": ray.__version__, "ray_path": ray.__file__})
     if connect:
@@ -248,7 +252,7 @@ def run_experiment(
     stage = "environment_check"
     keep = config.runtime.keep_deployment if keep_deployment is None else keep_deployment
     try:
-        env = environment_check(connect=True)
+        env = environment_check(connect=True, aiperf_source=config.runtime.aiperf_source)
         artifacts.manifest["environment"] = env
         artifacts.flush_manifest()
 

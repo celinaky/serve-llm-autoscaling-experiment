@@ -29,7 +29,7 @@ COMMON_OWNED_ARGS = {
     "--request-rate-series", "--arrival-smoothness",
 }
 AGENTX_OWNED_ARGS = {
-    "--scenario", "--public-dataset", "--concurrency-ramp-duration",
+    "--scenario", "--public-dataset", "--concurrency-ramp-duration", "--concurrency-series",
     "--trajectory-start-min-ratio", "--trajectory-start-max-ratio",
     "--unsafe-override",
 }
@@ -242,6 +242,15 @@ class SyntheticWorkloadConfig(BaseModel):
     ignore_eos: bool = True
 
 
+class ConcurrencyPoint(BaseModel):
+    """One control point of a session-concurrency curve."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    time_s: float = Field(ge=0)
+    sessions: int = Field(ge=1, strict=True)
+
+
 class AgentXWorkloadConfig(BaseModel):
     """AgentX trace replay; concurrency counts live session trees, not requests."""
 
@@ -250,8 +259,13 @@ class AgentXWorkloadConfig(BaseModel):
     type: Literal["agentx"] = "agentx"
     public_dataset: str = "semianalysis_cc_traces_weka_062126_256k"
     target_concurrency: int = Field(ge=1, strict=True)
-    # Required by agentx_concurrency_ramp; rejected by agentx_fixed_concurrency.
+    # agentx_concurrency_ramp takes exactly one of these; agentx_fixed_concurrency
+    # rejects both. The ramp rises linearly from 1 to target_concurrency. The
+    # series is a piecewise-linear curve that can also fall: AIPerf lowers the
+    # session limit and retires live sessions at their next turn boundary, which
+    # needs the workday-curve AIPerf fork (runtime.aiperf_source).
     concurrency_ramp_duration_s: float | None = Field(default=None, gt=0)
+    concurrency_series: list[ConcurrencyPoint] | None = None
     # Window of each trace's recorded duration that AIPerf samples a lane's
     # start instant from. Turns before it are replayed as warmup to prime the
     # KV cache. 0/0 starts every trajectory cold at turn zero; the scenario's
@@ -372,14 +386,25 @@ class BenchmarkConfig(BaseModel):
         if not self.streaming:
             raise ValueError(f"{self.mode} mode requires streaming: true")
         ramp = workload.concurrency_ramp_duration_s
+        series = workload.concurrency_series
         if self.mode == "agentx_fixed_concurrency":
-            if ramp is not None:
+            if ramp is not None or series is not None:
                 raise ValueError(
                     "agentx_fixed_concurrency mode does not accept "
-                    "concurrency_ramp_duration_s; use agentx_concurrency_ramp to ramp"
+                    "concurrency_ramp_duration_s or concurrency_series; use "
+                    "agentx_concurrency_ramp to vary concurrency"
                 )
+        elif ramp is not None and series is not None:
+            raise ValueError(
+                "concurrency_ramp_duration_s and concurrency_series are mutually exclusive"
+            )
+        elif series is not None:
+            self._validate_concurrency_series(series, workload.target_concurrency)
         elif ramp is None:
-            raise ValueError("agentx_concurrency_ramp mode requires concurrency_ramp_duration_s")
+            raise ValueError(
+                "agentx_concurrency_ramp mode requires concurrency_ramp_duration_s "
+                "or concurrency_series"
+            )
         elif ramp > self.duration_s:
             raise ValueError(
                 f"concurrency_ramp_duration_s {ramp} exceeds duration_s {self.duration_s}"
@@ -388,6 +413,26 @@ class BenchmarkConfig(BaseModel):
             raise ValueError(
                 f"AgentX runs require duration_s >= {AGENTX_MIN_DURATION_S}; set "
                 "workload.unsafe_override: true for a shorter development run"
+            )
+
+    def _validate_concurrency_series(
+        self, points: list[ConcurrencyPoint], target: int
+    ) -> None:
+        if len(points) < 2:
+            raise ValueError("concurrency_series requires at least two points")
+        if points[0].time_s != 0:
+            raise ValueError("concurrency_series must start at time_s 0")
+        times = [point.time_s for point in points]
+        if any(later <= earlier for earlier, later in zip(times, times[1:])):
+            raise ValueError("concurrency_series time_s values must be strictly increasing")
+        if times[-1] > self.duration_s:
+            raise ValueError(
+                f"concurrency_series ends at {times[-1]}s, after duration_s {self.duration_s}"
+            )
+        peak = max(point.sessions for point in points)
+        if peak != target:
+            raise ValueError(
+                f"target_concurrency {target} must equal the concurrency_series peak {peak}"
             )
 
     def _validate_rate_series(self) -> None:
@@ -419,8 +464,15 @@ class BenchmarkConfig(BaseModel):
             raise ValueError("concurrency levels must be integers")
 
 
+# The AIPerf release the harness runs through ``uvx --from``.
+AIPERF_SOURCE_DEFAULT = "aiperf==0.12.0"
+
+
 class RuntimeConfig(BaseModel):
     endpoint_url: str = "http://127.0.0.1:8000"
+    # Anything ``uvx --from`` accepts: a pinned release, a local checkout, or
+    # ``git+https://...@<sha>``. A concurrency_series needs the workday-curve fork.
+    aiperf_source: str = Field(default=AIPERF_SOURCE_DEFAULT, min_length=1)
     readiness_timeout_s: float = Field(default=1200, gt=0)
     readiness_poll_s: float = Field(default=2, gt=0)
     keep_deployment: bool = False

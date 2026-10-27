@@ -278,7 +278,7 @@ def test_topology_failure_fails_run(monkeypatch, tmp_path: Path):
 
     config = load_config("experiments/baseline.yaml")
     config.runtime.results_dir = tmp_path / "runs"
-    monkeypatch.setattr(runner, "environment_check", lambda connect: {})
+    monkeypatch.setattr(runner, "environment_check", lambda connect, **kwargs: {})
     monkeypatch.setattr(runner, "check_routing_support", lambda c: {"policy": "p"})
     torn_down = []
     monkeypatch.setattr(runner.RayServeBackend, "deploy", lambda self: {})

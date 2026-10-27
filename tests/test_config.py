@@ -443,3 +443,78 @@ def test_agentx_trajectory_start_window(agentx_config):
         })
     with pytest.raises(ValidationError, match="trajectory_start_ratio"):
         agentx_config(workload={"trajectory_start_ratio": 0})
+
+
+# --- AgentX concurrency series ----------------------------------------------
+
+CURVE = [
+    {"time_s": 0, "sessions": 1},
+    {"time_s": 600, "sessions": 16},
+    {"time_s": 1200, "sessions": 4},
+]
+
+
+def _curve_config(agentx_config, points=CURVE, **benchmark):
+    return agentx_config(
+        {"concurrency_ramp_duration_s": None, "concurrency_series": points}, **benchmark
+    )
+
+
+def test_agentx_concurrency_series_parses(agentx_config):
+    workload = _curve_config(agentx_config).benchmark.workload
+    assert workload.concurrency_ramp_duration_s is None
+    assert [(p.time_s, p.sessions) for p in workload.concurrency_series] == [
+        (0, 1), (600, 16), (1200, 4)
+    ]
+
+
+def test_agentx_ramp_requires_ramp_or_series(agentx_config):
+    with pytest.raises(ValidationError, match="requires concurrency_ramp_duration_s or"):
+        agentx_config({"concurrency_ramp_duration_s": None})
+
+
+def test_agentx_rejects_ramp_with_series(agentx_config):
+    with pytest.raises(ValidationError, match="mutually exclusive"):
+        agentx_config({"concurrency_series": CURVE})
+
+
+@pytest.mark.parametrize(
+    ("points", "message"),
+    [
+        (CURVE[:1], "at least two points"),
+        ([{"time_s": 10, "sessions": 1}, {"time_s": 600, "sessions": 16}], "start at time_s 0"),
+        ([CURVE[0], {"time_s": 600, "sessions": 16}, {"time_s": 600, "sessions": 4}],
+         "strictly increasing"),
+        ([CURVE[0], {"time_s": 1801, "sessions": 16}], "after duration_s"),
+        ([CURVE[0], {"time_s": 600, "sessions": 8}], "must equal the concurrency_series peak"),
+        ([CURVE[0], {"time_s": 600, "sessions": 0}], "sessions"),
+        ([CURVE[0], {"time_s": 600, "sessions": 16.0}], "sessions"),
+    ],
+)
+def test_agentx_rejects_bad_concurrency_series(agentx_config, points, message):
+    with pytest.raises(ValidationError, match=message):
+        _curve_config(agentx_config, points)
+
+
+def test_agentx_fixed_rejects_concurrency_series(agentx_fixed_config):
+    with pytest.raises(ValidationError, match="does not accept"):
+        agentx_fixed_config({"concurrency_series": [CURVE[0], {"time_s": 60, "sessions": 8}]})
+
+
+def test_agentx_rejects_series_flag_in_extra_args(agentx_config):
+    with pytest.raises(ValidationError, match="--concurrency-series"):
+        _curve_config(agentx_config, extra_args=["--concurrency-series", "x.json"])
+
+
+def test_aiperf_source_defaults_to_pinned_release(agentx_config):
+    assert agentx_config().runtime.aiperf_source == "aiperf==0.12.0"
+
+
+def test_aiperf_source_accepts_fork(agentx_config):
+    raw = agentx_config().resolved_dict()
+    raw["runtime"]["aiperf_source"] = "git+https://example.com/aiperf@abc123"
+    config = ExperimentConfig.model_validate(raw)
+    assert config.runtime.aiperf_source == "git+https://example.com/aiperf@abc123"
+    raw["runtime"]["aiperf_source"] = ""
+    with pytest.raises(ValidationError, match="aiperf_source"):
+        ExperimentConfig.model_validate(raw)

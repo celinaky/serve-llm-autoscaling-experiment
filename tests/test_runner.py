@@ -111,7 +111,7 @@ def _fake_cluster(monkeypatch, tmp_path: Path):
     from serve_llm_autoscaling import runner
     from serve_llm_autoscaling.telemetry import TelemetrySession
 
-    monkeypatch.setattr(runner, "environment_check", lambda connect: {})
+    monkeypatch.setattr(runner, "environment_check", lambda connect, **kwargs: {})
     monkeypatch.setattr(runner, "check_routing_support", lambda config: {
         "policy": config.deployment.routing.policy, "request_router_class": "R",
     })

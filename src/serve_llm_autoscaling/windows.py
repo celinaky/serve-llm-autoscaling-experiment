@@ -26,6 +26,9 @@ class Request(NamedTuple):
     # cache (``usage.prompt_tokens_details.cached_tokens``); None if absent.
     input_tokens: float | None = None
     cached_tokens: float | None = None
+    # The session tree this request belongs to (its root's correlation id,
+    # or its own for a root); None if the record does not say.
+    root_id: str | None = None
 
     @property
     def cold(self) -> bool | None:
@@ -116,6 +119,7 @@ def _parse(line: str) -> Request | None:
     depth = meta.get("agent_depth")
     if isinstance(depth, bool) or not isinstance(depth, int):
         depth = None
+    root = meta.get("root_correlation_id") or meta.get("x_correlation_id")
     metrics = record.get("metrics")
     return Request(
         credit, start, end, record.get("error") is not None,
@@ -124,6 +128,7 @@ def _parse(line: str) -> Request | None:
         depth,
         _latency_ms(metrics, "input_sequence_length"),
         _latency_ms(metrics, "usage_prompt_cache_read_tokens"),
+        root if isinstance(root, str) and root else None,
     )
 
 
@@ -152,6 +157,34 @@ def configured_concurrency_at(
     if time_s >= ramp_duration_s:
         return float(target)
     return 1 + (target - 1) * max(time_s, 0.0) / ramp_duration_s
+
+
+def configured_series_concurrency_at(
+    time_s: float, points: list[tuple[float, float]]
+) -> float:
+    """The configured session concurrency of a piecewise-linear curve.
+
+    ``points`` are (time_s, sessions) pairs with increasing times; the curve
+    holds its first value before the first point and its last after the last.
+    """
+    if time_s <= points[0][0]:
+        return float(points[0][1])
+    for (t0, v0), (t1, v1) in zip(points, points[1:]):
+        if time_s <= t1:
+            return v0 + (v1 - v0) * (time_s - t0) / (t1 - t0)
+    return float(points[-1][1])
+
+
+def session_tree_spans(requests: list[Request]) -> list[tuple[int, int]]:
+    """(first start, last end) of every session tree the records identify."""
+    spans: dict[str, list[int]] = {}
+    for r in requests:
+        if r.root_id is None:
+            continue
+        span = spans.setdefault(r.root_id, [r.start_ns, r.end_ns])
+        span[0] = min(span[0], r.start_ns)
+        span[1] = max(span[1], r.end_ns)
+    return [(s, e) for s, e in spans.values()]
 
 
 def _qps_summary(requests: list[Request], t0: int | None, duration_s: float) -> dict[str, Any]:
@@ -302,6 +335,12 @@ def request_timeseries(
 
     starts = sorted(r.start_ns for r in requests)
     ends = sorted(r.end_ns for r in requests)
+    # Live session trees: a tree is live from its root's first request start
+    # to the last end of any request in the tree. This is what an AgentX
+    # concurrency curve controls, so it is the line to compare against it.
+    trees = session_tree_spans(requests)
+    tree_starts = sorted(s for s, _ in trees)
+    tree_ends = sorted(e for _, e in trees)
     # (start time, latency) for the rolling windows, ordered by start.
     by_start = {
         name: sorted(
@@ -330,6 +369,9 @@ def request_timeseries(
             "failed_completed_rps": b["failed"] / window_s,
             # Started before the boundary and not ended by it.
             "in_flight_at_end": bisect_left(starts, boundary) - bisect_right(ends, boundary),
+            **({"live_session_trees_at_end": (
+                bisect_left(tree_starts, boundary) - bisect_right(tree_ends, boundary)
+            )} if trees else {}),
             **_latency_fields("ttft", sorted(b["ttft"]), ttft_slo_ms),
             **_latency_fields("itl", sorted(b["itl"]), itl_slo_ms),
             "p50_client_queue_ms": percentile(queue, 0.50),

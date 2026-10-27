@@ -7,6 +7,7 @@ import pytest
 from serve_llm_autoscaling.artifacts import format_run_summary, write_json
 from serve_llm_autoscaling.windows import (
     configured_concurrency_at,
+    configured_series_concurrency_at,
     percentile,
     profiling_qps_summary,
     request_timeseries,
@@ -348,3 +349,41 @@ def test_prompt_cache_fields_classify_cold_requests(tmp_path: Path):
     requests, _ = read_requests(_write(tmp_path, records) / "profile_export.jsonl")
     assert [r.cold for r in requests] == [True, False, None]
     assert (requests[0].input_tokens, requests[1].cached_tokens) == (64000, 60000)
+
+
+# --- Concurrency series and live session trees ------------------------------
+
+CURVE = [(0.0, 1.0), (600.0, 16.0), (1200.0, 4.0)]
+
+
+@pytest.mark.parametrize(("time_s", "expected"), [
+    (-5, 1.0), (0, 1.0), (300, 8.5), (600, 16.0), (900, 10.0), (1200, 4.0), (1500, 4.0),
+])
+def test_configured_series_concurrency(time_s, expected):
+    assert configured_series_concurrency_at(time_s, CURVE) == pytest.approx(expected)
+
+
+def _tree_record(credit, end, root, corr=None, depth=0):
+    record = _record(credit, end, depth=depth)
+    record["metadata"]["x_correlation_id"] = corr or root
+    record["metadata"]["root_correlation_id"] = root
+    return record
+
+
+def test_live_session_trees_span_root_and_subagents(tmp_path: Path):
+    # Tree A: root turns 0-2 and 8-9, a subagent 3-6, so live over [0, 9].
+    # Tree B: a single root turn 4-5. Tree C: a root turn 12-13.
+    records = [
+        _tree_record(0, 2, "A"), _tree_record(3, 6, "A", corr="A1", depth=1),
+        _tree_record(8, 9, "A"), _tree_record(4, 5, "B"), _tree_record(12, 13, "C"),
+    ]
+    result = request_timeseries(_write(tmp_path, records), window_s=5)
+    live = [w["live_session_trees_at_end"] for w in result["windows"]]
+    # Boundaries at 5s, 10s, 15s: A live at 5 (B ended exactly at 5), none at 10, none at 15.
+    assert live == [1, 0, 0]
+    assert result["windows"][0]["in_flight_at_end"] == 1
+
+
+def test_live_session_trees_omitted_without_correlation_ids(tmp_path: Path):
+    result = request_timeseries(_write(tmp_path, [_record(0, 2), _record(1, 3)]), window_s=5)
+    assert "live_session_trees_at_end" not in result["windows"][0]

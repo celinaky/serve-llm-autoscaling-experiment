@@ -624,3 +624,48 @@ def test_sla_policy_events_are_aligned_and_filtered(tmp_path: Path):
         (-5.0, "model_not_ready", 1.0), (30.0, "capacity", 2.0),
     ]
     assert read_sla_policy_events(tmp_path / "missing", APP, T0) == []
+
+
+# --- AgentX concurrency series ----------------------------------------------
+
+
+@pytest.fixture
+def agentx_curve_run(agentx_config, tmp_path: Path):
+    config = agentx_config(
+        {"concurrency_ramp_duration_s": None, "target_concurrency": 4, "unsafe_override": True,
+         "concurrency_series": [{"time_s": 0, "sessions": 1}, {"time_s": 100, "sessions": 4},
+                                {"time_s": 150, "sessions": 2}]},
+        duration_s=200, grace_period_s=30,
+    )
+    return make_agentx_run(tmp_path / "run", config)
+
+
+def test_agentx_curve_configured_load_and_markers(agentx_curve_run: Path):
+    analyze_run(agentx_curve_run, plot=False)
+    data = json.loads((agentx_curve_run / "analysis" / "plot_data.json").read_text())
+    load = data["configured_load"]
+    assert load["dimension"] == "session_concurrency"
+    assert load["points"] == [{"time_s": 0.0, "value": 1.0}, {"time_s": 100.0, "value": 4.0},
+                              {"time_s": 150.0, "value": 2.0}, {"time_s": 200.0, "value": 2.0}]
+    assert load["markers"] == [100.0, 150.0]
+    assert data["lifecycle"]["markers"]["ramp_end_s"] is None
+
+
+def test_agentx_curve_concurrency_qps_follows_curve(agentx_curve_run: Path):
+    analyze_run(agentx_curve_run, plot=False)
+    result = json.loads((agentx_curve_run / "analysis" / "concurrency_qps.json").read_text())
+    assert result["concurrency_series"] == [
+        {"time_s": 0.0, "sessions": 1}, {"time_s": 100.0, "sessions": 4},
+        {"time_s": 150.0, "sessions": 2},
+    ]
+    assert "ramp_duration_s" not in result
+    windows = result["windows"]
+    assert windows[0]["configured_session_concurrency"] == pytest.approx(1.075)  # mid 2.5s
+    assert windows[20]["configured_session_concurrency"] == pytest.approx(3.9)   # mid 102.5s
+    assert windows[35]["configured_session_concurrency"] == 2.0                  # mid 177.5s
+    assert windows[-1]["configured_session_concurrency"] == 2.0                  # mid 197.5s
+
+
+def test_agentx_curve_plots(agentx_curve_run: Path):
+    analyze_run(agentx_curve_run, plot=True)
+    assert (agentx_curve_run / "analysis" / "autoscaling_timeline.png").exists()

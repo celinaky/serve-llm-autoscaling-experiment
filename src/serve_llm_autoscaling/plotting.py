@@ -199,7 +199,15 @@ def plot_timeline(plot_data_path: Path, out_path: Path) -> None:
     else:
         sessions = twins[traffic] = traffic.twinx()
         sessions.plot(load_xs, load_ys, "k--", lw=1.5, label=load["label"])
-        sessions.set_ylim(bottom=0, top=max(load_ys) * 1.1)
+        live = [w.get("live_session_trees_at_end") for w in windows]
+        if any(v is not None for v in live):
+            # From the records only: a tree counts from its first request start
+            # to its last request end, so sessions idle in a long think gap, or
+            # waiting on a turn that never came before load ended, read as gone.
+            # The AIPerf log's "live sessions" count at each limit change is exact.
+            sessions.plot(ends, [_nan(v) for v in live], color="tab:purple", lw=1.2,
+                          label="session trees with requests (records)")
+        sessions.set_ylim(bottom=0, top=max(load_ys + [v or 0 for v in live]) * 1.1)
         sessions.set_ylabel(load["unit"])
     for key, label, lw in (("offered_rps", "offered", 3), ("started_rps", "started", 1.5),
                            ("successful_completed_rps", "completed (ok)", 1.5)):

@@ -28,7 +28,7 @@ deployment:
   autoscaling:
     min_replicas: 1
     initial_replicas: 1
-    max_replicas: 4
+    max_replicas: 8
     target_ongoing_requests: 8
     upscale_delay_s: 0
     downscale_delay_s: 300

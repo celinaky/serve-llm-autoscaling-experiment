@@ -54,7 +54,7 @@ deployment:
         target_decode_requests_per_replica: 8
     min_replicas: 1
     initial_replicas: 1
-    max_replicas: 4
+    max_replicas: 8
     # Unused by the token policy; kept so the deployment config stays
     # comparable with the default-policy run.
     target_ongoing_requests: 8

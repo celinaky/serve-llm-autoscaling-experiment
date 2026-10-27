@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import (
+    AIPERF_SOURCE_DEFAULT,
     CONTINUOUS_MODE_DIRS,
     SESSION_HEADER,
     AgentXWorkloadConfig,
@@ -19,14 +20,15 @@ from .config import (
 from .windows import profiling_qps_summary
 
 # AIPerf 0.12 needs Python 3.11+, which the Ray image's driver may not have.
-AIPERF_COMMAND = ["uvx", "--python", "3.11", "--from", "aiperf==0.12.0", "aiperf"]
+AIPERF_COMMAND = ["uvx", "--python", "3.11", "--from", AIPERF_SOURCE_DEFAULT, "aiperf"]
 AGENTX_SCENARIO = "inferencex-agentx-mvp"
+CONCURRENCY_SERIES_FILE = "concurrency_series.json"
 
 
-def aiperf_command() -> list[str]:
+def aiperf_command(source: str = AIPERF_SOURCE_DEFAULT) -> list[str]:
     if shutil.which("uvx") is None:
         raise RuntimeError("uvx not on PATH; install uv to run AIPerf")
-    return list(AIPERF_COMMAND)
+    return ["uvx", "--python", "3.11", "--from", source, "aiperf"]
 
 
 def _metric_value(data: dict[str, Any], key: str, stat: str = "avg") -> Any:
@@ -75,7 +77,9 @@ def agentx_row_fields(mode: str, workload: AgentXWorkloadConfig) -> dict[str, An
     Fixed concurrency has no ramp, so it reports no ramp duration.
     """
     fields: dict[str, Any] = {"target_concurrency": workload.target_concurrency}
-    if mode == "agentx_concurrency_ramp":
+    if workload.concurrency_series is not None:
+        fields["concurrency_series"] = [p.model_dump() for p in workload.concurrency_series]
+    elif mode == "agentx_concurrency_ramp":
         fields["ramp_duration_s"] = workload.concurrency_ramp_duration_s
     return fields
 
@@ -90,7 +94,7 @@ class AIPerfRunner:
         benchmark = self.config.benchmark
         deployment = self.config.deployment
         cmd = [
-            *aiperf_command(),
+            *aiperf_command(self.config.runtime.aiperf_source),
             "profile",
             "--model", deployment.model_id,
             "--tokenizer", str(deployment.tokenizer),
@@ -174,7 +178,13 @@ class AIPerfRunner:
             "--public-dataset", workload.public_dataset,
             "--concurrency", str(workload.target_concurrency),
         ])
-        if benchmark.mode == "agentx_concurrency_ramp":
+        if workload.concurrency_series is not None:
+            # AIPerf refuses series paths with symlinked components; resolve them.
+            cmd.extend([
+                "--concurrency-series",
+                str((artifact_dir / CONCURRENCY_SERIES_FILE).resolve()),
+            ])
+        elif benchmark.mode == "agentx_concurrency_ramp":
             cmd.extend([
                 "--concurrency-ramp-duration", str(workload.concurrency_ramp_duration_s)
             ])
@@ -187,6 +197,18 @@ class AIPerfRunner:
             cmd.append("--unsafe-override")
         cmd.extend(benchmark.extra_args)
         return cmd
+
+    def write_concurrency_series(self, path: Path) -> None:
+        """The AgentX session curve in the JSON shape AIPerf's flag reads."""
+        workload = self.config.benchmark.workload
+        assert isinstance(workload, AgentXWorkloadConfig)
+        points = [
+            {"time_s": p.time_s, "concurrency": p.sessions}
+            for p in workload.concurrency_series or []
+        ]
+        with path.open("w") as fh:
+            json.dump({"points": points}, fh, indent=2)
+            fh.write("\n")
 
     def write_rate_series(self, path: Path) -> None:
         points = self.config.benchmark.rate_series or []
@@ -222,6 +244,8 @@ class AIPerfRunner:
         assert isinstance(workload, AgentXWorkloadConfig)
         run_dir = self.benchmark_root / CONTINUOUS_MODE_DIRS[benchmark.mode]
         run_dir.mkdir(parents=True, exist_ok=False)
+        if workload.concurrency_series is not None:
+            self.write_concurrency_series(run_dir / CONCURRENCY_SERIES_FILE)
         row = self._execute(
             self.build_agentx_command(run_dir), run_dir, workload.target_concurrency
         )
