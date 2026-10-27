@@ -1,0 +1,132 @@
+# The dampened token autoscaling policy (celina/prefill-token-autoscaling-policy,
+# commit "Dampen token autoscaling decisions") under the same workday-shaped
+# AgentX ramp on 4 B200s as b200_workday_ramp_token.yaml. The two configs
+# differ only in the policy kwargs and the autoscaling delays/lookback.
+#
+# What changed in the policy:
+# - Scale-up aggregates the required replica count over the last
+#   upscale_lookback_s of router snapshots instead of the latest sample
+#   alone. This config uses the time-weighted mean, so the prefill term
+#   fires on sustained backlog (cold prompts arriving faster than they
+#   clear) rather than on one spike. The max variant was run first
+#   (runs/20261027T022057Z-*): it treated every 64K-170K cold prompt as
+#   1-3 replicas of demand for 30s and reached 8 replicas at 501s, 1.31
+#   GPU-h vs the default policy's 0.64 at the same TTFT p95. Replaying its
+#   signal with mean gives 2@165s 3@377s 5@498s 6@512s, ~30% fewer
+#   replica-seconds, still ahead of the default policy on each step.
+# - Scale-down removes at most one replica per decision, and only when the
+#   latest snapshot would leave both prefill and decode utilization below
+#   scale_down_sensitivity on the survivors; downscale_delay_s then applies.
+#
+# Load, a quick version of a workday morning: sessions ramp 1 -> 32 over 10
+# minutes, every one starting cold at turn 0 (its first request is a
+# 64K-170K-token prompt, 10-15s of prefill that no replica count shortens;
+# later turns of the session hit the prefix cache), then hold at 32 for 5
+# minutes. One replica handles ~16 sessions, so the ramp crosses a
+# replica's capacity at ~16 sessions (t ~ 300s) and ~32 at the top. The step
+# to zero load plus the idle observation is the scale-down test.
+#
+# The cold first turns are ~5-10% of requests, so p95 TTFT includes them
+# for any policy; compare policies on ITL and on the follow-up turns.
+#
+# Timeline: load 0-900s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-workday-ramp-token-dampen
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 32
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 60000
+        target_decode_requests_per_replica: 8
+        # Scale-up: aggregate the required count over the last 30s of router
+        # snapshots. Must not exceed look_back_period_s below (the policy
+        # raises otherwise; the replica prunes older samples anyway).
+        upscale_lookback_s: 30
+        # mean: time-weighted average of the required count over the window,
+        # so a lone 5-15s spike counts for its duration only and a replica is
+        # requested when the backlog is sustained. max (the first run) holds
+        # any spike at full weight for the whole window.
+        upscale_aggregation: mean
+        # Propose dropping one replica only when the survivors would sit
+        # below 80% of both per-replica targets on the latest snapshot.
+        scale_down_sensitivity: 0.8
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    # Unused by the token policy; kept so the deployment config stays
+    # comparable with the default-policy run.
+    target_ongoing_requests: 8
+    # Serve's default, and what the default-policy baseline uses. The
+    # undampened config needs 0 because the raw prefill backlog never
+    # persists 10s; the 30s mean above changes slowly enough that a 10s
+    # delay no longer silences the prefill term.
+    upscale_delay_s: 10
+    # A replica costs ~100s to start; do not drop one on a short lull.
+    downscale_delay_s: 300
+    # The engine replica records the router's work snapshot every
+    # min(0.2 x look_back_period_s, metrics_interval_s) and pushes it to the
+    # controller every metrics_interval_s: 6s and 10s by default, against
+    # backlog spikes that last 2-8s. Record and push every 2s instead, so the
+    # policy reacts to a cold prompt within seconds.
+    metrics_interval_s: 2
+    # Raised from 10 to retain the 30s of snapshots upscale_lookback_s reads
+    # (samples older than this are pruned before each push). The record
+    # interval stays min(0.2 x 30, 2) = 2s.
+    look_back_period_s: 30
+  max_ongoing_requests: 128
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 900
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 32
+    # One cold session start every ~19s; 32 sessions is two replicas' worth.
+    concurrency_ramp_duration_s: 600
+    # Every session begins at turn 0: its first request is a cold prompt.
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  # The p95 of the workload's queue-free TTFT floor is ~3.8s (cold prompts of
+  # 32K-128K uncached tokens at ~16K tok/s; findings-token-policy/scripts/
+  # ttft_floor.py), so 3s is unreachable by any replica count. The best
+  # configuration measured 4.5-4.9s over three runs; 5s is the target it
+  # meets with the run-to-run spread included.
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole ramp; the cold session starts are the point.
+  warmup_s: 0

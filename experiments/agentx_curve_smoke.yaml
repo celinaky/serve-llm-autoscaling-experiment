@@ -60,7 +60,7 @@ benchmark:
   fail_fast: true
 runtime:
   endpoint_url: http://127.0.0.1:8000
-  aiperf_source: git+https://github.com/celinaky/aiperf@3bd607a44b8358a021bdeabab1ac02f82c86bfa3
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
   readiness_timeout_s: 1800
   keep_deployment: false
   results_dir: runs

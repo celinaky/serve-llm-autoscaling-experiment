@@ -1,5 +1,5 @@
-# A workday-shaped AgentX session curve on 4 B200s: sessions rise through
-# the morning, dip at lunch, peak in the afternoon and wind down, all in one
+# A simple up-then-down AgentX session curve on 8 B200s: sessions ramp
+# 1 -> 60 over 10 minutes, then back down to 1 over the next 10, all in one
 # AIPerf process. The curve is delivered by the workday-curve AIPerf fork
 # (runtime.aiperf_source): the session limit follows the curve, and when it
 # falls below the live count, sessions are retired at their next turn
@@ -7,7 +7,7 @@
 # "live sessions" count at each limit change, and the session-trees line on
 # the traffic panel, against the configured curve.
 #
-# Timeline: load 0-5400s, AIPerf drains for up to 120s, then 180s idle.
+# Timeline: load 0-1200s, AIPerf drains for up to 120s, then 180s idle.
 name: b200-workday-curve-token
 deployment:
   application_name: ttft-benchmark
@@ -34,36 +34,46 @@ deployment:
       kwargs:
         target_prefill_tokens_per_replica: 60000
         target_decode_requests_per_replica: 8
+        # Scale-up: aggregate the required count over the last 20s of router
+        # snapshots. Must not exceed look_back_period_s below (the policy
+        # raises otherwise; the replica prunes older samples anyway).
+        upscale_lookback_s: 20
+        # mean: time-weighted average of the required count over the window,
+        # so a lone 5-15s spike counts for its duration only and a replica is
+        # requested when the backlog is sustained. max (the first run) holds
+        # any spike at full weight for the whole window.
+        upscale_aggregation: mean
+        # Propose dropping one replica only when the survivors would sit
+        # below 80% of both per-replica targets on the latest snapshot.
+        scale_down_sensitivity: 0.8
     min_replicas: 1
     initial_replicas: 1
-    max_replicas: 4
+    max_replicas: 8
     target_ongoing_requests: 8
-    upscale_delay_s: 0
-    downscale_delay_s: 300
+    upscale_delay_s: 10
+    downscale_delay_s: 120
     metrics_interval_s: 2
-    look_back_period_s: 10
+    look_back_period_s: 20
   max_ongoing_requests: 128
 benchmark:
   generator: aiperf
   mode: agentx_concurrency_ramp
-  duration_s: 5400
+  duration_s: 1200
   grace_period_s: 120
   post_load_observation_s: 180
   workload:
     type: agentx
     public_dataset: semianalysis_cc_traces_weka_062126_256k
-    target_concurrency: 40
-    # Minutes: 0-20 morning ramp, 20-35 steady, 35-45 lunch dip and return,
-    # 45-60 afternoon peak, 60-90 wind-down to a few stragglers.
+    target_concurrency: 60
+    # One cold session every 10s on the way up and one retirement every 10s
+    # on the way down. 60 sessions is about four replicas' worth (one B200
+    # holds ~16 before TTFT collapses at 32), so the 8-replica cap is never
+    # the limit. The floor is 1 because the series cannot go to 0, and load
+    # issuance ends at 1200s anyway.
     concurrency_series:
       - {time_s: 0, sessions: 1}
-      - {time_s: 1200, sessions: 32}
-      - {time_s: 2100, sessions: 32}
-      - {time_s: 2400, sessions: 16}
-      - {time_s: 2700, sessions: 32}
-      - {time_s: 3000, sessions: 40}
-      - {time_s: 3600, sessions: 40}
-      - {time_s: 5400, sessions: 4}
+      - {time_s: 600, sessions: 60}
+      - {time_s: 1200, sessions: 1}
     trajectory_start_min_ratio: 0
     trajectory_start_max_ratio: 0
     seed: 42
@@ -72,7 +82,7 @@ benchmark:
 runtime:
   endpoint_url: http://127.0.0.1:8000
   # The workday-curve AIPerf fork, pinned to a commit.
-  aiperf_source: git+https://github.com/celinaky/aiperf@3bd607a44b8358a021bdeabab1ac02f82c86bfa3
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
   readiness_timeout_s: 1800
   keep_deployment: false
   results_dir: runs

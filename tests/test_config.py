@@ -81,6 +81,7 @@ def _benchmark(**benchmark):
         "experiments/b200_workday_ramp_sla.yaml",
         "experiments/b200_workday_ramp_sla_advisory.yaml",
         "experiments/b200_workday_ramp_token.yaml",
+        "experiments/b200_workday_ramp_token_dampen.yaml",
     ],
 )
 def test_checked_in_experiments_are_valid(path):
@@ -214,6 +215,21 @@ def test_b200_workday_ramp_experiments_differ_only_in_policy():
     assert advisory.deployment.autoscaling.policy.kwargs["advisory"] is True
     assert active.benchmark == advisory.benchmark
     assert active.analysis == advisory.analysis
+
+
+def test_b200_workday_ramp_dampen_pair_differs_only_in_policy():
+    default = load_config(Path("experiments/b200_workday_ramp_default.yaml"))
+    token = load_config(Path("experiments/b200_workday_ramp_token_dampen.yaml"))
+    assert default.deployment.autoscaling.policy.name == "default"
+    assert token.deployment.autoscaling.policy.name == "token"
+    assert default.benchmark == token.benchmark
+    assert default.analysis == token.analysis
+    assert default.deployment.engine == token.deployment.engine
+    assert default.deployment.routing == token.deployment.routing
+    scaling_default, scaling_token = default.deployment.autoscaling, token.deployment.autoscaling
+    assert (scaling_default.upscale_delay_s, scaling_default.downscale_delay_s) == (10, 300)
+    assert (scaling_token.upscale_delay_s, scaling_token.downscale_delay_s) == (10, 300)
+    assert scaling_token.policy.kwargs["upscale_lookback_s"] <= scaling_token.model_extra["look_back_period_s"]
 
 
 def test_rejects_tail_window_shorter_than_window():
