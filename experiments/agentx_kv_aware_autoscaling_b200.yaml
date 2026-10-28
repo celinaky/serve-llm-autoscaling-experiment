@@ -15,9 +15,9 @@ name: qwen-agentx-kv-aware-autoscaling-b200
 # ~4M tokens per replica, ~15 full 256K contexts.
 #
 # Autoscaling (suggested starting point, not yet measured on B200):
-# max_num_seqs = 1024 and max_num_batched_tokens = 65536 (131072 and 262144 OOM
-# at boot on B200 with gpu_memory_utilization 0.92) leave the
-# engine unconstrained (KV holds 4,182,251 tokens per replica, measured). target_ongoing_requests = 8 is deliberately
+# max_num_seqs = 1024 and max_num_batched_tokens = 16384 are vLLM's own B200
+# defaults (65536 boots too; 131072 and 262144 OOM at startup at
+# gpu_memory_utilization 0.92). KV holds 4,182,251 tokens per replica, measured. target_ongoing_requests = 8 is deliberately
 # aggressive: in the first run (target 24), cold-start sessions began
 # queueing for prefill at ~7-10 requests per replica, because prefill ran
 # at only ~4-10K tok/s. At 8, ~35-40 ongoing requests ask for all 4
@@ -56,7 +56,7 @@ deployment:
     # larger chunks cut TTFT on 100K+ token prompts, but every step that
     # carries a chunk stalls the decodes batched with it. Try 32768 if TTFT
     # dominates and ITL has slack.
-    max_num_batched_tokens: 65536
+    max_num_batched_tokens: 16384
     enable_prefix_caching: true
     kv_cache_dtype: fp8
     language_model_only: true
