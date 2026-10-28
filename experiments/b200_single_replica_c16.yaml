@@ -17,8 +17,8 @@ deployment:
     tensor_parallel_size: 1
     max_model_len: 262144
     gpu_memory_utilization: 0.92
-    max_num_seqs: 32
-    max_num_batched_tokens: 16384
+    max_num_seqs: 1024
+    max_num_batched_tokens: 65536
     enable_prefix_caching: true
     kv_cache_dtype: fp8
     language_model_only: true
@@ -26,7 +26,6 @@ deployment:
     min_replicas: 1
     initial_replicas: 1
     max_replicas: 1
-  max_ongoing_requests: 128
 benchmark:
   generator: aiperf
   mode: agentx_fixed_concurrency

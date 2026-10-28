@@ -1,6 +1,9 @@
-# A simple up-then-down AgentX session curve on 8 B200s: sessions ramp
-# 1 -> 30 over 10 minutes, then back down to 1 over the next 10, all in one
-# AIPerf process. The curve is delivered by the workday-curve AIPerf fork
+# Serve's default (ongoing-request) policy on the same workday curve as
+# b200_workday_curve_token.yaml; everything but the policy block is identical.
+#
+# A workday-shaped AgentX session curve on 8 B200s: a slow start, a morning
+# surge of cold sessions, a hold, and a slow decline, all in one AIPerf
+# process. The curve is delivered by the workday-curve AIPerf fork
 # (runtime.aiperf_source): the session limit follows the curve, and when it
 # falls below the live count, sessions are retired at their next turn
 # boundary. Every session starts cold at turn 0. Compare the AIPerf log's
@@ -23,8 +26,8 @@ deployment:
     tensor_parallel_size: 1
     max_model_len: 262144
     gpu_memory_utilization: 0.92
-    max_num_seqs: 32
-    max_num_batched_tokens: 16384
+    max_num_seqs: 1024
+    max_num_batched_tokens: 65536
     enable_prefix_caching: true
     kv_cache_dtype: fp8
     language_model_only: true
@@ -35,11 +38,10 @@ deployment:
     initial_replicas: 1
     max_replicas: 8
     target_ongoing_requests: 8
-    upscale_delay_s: 0
-    downscale_delay_s: 300
+    upscale_delay_s: 10
+    downscale_delay_s: 120
     metrics_interval_s: 2
-    look_back_period_s: 10
-  max_ongoing_requests: 128
+    look_back_period_s: 20
 benchmark:
   generator: aiperf
   mode: agentx_concurrency_ramp
@@ -49,13 +51,19 @@ benchmark:
   workload:
     type: agentx
     public_dataset: semianalysis_cc_traces_weka_062126_256k
-    target_concurrency: 30
-    # 30 sessions is about two replicas' worth (one B200 handles ~16), so
-    # the 8-replica cap is never the limit; the floor is 1 because the series
-    # cannot go to 0, and load issuance ends at 1200s anyway.
+    target_concurrency: 60
+    # 0-120s slow start (one cold session every ~13s); 120-270s surge, 50
+    # cold sessions in 150s (one every 3s, ~30K cold tokens/s, more than one
+    # B200's ~16-20K tok/s of prefill), so a prefill backlog persists long
+    # enough to survive the policy's lookback mean; 270-600s hold at 60;
+    # 600-1200s slow decline, one retirement every ~10s. 60 sessions is about
+    # four replicas' worth, so the 8-replica cap is never the limit. The floor
+    # is 1 because the series cannot go to 0, and load issuance ends at 1200s.
     concurrency_series:
       - {time_s: 0, sessions: 1}
-      - {time_s: 600, sessions: 30}
+      - {time_s: 120, sessions: 10}
+      - {time_s: 270, sessions: 60}
+      - {time_s: 600, sessions: 60}
       - {time_s: 1200, sessions: 1}
     trajectory_start_min_ratio: 0
     trajectory_start_max_ratio: 0

@@ -12,8 +12,8 @@ deployment:
     tensor_parallel_size: 1
     max_model_len: 10000
     gpu_memory_utilization: 0.95
-    max_num_seqs: 128
-    max_num_batched_tokens: 16384
+    max_num_seqs: 1024
+    max_num_batched_tokens: 10000
     enable_prefix_caching: false
     kv_cache_dtype: fp8
   autoscaling:
@@ -23,8 +23,6 @@ deployment:
     target_ongoing_requests: 4
     upscale_delay_s: 30
     downscale_delay_s: 600
-  max_ongoing_requests: 8192
-
 benchmark:
   generator: aiperf
   mode: request_rate

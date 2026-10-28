@@ -15,8 +15,9 @@ name: qwen-agentx-kv-aware-autoscaling-b200
 # ~4M tokens per replica, ~15 full 256K contexts.
 #
 # Autoscaling (suggested starting point, not yet measured on B200):
-# max_num_seqs = 32 is vLLM's batch limit (KV holds 4,182,251 tokens per
-# replica, measured). target_ongoing_requests = 8 is deliberately
+# max_num_seqs = 1024 and max_num_batched_tokens = 65536 (131072 and 262144 OOM
+# at boot on B200 with gpu_memory_utilization 0.92) leave the
+# engine unconstrained (KV holds 4,182,251 tokens per replica, measured). target_ongoing_requests = 8 is deliberately
 # aggressive: in the first run (target 24), cold-start sessions began
 # queueing for prefill at ~7-10 requests per replica, because prefill ran
 # at only ~4-10K tok/s. At 8, ~35-40 ongoing requests ask for all 4
@@ -50,12 +51,12 @@ deployment:
     # Conservative first guess: ~125K tokens of KV per sequence at the
     # estimated ~4M-token budget, so even long agent contexts fit without
     # preemption. Raise toward ~64 if the vLLM log shows spare capacity.
-    max_num_seqs: 32
+    max_num_seqs: 1024
     # Prefill chunk size, a trade-off for prefill-heavy agent traffic:
     # larger chunks cut TTFT on 100K+ token prompts, but every step that
     # carries a chunk stalls the decodes batched with it. Try 32768 if TTFT
     # dominates and ITL has slack.
-    max_num_batched_tokens: 16384
+    max_num_batched_tokens: 65536
     enable_prefix_caching: true
     kv_cache_dtype: fp8
     language_model_only: true
@@ -66,17 +67,9 @@ deployment:
     target_ongoing_requests: 8
     upscale_delay_s: 10
     downscale_delay_s: 60
-  # Deliberately ABOVE max_num_seqs (not equal, as handle-based guidance
-  # suggests). Under direct streaming (Ray 2.58) the router picks a replica
-  # immediately without checking capacity, and a replica only reports a
-  # request to the autoscaler once it holds one of these slots. Requests
-  # waiting for a slot are invisible. With a cap of 32 each replica would
-  # report at most 32, so scale-out could only step 1->2->3->4, waiting
-  # for each new replica to start. At >= max_replicas x target (32) the
-  # whole backlog is counted (it waits in vLLM's queue instead) and Serve
-  # can jump straight to 4. Excess requests stay on their replica either
-  # way.
-  max_ongoing_requests: 128
+  # max_ongoing_requests is left at the harness default (8192) so Serve
+  # never caps a replica; excess requests wait in vLLM's queue, where the
+  # autoscaler can count them.
 
 benchmark:
   generator: aiperf

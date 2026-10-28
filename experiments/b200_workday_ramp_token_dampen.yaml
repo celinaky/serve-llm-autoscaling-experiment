@@ -45,8 +45,8 @@ deployment:
     tensor_parallel_size: 1
     max_model_len: 262144
     gpu_memory_utilization: 0.92
-    max_num_seqs: 32
-    max_num_batched_tokens: 16384
+    max_num_seqs: 1024
+    max_num_batched_tokens: 65536
     enable_prefix_caching: true
     kv_cache_dtype: fp8
     language_model_only: true
@@ -91,7 +91,6 @@ deployment:
     # (samples older than this are pruned before each push). The record
     # interval stays min(0.2 x 30, 2) = 2s.
     look_back_period_s: 30
-  max_ongoing_requests: 128
 benchmark:
   generator: aiperf
   mode: agentx_concurrency_ramp
