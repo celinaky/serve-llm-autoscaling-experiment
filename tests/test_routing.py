@@ -3,6 +3,7 @@ import types
 from pathlib import Path
 
 import pytest
+import typing
 from pydantic import ValidationError
 
 from serve_llm_autoscaling import backend, benchmark
@@ -34,12 +35,14 @@ def _config(routing=None, **deployment) -> ExperimentConfig:
 # --- RoutingConfig ----------------------------------------------------------
 
 
-def test_default_routing_is_power_of_two_through_ingress():
+def test_default_routing_leaves_the_router_to_serve():
     routing = RoutingConfig()
-    assert routing.policy == "power_of_two"
+    assert routing.policy is None and routing.router_class is None
     assert (routing.direct_streaming, routing.forward_request_body) == (False, False)
     assert routing.environment() == {}
-    assert routing.router_class.endswith("PowerOfTwoChoicesRequestRouter")
+    spec = RayServeBackend(_config()).deployment_spec()
+    assert "request_router_config" not in spec["deployment_config"]
+    assert check_routing_support(_config()) == {"policy": None, "request_router_class": None}
 
 
 def test_kv_aware_enables_direct_streaming_and_body_forwarding():
@@ -80,8 +83,9 @@ def test_direct_streaming_environment_includes_buffer_size():
 
 
 def test_every_policy_maps_to_a_router_class():
-    policies = RoutingConfig.model_fields["policy"].annotation.__args__
-    assert set(policies) == set(ROUTER_CLASSES)
+    literal, none = typing.get_args(RoutingConfig.model_fields["policy"].annotation)
+    assert none is type(None)
+    assert set(typing.get_args(literal)) == set(ROUTER_CLASSES)
 
 
 def test_top_level_direct_streaming_is_rejected():

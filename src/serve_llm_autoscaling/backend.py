@@ -51,6 +51,9 @@ def check_routing_support(config: ExperimentConfig) -> dict[str, Any]:
     """
     routing = config.deployment.routing
     apply_routing_environment(config)
+    if routing.policy is None:
+        # No router is requested; Serve picks one for the topology.
+        return {"policy": None, "request_router_class": None}
     from ray.serve.config import RequestRouterConfig
 
     import ray
@@ -285,7 +288,7 @@ class RayServeBackend:
                 "model_id": deployment.model_id,
                 "model_source": deployment.model_source,
             },
-            "engine_kwargs": deployment.engine.model_dump(),
+            "engine_kwargs": deployment.engine.model_dump(exclude_none=True),
             "deployment_config": {
                 "autoscaling_config": {
                     **deployment.autoscaling.model_dump(
@@ -293,14 +296,17 @@ class RayServeBackend:
                     ),
                     "policy": autoscaling_policy(self.config),
                 },
-                "max_ongoing_requests": deployment.max_ongoing_requests,
-                "request_router_config": {
-                    "request_router_class": deployment.routing.router_class,
-                    "request_router_kwargs": deployment.routing.request_router_kwargs,
-                },
             },
-            "experimental_configs": deployment.experimental_configs,
         }
+        if deployment.routing.policy is not None:
+            spec["deployment_config"]["request_router_config"] = {
+                "request_router_class": deployment.routing.router_class,
+                "request_router_kwargs": deployment.routing.request_router_kwargs,
+            }
+        if deployment.experimental_configs:
+            spec["experimental_configs"] = deployment.experimental_configs
+        if deployment.max_ongoing_requests is not None:
+            spec["deployment_config"]["max_ongoing_requests"] = deployment.max_ongoing_requests
         if deployment.accelerator_type:
             spec["accelerator_type"] = deployment.accelerator_type
         return spec

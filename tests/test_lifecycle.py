@@ -230,7 +230,7 @@ def test_plot_data_separates_drain_from_idle(observed_run: Path):
         {"name": "idle", "start_s": 225.0, "end_s": 330.0},
     ]
     assert data["experiment"]["post_load_observation_s"] == 90
-    assert data["experiment"]["routing_policy"] == "power_of_two"
+    assert data["experiment"]["routing_policy"] is None
 
 
 def test_request_windows_cover_idle_observation(observed_run: Path):

@@ -423,14 +423,15 @@ deployment:
 
 | `policy` | Ray router class | Notes |
 | --- | --- | --- |
-| `power_of_two` (default) | `PowerOfTwoChoicesRequestRouter` | Serve's default for the ingress topology |
+| `power_of_two` | `PowerOfTwoChoicesRequestRouter` | Serve's default for the ingress topology |
 | `round_robin` | `ray.serve.experimental.round_robin_router.RoundRobinRouter` | |
 | `consistent_hash` | `ray.serve.experimental.consistent_hash_router.ConsistentHashRouter` | AIPerf sends `--session-header X-Session-ID`, so each session's turns pin to one replica |
 | `prefix_cache_affinity` | `ray.serve.llm.request_router.PrefixCacheAffinityRouter` | Routes on the prompt text |
 | `kv_aware` | `ray.serve.llm.request_router.KVAwareRouter` | Scores prompt/KV-cache overlap; needs direct streaming, body forwarding and `ai-dynamo>=1.4.0` |
 
-The policy is always passed explicitly, because direct streaming otherwise
-defaults to round robin.
+With no `policy` set (the default), the harness sends no request router
+config and Serve picks the router itself: power of two for the ingress
+topology, round robin under direct streaming. Set a policy to pin one.
 
 - **Direct streaming** makes `LLMServer` the ingress deployment and attaches
   `LLMRouter` as its ingress request router. HAProxy asks `LLMRouter` for a
@@ -465,6 +466,14 @@ resolved router class and the verified deployments are written to
 `deployment/routing.json` and summarized under `routing` in `manifest.json`.
 
 ## Autoscaling policy
+
+`deployment.autoscaling.policy` is the only autoscaling key the harness
+always sends. Every other `deployment.autoscaling` key (`min_replicas`,
+`max_replicas`, `target_ongoing_requests`, the delays, ...) and every
+`deployment.engine` key except `enable_prompt_tokens_details` is forwarded
+only when the experiment sets it; unset keys take Ray Serve's, Ray Serve
+LLM's or vLLM's own defaults. The same holds for `max_ongoing_requests`,
+`experimental_configs` and `routing.policy`.
 
 `deployment.autoscaling.policy` selects the Serve autoscaling policy that
 decides `LLMServer`'s replica count:

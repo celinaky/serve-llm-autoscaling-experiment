@@ -57,17 +57,23 @@ def _nan(value: Any) -> float:
     return math.nan if value is None else value
 
 
+
+def _setting(value):
+    """A configured number, or a note that Serve's default applies."""
+    return "serve default" if value is None else f"{value:g}"
+
 def _title(experiment: dict[str, Any]) -> str:
     policy = experiment.get("autoscaling_policy", "default")
     if "advisory" in (experiment.get("autoscaling_policy_kwargs") or {}):
         policy += f" (advisory={experiment['autoscaling_policy_kwargs']['advisory']})"
     return (
         f"{experiment['name']} · {experiment['model_id']}\n"
-        f"replicas {experiment['min_replicas']}-{experiment['max_replicas']} "
-        f"(initial {experiment['initial_replicas']}) · "
+        f"replicas {_setting(experiment.get('min_replicas'))}-"
+        f"{_setting(experiment.get('max_replicas'))} "
+        f"(initial {_setting(experiment.get('initial_replicas'))}) · "
         f"autoscaling {policy} · "
-        f"target_ongoing_requests={experiment['target_ongoing_requests']:g} · "
-        f"routing {experiment.get('routing_policy', 'power_of_two')}"
+        f"target_ongoing_requests={_setting(experiment.get('target_ongoing_requests'))} · "
+        f"routing {experiment.get('routing_policy') or 'serve default'}"
         f"{' (direct streaming)' if experiment.get('direct_streaming') else ''}\n"
         f"window {experiment['window_s']:g}s · "
         f"status every {experiment['status_interval_s']:g}s · "
@@ -249,7 +255,7 @@ def plot_timeline(plot_data_path: Path, out_path: Path) -> None:
 
     # Panel 5: autoscaling, as step functions at the original sample times.
     # Unavailable status samples have no counts and break the line.
-    observed = [experiment["max_replicas"], 1]
+    observed = [experiment.get("max_replicas") or 1, 1]
     for key, label, style in (("target_replicas", "target", {"lw": 2.5}),
                               ("desired_replicas", "desired", {"lw": 1, "ls": "--"}),
                               ("sla_recommended_replicas", "SLA recommended",

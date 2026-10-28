@@ -36,20 +36,25 @@ AGENTX_OWNED_ARGS = {
 
 
 class EngineConfig(BaseModel):
-    """vLLM engine settings forwarded to Ray Serve LLM."""
+    """vLLM engine settings forwarded to Ray Serve LLM.
+
+    Only keys the experiment sets are forwarded; anything left unset takes
+    vLLM's own default (which for ``max_num_seqs`` and
+    ``max_num_batched_tokens`` depends on the GPU).
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    tensor_parallel_size: int = Field(default=1, ge=1)
-    max_model_len: int = Field(default=10_000, ge=1)
-    gpu_memory_utilization: float = Field(default=0.95, gt=0, le=1)
-    max_num_seqs: int = Field(default=128, ge=1)
-    max_num_batched_tokens: int = Field(default=16_384, ge=1)
-    enable_prefix_caching: bool = False
+    tensor_parallel_size: int | None = Field(default=None, ge=1)
+    max_model_len: int | None = Field(default=None, ge=1)
+    gpu_memory_utilization: float | None = Field(default=None, gt=0, le=1)
+    max_num_seqs: int | None = Field(default=None, ge=1)
+    max_num_batched_tokens: int | None = Field(default=None, ge=1)
+    enable_prefix_caching: bool | None = None
     # Reports usage.prompt_tokens_details.cached_tokens so AIPerf can record
     # prefix-cache hits. vLLM only computes the count with prefix caching on.
     enable_prompt_tokens_details: bool = True
-    kv_cache_dtype: str = "fp8"
+    kv_cache_dtype: str | None = None
 
 
 # Autoscaling policy -> Ray Serve policy_function. Every policy is passed
@@ -101,22 +106,31 @@ class AutoscalingPolicyConfig(BaseModel):
 
 
 class AutoscalingConfig(BaseModel):
+    """Serve autoscaling settings; only ``policy`` is always sent.
+
+    Every other key is forwarded only when the experiment sets it, so unset
+    keys take Ray Serve's defaults (one replica, ``target_ongoing_requests``
+    from Ray Serve LLM, 30s up / 600s down delays).
+    """
+
     model_config = ConfigDict(extra="allow")
 
     policy: AutoscalingPolicyConfig = Field(default_factory=AutoscalingPolicyConfig)
-    min_replicas: int = Field(default=1, ge=0)
-    initial_replicas: int | None = Field(default=1, ge=0)
-    max_replicas: int = Field(default=1, ge=1)
-    target_ongoing_requests: float = Field(default=4, gt=0)
-    upscale_delay_s: float = Field(default=30, ge=0)
-    downscale_delay_s: float = Field(default=600, ge=0)
+    min_replicas: int | None = Field(default=None, ge=0)
+    initial_replicas: int | None = Field(default=None, ge=0)
+    max_replicas: int | None = Field(default=None, ge=1)
+    target_ongoing_requests: float | None = Field(default=None, gt=0)
+    upscale_delay_s: float | None = Field(default=None, ge=0)
+    downscale_delay_s: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_bounds(self) -> "AutoscalingConfig":
-        if self.min_replicas > self.max_replicas:
+        low = 0 if self.min_replicas is None else self.min_replicas
+        high = self.max_replicas
+        if high is not None and low > high:
             raise ValueError("min_replicas must be <= max_replicas")
         if self.initial_replicas is not None and not (
-            self.min_replicas <= self.initial_replicas <= self.max_replicas
+            low <= self.initial_replicas <= (self.initial_replicas if high is None else high)
         ):
             raise ValueError(
                 "initial_replicas must be between min_replicas and max_replicas"
@@ -124,9 +138,9 @@ class AutoscalingConfig(BaseModel):
         return self
 
 
-# Routing policy -> Ray request router class. Every policy is passed
-# explicitly: the default router differs between the ingress topology (power
-# of two) and direct streaming (round robin).
+# Routing policy -> Ray request router class. With no policy set, no
+# request_router_config is sent and Serve picks its own router (power of two
+# for the ingress topology, round robin under direct streaming).
 ROUTER_CLASSES = {
     "power_of_two": "ray.serve._private.request_router:PowerOfTwoChoicesRequestRouter",
     "round_robin": "ray.serve.experimental.round_robin_router.RoundRobinRouter",
@@ -143,16 +157,18 @@ SESSION_HEADER = "X-Session-ID"
 class RoutingConfig(BaseModel):
     """Replica selection and the ingress topology in front of LLMServer.
 
-    ``None`` for ``direct_streaming`` or ``forward_request_body`` means the
-    policy decides: KV-aware routing needs both, and body-aware policies need
-    the body whenever direct streaming is on.
+    ``policy: null`` (the default) sends no request router config, so Serve
+    chooses the router. ``None`` for ``direct_streaming`` or
+    ``forward_request_body`` means the policy decides: KV-aware routing needs
+    both, and body-aware policies need the body whenever direct streaming is
+    on.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     policy: Literal[
         "power_of_two", "round_robin", "consistent_hash", "prefix_cache_affinity", "kv_aware"
-    ] = "power_of_two"
+    ] | None = None
     direct_streaming: bool | None = None
     forward_request_body: bool | None = None
     # HAProxy's per-buffer cap on the body forwarded to the router; longer
@@ -180,8 +196,8 @@ class RoutingConfig(BaseModel):
         return self
 
     @property
-    def router_class(self) -> str:
-        return ROUTER_CLASSES[self.policy]
+    def router_class(self) -> str | None:
+        return None if self.policy is None else ROUTER_CLASSES[self.policy]
 
     def environment(self) -> dict[str, str]:
         """Ray switches for this topology, needed by the driver and controller."""
@@ -213,10 +229,12 @@ class DeploymentConfig(BaseModel):
     routing: RoutingConfig = Field(default_factory=RoutingConfig)
     engine: EngineConfig = Field(default_factory=EngineConfig)
     autoscaling: AutoscalingConfig = Field(default_factory=AutoscalingConfig)
-    max_ongoing_requests: int = Field(default=8192, ge=1)
-    experimental_configs: dict[str, Any] = Field(
-        default_factory=lambda: {"stream_batching_interval_ms": 0}
-    )
+    # None leaves Ray Serve LLM's default (1e9, effectively unlimited) in
+    # place; set it only to cap in-flight requests per replica.
+    max_ongoing_requests: int | None = Field(default=None, ge=1)
+    # Forwarded only when set; Ray Serve LLM's defaults apply otherwise
+    # (for example 50ms of stream batching).
+    experimental_configs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def fill_defaults(self) -> "DeploymentConfig":
@@ -560,7 +578,8 @@ class ExperimentConfig(BaseModel):
         if not isinstance(workload, SyntheticWorkloadConfig):
             return self  # trace lengths come from the dataset, not the config
         required = workload.input_tokens + workload.output_tokens
-        if required > self.deployment.engine.max_model_len:
+        max_model_len = self.deployment.engine.max_model_len
+        if max_model_len is not None and required > max_model_len:
             raise ValueError(
                 f"workload requires {required} tokens but max_model_len is "
                 f"{self.deployment.engine.max_model_len}"
