@@ -181,8 +181,10 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Experiment outputs
-runs/
+# Experiment outputs live in runs/ and are tracked: Anyscale does not persist
+# gitignored files across workspace restarts. Keep their logs too, which the
+# *.log rule above would otherwise drop.
+!runs/**/*.log
 
 # PyCharm
 #   JetBrains specific template is maintained in a separate JetBrains.gitignore that can
