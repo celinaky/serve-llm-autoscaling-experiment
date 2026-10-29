@@ -606,6 +606,27 @@ def test_vllm_series_are_attributed_by_replica_id():
     assert not warnings
 
 
+def test_policy_metric_gauge_is_split_by_its_metric_label():
+    labels = {"application": APP, "deployment": LLM}
+    records = [
+        _scrape(t, i, [
+            _sample("ray_serve_autoscaling_policy_metric", 1.0 + t, metric="prefill_required_replicas", **labels),
+            _sample("ray_serve_autoscaling_policy_metric", 2.0, metric="decode_required_replicas", **labels),
+            _sample("ray_serve_autoscaling_policy_metric", 3.0, metric="required_replicas", **labels),
+            _sample("ray_serve_autoscaling_policy_metric", 9.0, metric="required_replicas",
+                    application="other", deployment=LLM),
+        ])
+        for i, t in enumerate(range(0, 11, 5))
+    ]
+    warnings = []
+    series = metric_series(records, APP, {LLM}, 5, T0, warnings)
+    assert [p["value"] for p in series["token_prefill_replicas"]["points"]] == [1.0, 6.0, 11.0]
+    assert [p["value"] for p in series["token_decode_replicas"]["points"]] == [2.0, 2.0, 2.0]
+    assert [p["value"] for p in series["token_desired_replicas"]["points"]] == [3.0, 3.0, 3.0]
+    assert "token_prefill_backlog" not in series
+    assert not warnings
+
+
 def test_sla_policy_events_are_aligned_and_filtered(tmp_path: Path):
     _jsonl(tmp_path / "telemetry" / "sla_policy_events.jsonl", [
         {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 - 5 * S,

@@ -476,7 +476,7 @@ def token_policy_evaluation(
     cross pairs show whether the signals tell the two latencies apart.
     """
     series = plot_data["serve_metric_series"]
-    if "token_prefill_backlog" not in series:
+    if "token_prefill_replicas" not in series:
         return None
     t0 = plot_data["time_origin"]["profiling_start_ns"]
     status = [s for s in plot_data["serve_status_samples"] if s.get("error") is None]

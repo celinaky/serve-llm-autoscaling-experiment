@@ -658,9 +658,10 @@ per-request records only. Its sections:
   summarized as counts, first upscale and mean/max upscale lag.
 - **Latency by replica count**: steady-state mean and p90 TTFT/ITL grouped by
   the replicas running when each request started.
-- **Token policy** (when its gauges were collected): which term, prefill
-  or decode, asked for each scale-up, and how strongly each input predicts
-  latency: Spearman rank correlation and a quartile table of the policy's
+- **Token policy** (when the controller's `serve_autoscaling_policy_metric`
+  gauge was collected): which term, prefill or decode, asked for each
+  scale-up and, if the policy also publishes its raw inputs, how strongly
+  each input predicts latency: Spearman rank correlation and a quartile table of the policy's
   input per running replica at each request's start against the latency
   that request saw (prefill backlog against warm-request TTFT and against
   TTFT in excess of the prompt's own prefill floor, active decodes against

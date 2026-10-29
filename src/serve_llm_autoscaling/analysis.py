@@ -34,7 +34,11 @@ from .windows import (
 # 4: added SLA policy and vLLM series, ``sla_policy_events`` and the ITL SLO.
 SCHEMA_VERSION = 4
 
-# key -> (normalized sample name, aggregation, identity labels)
+# key -> (normalized sample name, aggregation, identity labels[, label match])
+#
+# A fourth element restricts the series to samples whose labels equal the
+# given values: the controller publishes every policy metric under one
+# family, serve_autoscaling_policy_metric, told apart by its metric label.
 #
 # A series is identified by application, deployment and the identity labels:
 # the replica for replica metrics, the handle or router actor for router
@@ -63,11 +67,23 @@ METRIC_SERIES = {
     "sla_training_buckets": ("serve_sla_autoscaling_training_buckets", "sum", ()),
     "sla_predicted_ttft_ms": ("serve_sla_autoscaling_predicted_ttft_ms", "sum", ()),
     "sla_predicted_itl_ms": ("serve_sla_autoscaling_predicted_itl_ms", "sum", ()),
-    "token_prefill_backlog": ("serve_token_autoscaling_outstanding_prefill_tokens", "sum", ()),
-    "token_active_decodes": ("serve_token_autoscaling_active_decode_requests", "sum", ()),
-    "token_prefill_replicas": ("serve_token_autoscaling_prefill_required_replicas", "sum", ()),
-    "token_decode_replicas": ("serve_token_autoscaling_decode_required_replicas", "sum", ()),
-    "token_desired_replicas": ("serve_token_autoscaling_desired_replicas", "sum", ()),
+    # The token policy publishes the three required-replica values; the raw
+    # prefill backlog and active-decode inputs are kept in case it ever does.
+    "token_prefill_backlog": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "outstanding_effective_prefill_tokens"}
+    ),
+    "token_active_decodes": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "active_decode_requests"}
+    ),
+    "token_prefill_replicas": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "prefill_required_replicas"}
+    ),
+    "token_decode_replicas": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "decode_required_replicas"}
+    ),
+    "token_desired_replicas": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "required_replicas"}
+    ),
     "vllm_running_requests": ("vllm_num_requests_running", "sum", ("ReplicaId",)),
     "vllm_waiting_requests": ("vllm_num_requests_waiting", "sum", ("ReplicaId",)),
 }
@@ -573,7 +589,7 @@ def metric_series(
     }
 
     unlabeled: dict[str, int] = defaultdict(int)
-    wanted = {name for name, _, _ in METRIC_SERIES.values()}
+    wanted = {spec[0] for spec in METRIC_SERIES.values()}
     wanted |= {name for pair in WINDOWED_RATIOS.values() for name in pair[:2]}
     by_metric: dict[str, list] = {name: [] for name in wanted}
     for tick in sorted(ticks):
@@ -603,8 +619,17 @@ def metric_series(
             f"{name}: excluded {unlabeled[name]} samples without application/deployment labels"
         )
     result = {}
-    for key, (name, aggregation, identity) in METRIC_SERIES.items():
-        points = aggregate_metric(by_metric[name], aggregation, identity, t0, warnings, name)
+    for key, (name, aggregation, identity, *rest) in METRIC_SERIES.items():
+        match = rest[0] if rest else {}
+        ticks_for_key = by_metric[name]
+        if match:
+            ticks_for_key = [
+                (ts, [(node, s) for node, s in samples
+                      if all(s["labels"].get(k) == v for k, v in match.items())])
+                for ts, samples in ticks_for_key
+            ]
+        label = name if not match else f"{name}{{{', '.join(f'{k}={v}' for k, v in match.items())}}}"
+        points = aggregate_metric(ticks_for_key, aggregation, identity, t0, warnings, label)
         if points:
             result[key] = {"metric": name, "aggregation": aggregation, "points": points}
     for key, (numerator, denominator, scale) in WINDOWED_RATIOS.items():
@@ -693,7 +718,7 @@ def build_plot_data(
                 warnings.append(f"{METRIC_SERIES[key][0]} was not exported; omitted from the plot")
     autoscaling = config.deployment.autoscaling
     sla_events = read_sla_policy_events(root, application, t0)
-    if autoscaling.policy.name == "token" and "token_prefill_backlog" not in series:
+    if autoscaling.policy.name == "token" and "token_prefill_replicas" not in series:
         warnings.append("token policy gauges were not exported; policy panel is empty")
     if autoscaling.policy.name == "sla":
         if "sla_recommended_replicas" not in series:
