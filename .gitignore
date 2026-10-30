@@ -185,6 +185,20 @@ cython_debug/
 # gitignored files across workspace restarts. Keep their logs too, which the
 # *.log rule above would otherwise drop.
 !runs/**/*.log
+#
+# Except the bulky raw streams: the workspace uploads the repo with every Ray
+# job, capped at 512 MiB, and these run to hundreds of MB per run. Each run's
+# configs, manifest, summaries, analysis tables and figures stay tracked and
+# are its durable record. The raw files may not survive a workspace restart
+# (a best-effort copy is in /mnt/cluster_storage/serve-llm-autoscaling-
+# experiment/runs); without them, tools that read them (load_breakdown.py
+# reads profile_export.jsonl) cannot be rerun on that run.
+runs/*/telemetry/serve_metrics.jsonl
+runs/*/telemetry/serve_status.jsonl
+runs/*/benchmark/*/profile_export.jsonl
+runs/*/benchmark/*/stdout.log
+runs/*/benchmark/*/logs/
+runs/*/analysis/plot_data.json
 
 # PyCharm
 #   JetBrains specific template is maintained in a separate JetBrains.gitignore that can

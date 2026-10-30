@@ -1,0 +1,177 @@
+# Repeated session bursts on one fixed replica, each sweeping the engine's
+# uncached prefill token load from 0 to ~200K+ and back, to collect ~20
+# requests per (request size band, 20K-token load bin) cell for
+# tools/state_breakdown.py. Same deployment, AIPerf fork, dataset and seed as
+# b200_workday_curve_single_replica.yaml and b200_fast_curve_single_replica.yaml,
+# whose low-load (workday) and >256K (fast) data this fills in between.
+#
+# Why bursts: load comes from new sessions. A new session's turn 0 is small
+# (mostly <4K uncached) and its turn 1, sent as soon as turn 0 returns, is the
+# cold bulk of the trajectory (~35-90K). Across the fast run's ramp, new
+# sessions brought ~36K uncached tokens each, and the engine drained ~18K
+# tokens/s (16K-token chunks in ~0.85s steps). Starting N sessions over T
+# seconds therefore peaks the load near 36K*N - 18K*T, rising roughly
+# linearly from 0, so arrivals during the ramp land spread across every bin
+# up to the peak, then again on the way down as it drains. Sessions are
+# closed-loop and running sessions stall while a backlog drains (each decode
+# token waits a full prefill step), so the arrivals at high load are mostly
+# the bursting sessions' own turns 0 and 1: turn 0 fills the <4K row, turn 1
+# the 16-48K and >=48K rows.
+#
+# Bursts, interleaved in the order A C B C A B B A C A B C C B A B C A (six
+# each) so drift over the hour does not line up with burst size:
+#   A  +24 sessions over 30s (one every 1.25s)  predicted peak ~320K
+#   B  +32 sessions over 50s (one every 1.56s)  predicted peak ~250K
+#   C  +40 sessions over 70s (one every 1.75s)  predicted peak ~180K
+# Each holds 20s at its peak, ramps back to a base of 8 over 30s, and sits
+# at 8 for 90s: the backlog drains, sessions stuck mid-response finish and
+# retire at their turn boundaries, so the next burst starts fresh, cold
+# sessions instead of paying off retirement debt. The base of 8 keeps warm
+# turns (the 4-16K row comes mostly from these) arriving into each burst.
+#
+# Expected yield over 18 bursts: <4K at every bin well above 20; 16-48K and
+# >=48K roughly 20-35 per 20K bin up to ~200K; 4-16K thin at loads above
+# ~40K (likely 5-10 per bin), since warm turns rarely arrive during a
+# backlog. The peak predictions are rough (+-50%); check the 20K-bin counts
+# after the run.
+#
+# Peak 48 sessions: the fast run reached 74% of the 4,115,962 KV tokens at 48
+# with no preemptions.
+#
+# Timeline: load 0-3570s (~60 min), AIPerf drains for up to 120s, then 180s
+# idle.
+name: b200-burst-sweep-single-replica
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 1
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 3600
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 48
+    # 0-120s: ramp to the base of 8 and settle. Then 18 bursts of
+    # ramp / 20s hold / 30s down to 8 / 90s at 8, labelled by type.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 60, sessions: 8}
+      - {time_s: 120, sessions: 8}
+      - {time_s: 150, sessions: 32}    # A
+      - {time_s: 170, sessions: 32}
+      - {time_s: 200, sessions: 8}
+      - {time_s: 290, sessions: 8}
+      - {time_s: 360, sessions: 48}    # C
+      - {time_s: 380, sessions: 48}
+      - {time_s: 410, sessions: 8}
+      - {time_s: 500, sessions: 8}
+      - {time_s: 550, sessions: 40}    # B
+      - {time_s: 570, sessions: 40}
+      - {time_s: 600, sessions: 8}
+      - {time_s: 690, sessions: 8}
+      - {time_s: 760, sessions: 48}    # C
+      - {time_s: 780, sessions: 48}
+      - {time_s: 810, sessions: 8}
+      - {time_s: 900, sessions: 8}
+      - {time_s: 930, sessions: 32}    # A
+      - {time_s: 950, sessions: 32}
+      - {time_s: 980, sessions: 8}
+      - {time_s: 1070, sessions: 8}
+      - {time_s: 1120, sessions: 40}   # B
+      - {time_s: 1140, sessions: 40}
+      - {time_s: 1170, sessions: 8}
+      - {time_s: 1260, sessions: 8}
+      - {time_s: 1310, sessions: 40}   # B
+      - {time_s: 1330, sessions: 40}
+      - {time_s: 1360, sessions: 8}
+      - {time_s: 1450, sessions: 8}
+      - {time_s: 1480, sessions: 32}   # A
+      - {time_s: 1500, sessions: 32}
+      - {time_s: 1530, sessions: 8}
+      - {time_s: 1620, sessions: 8}
+      - {time_s: 1690, sessions: 48}   # C
+      - {time_s: 1710, sessions: 48}
+      - {time_s: 1740, sessions: 8}
+      - {time_s: 1830, sessions: 8}
+      - {time_s: 1860, sessions: 32}   # A
+      - {time_s: 1880, sessions: 32}
+      - {time_s: 1910, sessions: 8}
+      - {time_s: 2000, sessions: 8}
+      - {time_s: 2050, sessions: 40}   # B
+      - {time_s: 2070, sessions: 40}
+      - {time_s: 2100, sessions: 8}
+      - {time_s: 2190, sessions: 8}
+      - {time_s: 2260, sessions: 48}   # C
+      - {time_s: 2280, sessions: 48}
+      - {time_s: 2310, sessions: 8}
+      - {time_s: 2400, sessions: 8}
+      - {time_s: 2470, sessions: 48}   # C
+      - {time_s: 2490, sessions: 48}
+      - {time_s: 2520, sessions: 8}
+      - {time_s: 2610, sessions: 8}
+      - {time_s: 2660, sessions: 40}   # B
+      - {time_s: 2680, sessions: 40}
+      - {time_s: 2710, sessions: 8}
+      - {time_s: 2800, sessions: 8}
+      - {time_s: 2830, sessions: 32}   # A
+      - {time_s: 2850, sessions: 32}
+      - {time_s: 2880, sessions: 8}
+      - {time_s: 2970, sessions: 8}
+      - {time_s: 3020, sessions: 40}   # B
+      - {time_s: 3040, sessions: 40}
+      - {time_s: 3070, sessions: 8}
+      - {time_s: 3160, sessions: 8}
+      - {time_s: 3230, sessions: 48}   # C
+      - {time_s: 3250, sessions: 48}
+      - {time_s: 3280, sessions: 8}
+      - {time_s: 3370, sessions: 8}
+      - {time_s: 3400, sessions: 32}   # A
+      - {time_s: 3420, sessions: 32}
+      - {time_s: 3450, sessions: 8}
+      - {time_s: 3540, sessions: 8}
+      - {time_s: 3570, sessions: 1}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

@@ -1,0 +1,87 @@
+# The workday curve of b200_workday_curve_token.yaml on one fixed replica: the
+# same deployment, curve shape, AIPerf fork, seed and analysis, with autoscaling
+# pinned to min = initial = max = 1 (so the token policy and its delays are
+# dropped) and the peak lowered from 48 to 32 sessions.
+#
+# Purpose: data on how one engine's TTFT responds to its own load, for the
+# vLLM scheduler traces (RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR). Sessions ramp
+# 1 -> 32 over 600s, hold at 32 for 600s and ramp back to 1 over 600s, so one
+# engine sweeps from idle to about twice the ~10-16 sessions a replica
+# handles, and back down. With a single replica the KV-aware router cannot
+# steer requests away from a busy engine, and overlapping cold prompts drive
+# the uncached prefill load well past the 32K tokens the autoscaled runs
+# rarely reached. Sessions are closed-loop (one request in flight each), so
+# the queue stays bounded by 32 requests. The engine holds 4,115,962 KV
+# tokens; running requests held ~75K tokens each in the autoscaled runs (95K
+# at the p90 step), so 32 running is ~58-74% of KV, with rare preemptions at
+# worst. 48 would exceed it. Before preemptions, prefix-cache evictions of
+# sessions between turns will turn some warm turns cold.
+#
+# TTFT will far exceed the 5s SLO through the middle of the run; the SLO
+# verdict is not the point of this run.
+#
+# Timeline: load 0-1800s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-workday-curve-single-replica
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 1
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1800
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 32
+    # 0-600s ramp 1->32 (one cold session every ~19.4s); 600-1200s hold at
+    # 32; 1200-1800s ramp down to 1, one retirement every ~19.4s. The floor is
+    # 1 because the series cannot go to 0, and load issuance ends at 1800s.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 600, sessions: 32}
+      - {time_s: 1200, sessions: 32}
+      - {time_s: 1800, sessions: 1}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0
