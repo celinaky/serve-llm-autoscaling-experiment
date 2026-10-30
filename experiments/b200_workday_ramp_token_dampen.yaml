@@ -56,40 +56,17 @@ deployment:
       kwargs:
         target_prefill_tokens_per_replica: 60000
         target_decode_requests_per_replica: 8
-        # Scale-up: aggregate the required count over the last 30s of router
-        # snapshots. Must not exceed look_back_period_s below (the policy
-        # raises otherwise; the replica prunes older samples anyway).
         upscale_lookback_s: 30
-        # mean: time-weighted average of the required count over the window,
-        # so a lone 5-15s spike counts for its duration only and a replica is
-        # requested when the backlog is sustained. max (the first run) holds
-        # any spike at full weight for the whole window.
         upscale_aggregation: mean
-        # Propose dropping one replica only when the survivors would sit
-        # below 80% of both per-replica targets on the latest snapshot.
-        scale_down_sensitivity: 0.8
     min_replicas: 1
     initial_replicas: 1
     max_replicas: 8
     # Unused by the token policy; kept so the deployment config stays
     # comparable with the default-policy run.
     target_ongoing_requests: 8
-    # Serve's default, and what the default-policy baseline uses. The
-    # undampened config needs 0 because the raw prefill backlog never
-    # persists 10s; the 30s mean above changes slowly enough that a 10s
-    # delay no longer silences the prefill term.
     upscale_delay_s: 10
-    # A replica costs ~100s to start; do not drop one on a short lull.
     downscale_delay_s: 300
-    # The engine replica records the router's work snapshot every
-    # min(0.2 x look_back_period_s, metrics_interval_s) and pushes it to the
-    # controller every metrics_interval_s: 6s and 10s by default, against
-    # backlog spikes that last 2-8s. Record and push every 2s instead, so the
-    # policy reacts to a cold prompt within seconds.
     metrics_interval_s: 2
-    # Raised from 10 to retain the 30s of snapshots upscale_lookback_s reads
-    # (samples older than this are pruned before each push). The record
-    # interval stays min(0.2 x 30, 2) = 2s.
     look_back_period_s: 30
 benchmark:
   generator: aiperf
@@ -120,11 +97,6 @@ analysis:
   status_interval_s: 1
   metrics_interval_s: 2
   generate_plots: true
-  # The p95 of the workload's queue-free TTFT floor is ~3.8s (cold prompts of
-  # 32K-128K uncached tokens at ~16K tok/s; findings-token-policy/scripts/
-  # ttft_floor.py), so 3s is unreachable by any replica count. The best
-  # configuration measured 4.5-4.9s over three runs; 5s is the target it
-  # meets with the run-to-run spread included.
   ttft_slo_ms: 5000
   itl_slo_ms: 50
   # Score the whole ramp; the cold session starts are the point.

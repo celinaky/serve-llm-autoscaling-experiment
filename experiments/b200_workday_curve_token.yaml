@@ -54,7 +54,6 @@ deployment:
     upscale_delay_s: 10
     downscale_delay_s: 120
     metrics_interval_s: 2
-    # Retains the 60s of snapshots upscale_lookback_s reads.
     look_back_period_s: 60
 benchmark:
   generator: aiperf
