@@ -1,0 +1,63 @@
+{
+  "models": {
+    "data": [
+      {
+        "created": 1793338161,
+        "id": "Qwen/Qwen3.6-27B-FP8",
+        "max_model_len": 262144,
+        "object": "model",
+        "owned_by": "vllm",
+        "parent": null,
+        "permission": [
+          {
+            "allow_create_engine": false,
+            "allow_fine_tuning": false,
+            "allow_logprobs": true,
+            "allow_sampling": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "created": 1793338161,
+            "group": null,
+            "id": "modelperm-b98693cbf0b76269",
+            "is_blocking": false,
+            "object": "model_permission",
+            "organization": "*"
+          }
+        ],
+        "root": "Qwen/Qwen3.6-27B-FP8"
+      }
+    ],
+    "object": "list"
+  },
+  "serve_status": {
+    "applications": {
+      "ttft-benchmark": {
+        "deployments": {
+          "LLMRouter": {
+            "message": "",
+            "replica_states": {
+              "RUNNING": 1
+            },
+            "status": {},
+            "status_trigger": {}
+          },
+          "LLMServer:Qwen--Qwen3_6-27B-FP8": {
+            "message": "",
+            "replica_states": {
+              "RUNNING": 1
+            },
+            "status": {},
+            "status_trigger": {}
+          }
+        },
+        "last_deployed_time_s": 1793337875.97114,
+        "message": "",
+        "status": {}
+      }
+    },
+    "proxies": {
+      "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323": {}
+    },
+    "target_capacity": null
+  }
+}

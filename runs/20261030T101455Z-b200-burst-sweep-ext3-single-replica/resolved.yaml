@@ -1,0 +1,165 @@
+name: b200-burst-sweep-ext3-single-replica
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  model_source: Qwen/Qwen3.6-27B-FP8
+  tokenizer: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+    request_router_kwargs: {}
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    enable_prompt_tokens_details: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: default
+      kwargs: {}
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 1
+    target_ongoing_requests: null
+    upscale_delay_s: null
+    downscale_delay_s: null
+  max_ongoing_requests: null
+  experimental_configs: {}
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  levels:
+  - 1.0
+  - 2.0
+  - 4.0
+  - 8.0
+  duration_s: 1860.0
+  grace_period_s: 120.0
+  post_load_observation_s: 180.0
+  warmup:
+    enabled: true
+    duration_s: 30.0
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 48
+    concurrency_ramp_duration_s: null
+    concurrency_series:
+    - time_s: 0.0
+      sessions: 1
+    - time_s: 60.0
+      sessions: 8
+    - time_s: 120.0
+      sessions: 8
+    - time_s: 150.0
+      sessions: 32
+    - time_s: 170.0
+      sessions: 32
+    - time_s: 200.0
+      sessions: 8
+    - time_s: 290.0
+      sessions: 8
+    - time_s: 360.0
+      sessions: 48
+    - time_s: 380.0
+      sessions: 48
+    - time_s: 410.0
+      sessions: 8
+    - time_s: 500.0
+      sessions: 8
+    - time_s: 550.0
+      sessions: 40
+    - time_s: 570.0
+      sessions: 40
+    - time_s: 600.0
+      sessions: 8
+    - time_s: 690.0
+      sessions: 8
+    - time_s: 760.0
+      sessions: 48
+    - time_s: 780.0
+      sessions: 48
+    - time_s: 810.0
+      sessions: 8
+    - time_s: 900.0
+      sessions: 8
+    - time_s: 930.0
+      sessions: 32
+    - time_s: 950.0
+      sessions: 32
+    - time_s: 980.0
+      sessions: 8
+    - time_s: 1070.0
+      sessions: 8
+    - time_s: 1120.0
+      sessions: 40
+    - time_s: 1140.0
+      sessions: 40
+    - time_s: 1170.0
+      sessions: 8
+    - time_s: 1260.0
+      sessions: 8
+    - time_s: 1310.0
+      sessions: 40
+    - time_s: 1330.0
+      sessions: 40
+    - time_s: 1360.0
+      sessions: 8
+    - time_s: 1450.0
+      sessions: 8
+    - time_s: 1480.0
+      sessions: 32
+    - time_s: 1500.0
+      sessions: 32
+    - time_s: 1530.0
+      sessions: 8
+    - time_s: 1620.0
+      sessions: 8
+    - time_s: 1690.0
+      sessions: 48
+    - time_s: 1710.0
+      sessions: 48
+    - time_s: 1740.0
+      sessions: 8
+    - time_s: 1830.0
+      sessions: 8
+    - time_s: 1860.0
+      sessions: 1
+    trajectory_start_min_ratio: 0.0
+    trajectory_start_max_ratio: 0.0
+    seed: 45
+    unsafe_override: false
+  streaming: true
+  arrival_pattern: poisson
+  arrival_smoothness: null
+  rate_series: null
+  fail_fast: true
+  use_server_token_count: true
+  extra_args: []
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800.0
+  readiness_poll_s: 2.0
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5.0
+  tail_window_s: 30.0
+  status_interval_s: 1.0
+  metrics_interval_s: 2.0
+  prometheus_enabled: true
+  generate_plots: true
+  ttft_slo_ms: 5000.0
+  itl_slo_ms: 50.0
+  slo_percentile: 0.95
+  warmup_s: 0.0

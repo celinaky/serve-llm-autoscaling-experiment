@@ -1,0 +1,13 @@
+{
+  "policy": "token",
+  "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+  "policy_kwargs": {
+    "target_decode_requests_per_replica": 8,
+    "target_prefill_tokens_per_replica": 60000,
+    "upscale_aggregation": "mean",
+    "upscale_lookback_s": 30
+  },
+  "verified_deployments": [
+    "LLMServer:Qwen--Qwen3_6-27B-FP8"
+  ]
+}

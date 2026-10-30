@@ -1,0 +1,164 @@
+{
+  "points": [
+    {
+      "time_s": 0.0,
+      "concurrency": 1
+    },
+    {
+      "time_s": 60.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 120.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 150.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 170.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 200.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 290.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 360.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 380.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 410.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 500.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 550.0,
+      "concurrency": 40
+    },
+    {
+      "time_s": 570.0,
+      "concurrency": 40
+    },
+    {
+      "time_s": 600.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 690.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 760.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 780.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 810.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 900.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 930.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 950.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 980.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1070.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1120.0,
+      "concurrency": 40
+    },
+    {
+      "time_s": 1140.0,
+      "concurrency": 40
+    },
+    {
+      "time_s": 1170.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1260.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1310.0,
+      "concurrency": 40
+    },
+    {
+      "time_s": 1330.0,
+      "concurrency": 40
+    },
+    {
+      "time_s": 1360.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1450.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1480.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 1500.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 1530.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1620.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1690.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 1710.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 1740.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1830.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1860.0,
+      "concurrency": 1
+    }
+  ]
+}

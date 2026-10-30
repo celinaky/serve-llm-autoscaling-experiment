@@ -1,0 +1,97 @@
+# A symmetric workday-shaped AgentX session curve on 8 B200s: sessions ramp
+# 1->48 over 600s, hold at 48 for 600s, and ramp back to 1 over 600s, all in
+# one AIPerf process. The curve is delivered by the workday-curve AIPerf fork
+# (runtime.aiperf_source): the session limit follows the curve, and when it
+# falls below the live count, sessions are retired at their next turn
+# boundary. Every session starts cold at turn 0. One cold session every
+# ~12.8s on the way up; 48 sessions is roughly 5-6 replicas at ~10 sessions
+# each, so the 8-replica cap is not the limit. Note a hold is not steady
+# load: sessions are front-loaded and later turns are prefix-cached, so
+# demand peaks ~90s into the hold and then falls.
+#
+# Timeline: load 0-1800s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-workday-curve-token
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        # Required capacity is max(prefill / 60000, decode / 5), and both
+        # directions follow the time-weighted mean of that over the last 60s
+        # of router snapshots (upscale_aggregation must be "mean"; the policy
+        # has no separate downscale window). Decode target 5: active decodes
+        # (~20-28 at the hold) are the steady concurrency signal. Prefill
+        # target 60K is a sustained-backlog guard only: in-flight uncached
+        # prefill is burst-driven (subagent fan-outs of 150-400K tokens for
+        # 10-60s) and barely depends on replica count, so a low target pins
+        # the cap. upscale_lookback_s must not exceed look_back_period_s.
+        target_prefill_tokens_per_replica: 60000
+        target_decode_requests_per_replica: 5
+        upscale_lookback_s: 60
+        upscale_aggregation: mean
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    target_ongoing_requests: 8
+    upscale_delay_s: 10
+    downscale_delay_s: 120
+    metrics_interval_s: 2
+    look_back_period_s: 60
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1800
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 48
+    # 0-600s ramp 1->48 (one cold session every ~12.8s); 600-1200s hold at
+    # 48; 1200-1800s ramp down to 1, one retirement every ~12.8s. The floor is
+    # 1 because the series cannot go to 0, and load issuance ends at 1800s.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 600, sessions: 48}
+      - {time_s: 1200, sessions: 48}
+      - {time_s: 1800, sessions: 1}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

@@ -1,0 +1,195 @@
+[
+  {
+    "aiperf_request_throughput": 0.5010047531163008,
+    "artifact_dir": "runs/20261030T085155Z-b200-burst-sweep-ext-single-replica/benchmark/agentx-concurrency-ramp",
+    "concurrency_series": [
+      {
+        "sessions": 1,
+        "time_s": 0.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 60.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 120.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 150.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 170.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 200.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 290.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 360.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 380.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 410.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 500.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 550.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 570.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 600.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 690.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 760.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 780.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 810.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 900.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 930.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 950.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 980.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1070.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1120.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1140.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1170.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1260.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1310.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1330.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1360.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1450.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 1480.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 1500.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1530.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1620.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 1690.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 1710.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1740.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1830.0
+      },
+      {
+        "sessions": 1,
+        "time_s": 1860.0
+      }
+    ],
+    "elapsed_s": 2067.530368105974,
+    "error": null,
+    "failed_requests": 0,
+    "level": 48,
+    "mean_e2el_ms": 71988.34312862888,
+    "mean_failed_qps": 0.0,
+    "mean_offered_qps": 0.5360215053763441,
+    "mean_started_qps": 0.5360215053763441,
+    "mean_successful_qps": 0.5086021505376344,
+    "mean_tpot_ms": 228.5656432839815,
+    "mean_ttft_ms": 6812.59486857372,
+    "mode": "agentx_concurrency_ramp",
+    "output_token_throughput": 311.4133987642549,
+    "p50_tpot_ms": 102.90445051032275,
+    "p50_ttft_ms": 2753.547295,
+    "p90_tpot_ms": 813.3435713708334,
+    "p90_ttft_ms": 19141.129923999997,
+    "p99_e2el_ms": 579198.8406362798,
+    "p99_tpot_ms": 852.8160566217704,
+    "p99_ttft_ms": 37223.46703211999,
+    "profiling_interval_s": 1860.0,
+    "prompt_cache_read_pct": 49.99507630768015,
+    "request_count": 997.0,
+    "request_throughput": 0.5010047531163008,
+    "target_concurrency": 48,
+    "total_prompt_cache_read_tokens": 19891648.0,
+    "total_token_throughput": 20304.977418077622
+  }
+]

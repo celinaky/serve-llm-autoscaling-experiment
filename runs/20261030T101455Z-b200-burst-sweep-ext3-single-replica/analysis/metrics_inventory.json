@@ -1,0 +1,511 @@
+{
+  "collected": true,
+  "endpoints": [
+    "http://10.240.13.26:8085/metrics"
+  ],
+  "max_scrape_bytes": 2518506,
+  "max_scrape_duration_s": 0.625106413,
+  "metrics": {
+    "serve_autoscaling_desired_replicas": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_autoscaling_desired_replicas"
+      ],
+      "sample_count": 1123,
+      "sample_names": [
+        "ray_serve_autoscaling_desired_replicas"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_autoscaling_target_ongoing_requests": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_autoscaling_target_ongoing_requests"
+      ],
+      "sample_count": 1123,
+      "sample_names": [
+        "ray_serve_autoscaling_target_ongoing_requests"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_autoscaling_target_replicas": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_autoscaling_target_replicas"
+      ],
+      "sample_count": 2246,
+      "sample_names": [
+        "ray_serve_autoscaling_target_replicas"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_autoscaling_total_requests": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_autoscaling_total_requests"
+      ],
+      "sample_count": 1123,
+      "sample_names": [
+        "ray_serve_autoscaling_total_requests"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_deployment_queued_queries": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "actor_id",
+        "application",
+        "deployment",
+        "handle"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_deployment_queued_queries"
+      ],
+      "sample_count": 4453,
+      "sample_names": [
+        "ray_serve_deployment_queued_queries"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_deployment_replica_healthy": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment",
+        "replica"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_deployment_replica_healthy"
+      ],
+      "sample_count": 2244,
+      "sample_names": [
+        "ray_serve_deployment_replica_healthy"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_num_ongoing_requests_at_replicas": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "actor_id",
+        "application",
+        "deployment",
+        "handle"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_num_ongoing_requests_at_replicas"
+      ],
+      "sample_count": 4453,
+      "sample_names": [
+        "ray_serve_num_ongoing_requests_at_replicas"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_replica_processing_queries": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment",
+        "replica"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_replica_processing_queries"
+      ],
+      "sample_count": 2246,
+      "sample_names": [
+        "ray_serve_replica_processing_queries"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "serve_replica_startup_latency_ms": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "application",
+        "deployment",
+        "le"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_serve_replica_startup_latency_ms"
+      ],
+      "sample_count": 202104,
+      "sample_names": [
+        "ray_serve_replica_startup_latency_ms_bucket",
+        "ray_serve_replica_startup_latency_ms_count",
+        "ray_serve_replica_startup_latency_ms_sum"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "histogram"
+      ]
+    },
+    "serve_request_router_queue_len": {
+      "first_timestamp_ns": 1793355419132553043,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "actor_id",
+        "application",
+        "deployment",
+        "handle_source",
+        "replica_id"
+      ],
+      "last_timestamp_ns": 1793357489157132823,
+      "original_names": [
+        "ray_serve_request_router_queue_len"
+      ],
+      "sample_count": 1950,
+      "sample_names": [
+        "ray_serve_request_router_queue_len"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "vllm_num_requests_running": {
+      "first_timestamp_ns": 1793355491157853272,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "ReplicaId",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "engine",
+        "model_name"
+      ],
+      "last_timestamp_ns": 1793357489157132823,
+      "original_names": [
+        "ray_vllm_num_requests_running"
+      ],
+      "sample_count": 1000,
+      "sample_names": [
+        "ray_vllm_num_requests_running"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "vllm_num_requests_waiting": {
+      "first_timestamp_ns": 1793355491157853272,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "ReplicaId",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "engine",
+        "model_name"
+      ],
+      "last_timestamp_ns": 1793357489157132823,
+      "original_names": [
+        "ray_vllm_num_requests_waiting"
+      ],
+      "sample_count": 1000,
+      "sample_names": [
+        "ray_vllm_num_requests_waiting"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "gauge"
+      ]
+    },
+    "vllm_prefix_cache_hits": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "ReplicaId",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "engine",
+        "model_name"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_vllm_prefix_cache_hits"
+      ],
+      "sample_count": 5566,
+      "sample_names": [
+        "ray_vllm_prefix_cache_hits_total"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "counter"
+      ]
+    },
+    "vllm_prefix_cache_queries": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "ReplicaId",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "engine",
+        "model_name"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_vllm_prefix_cache_queries"
+      ],
+      "sample_count": 5576,
+      "sample_names": [
+        "ray_vllm_prefix_cache_queries_total"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "counter"
+      ]
+    },
+    "vllm_request_time_per_output_token_seconds": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "ReplicaId",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "engine",
+        "le",
+        "model_name"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_vllm_request_time_per_output_token_seconds"
+      ],
+      "sample_count": 122672,
+      "sample_names": [
+        "ray_vllm_request_time_per_output_token_seconds_bucket",
+        "ray_vllm_request_time_per_output_token_seconds_count",
+        "ray_vllm_request_time_per_output_token_seconds_sum"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "histogram"
+      ]
+    },
+    "vllm_time_to_first_token_seconds": {
+      "first_timestamp_ns": 1793355413144139927,
+      "labels": [
+        "Component",
+        "NodeAddress",
+        "ReplicaId",
+        "SessionName",
+        "Version",
+        "WorkerId",
+        "engine",
+        "le",
+        "model_name"
+      ],
+      "last_timestamp_ns": 1793357657155024373,
+      "original_names": [
+        "ray_vllm_time_to_first_token_seconds"
+      ],
+      "sample_count": 139400,
+      "sample_names": [
+        "ray_vllm_time_to_first_token_seconds_bucket",
+        "ray_vllm_time_to_first_token_seconds_count",
+        "ray_vllm_time_to_first_token_seconds_sum"
+      ],
+      "source_nodes": [
+        "33c8be3ae1e891d03c293636681cadf5daaff6dd64aa71a95bc02323"
+      ],
+      "types": [
+        "histogram"
+      ]
+    }
+  },
+  "missing_recommended_metrics": [
+    "serve_sla_autoscaling_recommended_replicas",
+    "serve_sla_autoscaling_model_ready",
+    "serve_sla_autoscaling_training_rows",
+    "serve_sla_autoscaling_training_buckets",
+    "serve_sla_autoscaling_predicted_ttft_ms",
+    "serve_sla_autoscaling_predicted_itl_ms",
+    "serve_sla_autoscaling_fit_duration_ms",
+    "serve_sla_autoscaling_inference_duration_ms",
+    "serve_autoscaling_policy_metric"
+  ],
+  "other_available_serve_metrics": [
+    "serve_application_status",
+    "serve_autoscaling_handle_metrics_delay_ms",
+    "serve_autoscaling_policy_execution_time_ms",
+    "serve_autoscaling_replica_metrics_delay_ms",
+    "serve_controller_application_state_update_duration_s",
+    "serve_controller_control_loop_duration_s",
+    "serve_controller_deployment_state_update_duration_s",
+    "serve_controller_node_update_duration_s",
+    "serve_controller_num_control_loops",
+    "serve_controller_proxy_state_update_duration_s",
+    "serve_controller_sleep_duration_s",
+    "serve_deployment_error_counter",
+    "serve_deployment_max_processing_latency_ms",
+    "serve_deployment_processing_latency_ms",
+    "serve_deployment_replica_starts",
+    "serve_deployment_request_counter",
+    "serve_deployment_status",
+    "serve_event_loop_monitoring_iterations",
+    "serve_event_loop_scheduling_latency_ms",
+    "serve_event_loop_tasks",
+    "serve_handle_request_counter",
+    "serve_haproxy_process_count",
+    "serve_haproxy_target_mismatch",
+    "serve_haproxy_update_latency_s",
+    "serve_health_check_latency_ms",
+    "serve_http_request_latency_ms",
+    "serve_long_poll_host_transmission_counter",
+    "serve_long_poll_latency_ms",
+    "serve_long_poll_pending_clients",
+    "serve_num_deployment_http_error_requests",
+    "serve_num_http_error_requests",
+    "serve_num_http_requests",
+    "serve_num_ongoing_http_requests",
+    "serve_num_router_requests",
+    "serve_num_scheduling_tasks",
+    "serve_num_scheduling_tasks_in_backoff",
+    "serve_proxy_shutdown_duration_ms",
+    "serve_proxy_status",
+    "serve_replica_initialization_latency_ms",
+    "serve_replica_shutdown_duration_ms",
+    "serve_replica_utilization_percent",
+    "serve_reserved_slots_active",
+    "serve_router_args_resolution_latency_ms",
+    "serve_routing_stats_delay_ms"
+  ],
+  "overran_cycles": 0,
+  "schema_version": 4,
+  "scrape_errors": 0,
+  "scrape_records": 1123
+}

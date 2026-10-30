@@ -1,0 +1,31 @@
+{
+  "applications": {
+    "ttft-benchmark": {
+      "deployments": {
+        "LLMRouter": {
+          "message": "",
+          "replica_states": {
+            "RUNNING": 1
+          },
+          "status": {},
+          "status_trigger": {}
+        },
+        "LLMServer:Qwen--Qwen3_6-27B-FP8": {
+          "message": "",
+          "replica_states": {
+            "RUNNING": 1
+          },
+          "status": {},
+          "status_trigger": {}
+        }
+      },
+      "last_deployed_time_s": 1793298750.2240868,
+      "message": "",
+      "status": {}
+    }
+  },
+  "proxies": {
+    "71f93ef525564cd98118dc2c2613f427807de0487afd76323580219b": {}
+  },
+  "target_capacity": null
+}

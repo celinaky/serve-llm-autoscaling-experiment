@@ -1,0 +1,65 @@
+{
+  "analysis": {
+    "plot_error": null,
+    "warnings": [
+      "phase_manifest.json unavailable; time origin is the first profiling credit"
+    ]
+  },
+  "autoscaling": {
+    "policy": "default",
+    "policy_function": "ray.serve.autoscaling_policy:default_autoscaling_policy",
+    "policy_kwargs": {},
+    "verified_deployments": [
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ]
+  },
+  "environment": {
+    "aiperf_source": "git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0",
+    "aiperf_version": "0.13.0",
+    "cluster_resources": {
+      "CPU": 184.0,
+      "GPU": 8.0,
+      "accelerator_type:B200": 1.0,
+      "anyscale/accelerator_shape:8xB200-180G": 1.0,
+      "anyscale/node-group:head": 1.0,
+      "anyscale/provider:generic": 1.0,
+      "anyscale/region:no-sys2-osl1": 1.0,
+      "memory": 2061584302080.0,
+      "node:10.240.13.26": 1.0,
+      "node:__internal_head__": 1.0,
+      "object_store_memory": 200000000000.0
+    },
+    "python_executable": "/home/ray/anaconda3/bin/python",
+    "python_version": "3.12.15",
+    "ray_path": "/home/ray/anaconda3/lib/python3.12/site-packages/ray/__init__.py",
+    "ray_version": "3.0.0.dev0"
+  },
+  "error": null,
+  "failure_stage": null,
+  "finished_at": "2026-10-30T08:50:12.198841+00:00",
+  "git_revision": "e030e0128a64b1c39a8cf01953a4d7f2d95deacd",
+  "name": "b200-burst-sweep-single-replica",
+  "readiness_s": 0.019516589818522334,
+  "routing": {
+    "ai_dynamo_version": "1.6.1",
+    "deployments": [
+      "LLMRouter",
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ],
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
+    "topology": "direct_streaming"
+  },
+  "started_at": "2026-10-30T07:43:00.657911+00:00",
+  "status": "succeeded",
+  "telemetry": {
+    "serve_metrics.jsonl": {
+      "error_records": 0,
+      "records": 1955
+    },
+    "serve_status.jsonl": {
+      "error_records": 0,
+      "records": 3910
+    }
+  }
+}

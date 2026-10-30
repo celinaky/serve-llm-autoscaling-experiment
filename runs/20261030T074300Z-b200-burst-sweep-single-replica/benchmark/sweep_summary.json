@@ -1,0 +1,339 @@
+[
+  {
+    "aiperf_request_throughput": 0.5034945369192348,
+    "artifact_dir": "runs/20261030T074300Z-b200-burst-sweep-single-replica/benchmark/agentx-concurrency-ramp",
+    "concurrency_series": [
+      {
+        "sessions": 1,
+        "time_s": 0.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 60.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 120.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 150.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 170.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 200.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 290.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 360.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 380.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 410.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 500.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 550.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 570.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 600.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 690.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 760.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 780.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 810.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 900.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 930.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 950.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 980.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1070.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1120.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1140.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1170.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1260.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1310.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 1330.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1360.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1450.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 1480.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 1500.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1530.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1620.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 1690.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 1710.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1740.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1830.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 1860.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 1880.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1910.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2000.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 2050.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 2070.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2100.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2190.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 2260.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 2280.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2310.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2400.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 2470.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 2490.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2520.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2610.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 2660.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 2680.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2710.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2800.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 2830.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 2850.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2880.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 2970.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 3020.0
+      },
+      {
+        "sessions": 40,
+        "time_s": 3040.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 3070.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 3160.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 3230.0
+      },
+      {
+        "sessions": 48,
+        "time_s": 3250.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 3280.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 3370.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 3400.0
+      },
+      {
+        "sessions": 32,
+        "time_s": 3420.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 3450.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 3540.0
+      },
+      {
+        "sessions": 1,
+        "time_s": 3570.0
+      }
+    ],
+    "elapsed_s": 3729.589175564004,
+    "error": null,
+    "failed_requests": 0,
+    "level": 48,
+    "mean_e2el_ms": 84206.98823028404,
+    "mean_failed_qps": 0.0,
+    "mean_offered_qps": 0.5202777777777777,
+    "mean_started_qps": 0.5202777777777777,
+    "mean_successful_qps": 0.5066666666666667,
+    "mean_tpot_ms": 210.09258443062947,
+    "mean_ttft_ms": 6931.044856147891,
+    "mode": "agentx_concurrency_ramp",
+    "output_token_throughput": 319.2354288764863,
+    "p50_tpot_ms": 99.22603205394056,
+    "p50_ttft_ms": 2786.399798,
+    "p90_tpot_ms": 642.3222220885342,
+    "p90_ttft_ms": 19805.772652799995,
+    "p99_e2el_ms": 615236.1003087197,
+    "p99_tpot_ms": 874.975656434074,
+    "p99_ttft_ms": 42751.956285919994,
+    "profiling_interval_s": 3600.0,
+    "prompt_cache_read_pct": 46.7974265567783,
+    "request_count": 1873.0,
+    "request_throughput": 0.5034945369192348,
+    "target_concurrency": 48,
+    "total_prompt_cache_read_tokens": 37326240.0,
+    "total_token_throughput": 21760.44383198754
+  }
+]

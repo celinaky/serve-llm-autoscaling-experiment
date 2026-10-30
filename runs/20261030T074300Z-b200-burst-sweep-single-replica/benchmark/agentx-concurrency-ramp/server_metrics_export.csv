@@ -1,0 +1,34 @@
+# AIPerf Server Metrics Export (CSV)
+# aiperf_version: 0.13.0
+# schema_version: 1.0
+# benchmark_id: 7c302092a0be
+# Note: Same benchmark_id and version appear in JSON and Parquet exports
+#
+Endpoint,Type,Metric,Unit,avg,min,max,std,p1,p5,p10,p25,p50,p75,p90,p95,p99,Description
+127.0.0.1:8000,gauge,process_max_fds,,1024.0000,1024.0000,1024.0000,0.0000,1024.0000,1024.0000,1024.0000,1024.0000,1024.0000,1024.0000,1024.0000,1024.0000,1024.0000,Maximum number of open file descriptors.
+127.0.0.1:8000,gauge,process_open_fds,,183.8825,132.0000,224.0000,19.8381,135.0000,147.0000,157.0000,170.0000,186.0000,197.0000,209.0000,216.0000,223.0000,Number of open file descriptors.
+127.0.0.1:8000,gauge,process_resident_memory_bytes,bytes,2136079664.4126,2034843648.0000,2254716928.0000,58122511.9437,2036416512.0000,2062704640.0000,2080006144.0000,2083262464.0000,2162200576.0000,2182365184.0000,2223472640.0000,2223472640.0000,2252718080.0000,Resident memory size in bytes.
+127.0.0.1:8000,gauge,process_start_time_seconds,seconds,1793346192.5400,1793346192.5400,1793346192.5400,0.0000,1793346192.5400,1793346192.5400,1793346192.5400,1793346192.5400,1793346192.5400,1793346192.5400,1793346192.5400,1793346192.5400,1793346192.5400,Start time of the process since unix epoch in seconds.
+127.0.0.1:8000,gauge,process_virtual_memory_bytes,bytes,225537315110.8768,225188651008.0000,225712992256.0000,94218781.0767,225362763776.0000,225397366784.0000,225415192576.0000,225419386880.0000,225599746048.0000,225612328960.0000,225637494784.0000,225638543360.0000,225709846528.0000,Virtual memory size in bytes.
+
+Endpoint,Type,Metric,Unit,total,rate,rate_avg,rate_min,rate_max,rate_std,generation,Description
+127.0.0.1:8000,counter,process_cpu_seconds,seconds,166.2000,0.0447,,,,,,Total user and system CPU time spent in seconds.
+127.0.0.1:8000,counter,python_gc_collections,,834.0000,0.2241,,,,,0,Number of times this generation was collected
+127.0.0.1:8000,counter,python_gc_collections,,75.0000,0.0201,,,,,1,Number of times this generation was collected
+127.0.0.1:8000,counter,python_gc_collections,,7.0000,0.0019,,,,,2,Number of times this generation was collected
+127.0.0.1:8000,counter,python_gc_objects_collected,,113.0000,0.0304,,,,,0,Objects collected during gc
+127.0.0.1:8000,counter,python_gc_objects_collected,,0.0000,0.0000,,,,,1,Objects collected during gc
+127.0.0.1:8000,counter,python_gc_objects_collected,,0.0000,0.0000,,,,,2,Objects collected during gc
+127.0.0.1:8000,counter,python_gc_objects_uncollectable,,0.0000,0.0000,,,,,0,Uncollectable objects found during GC
+127.0.0.1:8000,counter,python_gc_objects_uncollectable,,0.0000,0.0000,,,,,1,Uncollectable objects found during GC
+127.0.0.1:8000,counter,python_gc_objects_uncollectable,,0.0000,0.0000,,,,,2,Uncollectable objects found during GC
+
+Endpoint,Type,Metric,Unit,count,count_rate,sum,sum_rate,avg,p1_estimate,p5_estimate,p10_estimate,p25_estimate,p50_estimate,p75_estimate,p90_estimate,p95_estimate,p99_estimate,Description,buckets
+127.0.0.1:8000,histogram,http_request_duration_highr_seconds,seconds,0,,,,,,,,,,,,,,Latency with many buckets but no API specific labels. Made for more accurate percentile calculations.,0.01=0;0.025=0;0.05=0;0.075=0;0.1=0;0.25=0;0.5=0;0.75=0;1.0=0;1.5=0;2.0=0;2.5=0;3.0=0;3.5=0;4.0=0;4.5=0;5.0=0;7.5=0;10.0=0;30.0=0;60.0=0;+Inf=0
+
+Endpoint,Metric,Key,Value,Description
+127.0.0.1:8000,python_info,implementation,CPython,Python platform information
+127.0.0.1:8000,python_info,major,3,Python platform information
+127.0.0.1:8000,python_info,minor,12,Python platform information
+127.0.0.1:8000,python_info,patchlevel,15,Python platform information
+127.0.0.1:8000,python_info,version,3.12.15,Python platform information

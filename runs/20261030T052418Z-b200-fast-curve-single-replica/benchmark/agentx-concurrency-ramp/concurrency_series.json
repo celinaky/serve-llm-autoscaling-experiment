@@ -1,0 +1,20 @@
+{
+  "points": [
+    {
+      "time_s": 0.0,
+      "concurrency": 1
+    },
+    {
+      "time_s": 60.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 240.0,
+      "concurrency": 48
+    },
+    {
+      "time_s": 300.0,
+      "concurrency": 1
+    }
+  ]
+}

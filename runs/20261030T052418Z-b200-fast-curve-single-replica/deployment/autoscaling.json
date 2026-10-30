@@ -1,0 +1,8 @@
+{
+  "policy": "default",
+  "policy_function": "ray.serve.autoscaling_policy:default_autoscaling_policy",
+  "policy_kwargs": {},
+  "verified_deployments": [
+    "LLMServer:Qwen--Qwen3_6-27B-FP8"
+  ]
+}

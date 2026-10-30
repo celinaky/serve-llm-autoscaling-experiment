@@ -1,0 +1,119 @@
+# A third 30-minute extension of b200_burst_sweep_single_replica.yaml: its
+# first nine bursts (A C B C A B B A C) with seed 45, pooled with the seed
+# 42, 43 and 44 runs. Those three left one cell short, >=48K own uncached at
+# 180-200K load, with 7 requests (2, 4 and 1 per run): a >=48K arrival near
+# ~170K lifts the load past ~220K by itself, and the load comes back down
+# through the bin while draining, when bursting sessions have stopped sending
+# their cold turn 1s.
+#
+# The adjustment is a second side prober, cold and large, that samples load
+# at random times instead of in step with the bursts: 48-90K-token unique
+# prompts with no shared prefix (like the replay's cold turn 1s), 8 output
+# tokens, Poisson at 0.07/s (~4K uncached tokens/s on average):
+#   python tools/side_probe.py --out <dir> --until-ns <load end> \
+#       --rate 0.07 --min-new 48000 --max-new 90000 --prefix 0 --seed 9
+# Random arrivals found 180-200K load 2.4% of the time in the earlier runs,
+# so ~125 of them should add ~3 to the cell. The 4-16K prober runs alongside
+# as before (--rate 0.3). Everything else is unchanged; see
+# b200_burst_sweep_single_replica.yaml for the design.
+#
+# Timeline: load 0-1860s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-burst-sweep-ext3-single-replica
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 1
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1860
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 48
+    # 0-120s: ramp to the base of 8 and settle. Then 9 bursts of
+    # ramp / 20s hold / 30s down to 8 / 90s at 8, labelled by type.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 60, sessions: 8}
+      - {time_s: 120, sessions: 8}
+      - {time_s: 150, sessions: 32}    # A
+      - {time_s: 170, sessions: 32}
+      - {time_s: 200, sessions: 8}
+      - {time_s: 290, sessions: 8}
+      - {time_s: 360, sessions: 48}    # C
+      - {time_s: 380, sessions: 48}
+      - {time_s: 410, sessions: 8}
+      - {time_s: 500, sessions: 8}
+      - {time_s: 550, sessions: 40}    # B
+      - {time_s: 570, sessions: 40}
+      - {time_s: 600, sessions: 8}
+      - {time_s: 690, sessions: 8}
+      - {time_s: 760, sessions: 48}    # C
+      - {time_s: 780, sessions: 48}
+      - {time_s: 810, sessions: 8}
+      - {time_s: 900, sessions: 8}
+      - {time_s: 930, sessions: 32}    # A
+      - {time_s: 950, sessions: 32}
+      - {time_s: 980, sessions: 8}
+      - {time_s: 1070, sessions: 8}
+      - {time_s: 1120, sessions: 40}   # B
+      - {time_s: 1140, sessions: 40}
+      - {time_s: 1170, sessions: 8}
+      - {time_s: 1260, sessions: 8}
+      - {time_s: 1310, sessions: 40}   # B
+      - {time_s: 1330, sessions: 40}
+      - {time_s: 1360, sessions: 8}
+      - {time_s: 1450, sessions: 8}
+      - {time_s: 1480, sessions: 32}   # A
+      - {time_s: 1500, sessions: 32}
+      - {time_s: 1530, sessions: 8}
+      - {time_s: 1620, sessions: 8}
+      - {time_s: 1690, sessions: 48}   # C
+      - {time_s: 1710, sessions: 48}
+      - {time_s: 1740, sessions: 8}
+      - {time_s: 1830, sessions: 8}
+      - {time_s: 1860, sessions: 1}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 45
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

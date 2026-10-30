@@ -1,0 +1,13 @@
+{
+  "aiperf_exited_ns": 1793307869894658870,
+  "aiperf_launched_ns": 1793305868976294410,
+  "clock": "epoch_ns",
+  "load_end_ns": null,
+  "observation_end_ns": 1793308049894835711,
+  "observation_skipped": null,
+  "post_load_observation_s": 180.0,
+  "profiling_phase_end_ns": null,
+  "profiling_start_ns": null,
+  "ramp_end_ns": null,
+  "schema_version": 1
+}

@@ -1,0 +1,70 @@
+{
+  "analysis": {
+    "plot_error": null,
+    "warnings": [
+      "phase_manifest.json unavailable; time origin is the first profiling credit"
+    ]
+  },
+  "autoscaling": {
+    "policy": "token",
+    "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+    "policy_kwargs": {
+      "target_decode_requests_per_replica": 8,
+      "target_prefill_tokens_per_replica": 60000,
+      "upscale_aggregation": "mean",
+      "upscale_lookback_s": 30
+    },
+    "verified_deployments": [
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ]
+  },
+  "environment": {
+    "aiperf_source": "aiperf==0.12.0",
+    "aiperf_version": "0.12.0",
+    "cluster_resources": {
+      "CPU": 184.0,
+      "GPU": 8.0,
+      "accelerator_type:B200": 1.0,
+      "anyscale/accelerator_shape:8xB200-180G": 1.0,
+      "anyscale/node-group:head": 1.0,
+      "anyscale/provider:generic": 1.0,
+      "anyscale/region:no-sys2-osl1": 1.0,
+      "memory": 2061584302080.0,
+      "node:10.240.6.40": 1.0,
+      "node:__internal_head__": 1.0,
+      "object_store_memory": 200000000000.0
+    },
+    "python_executable": "/home/ray/anaconda3/bin/python",
+    "python_version": "3.12.14",
+    "ray_path": "/home/ray/anaconda3/lib/python3.12/site-packages/ray/__init__.py",
+    "ray_version": "3.0.0.dev0"
+  },
+  "error": null,
+  "failure_stage": null,
+  "finished_at": "2026-10-29T18:58:56.623464+00:00",
+  "git_revision": "39d7dd999cd24073e48a593ead55fc794c9fc27f",
+  "name": "b200-workday-ramp-token-dampen",
+  "readiness_s": 0.018744939006865025,
+  "routing": {
+    "ai_dynamo_version": "1.6.1",
+    "deployments": [
+      "LLMRouter",
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ],
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
+    "topology": "direct_streaming"
+  },
+  "started_at": "2026-10-29T18:32:14.746369+00:00",
+  "status": "succeeded",
+  "telemetry": {
+    "serve_metrics.jsonl": {
+      "error_records": 0,
+      "records": 647
+    },
+    "serve_status.jsonl": {
+      "error_records": 0,
+      "records": 1294
+    }
+  }
+}
