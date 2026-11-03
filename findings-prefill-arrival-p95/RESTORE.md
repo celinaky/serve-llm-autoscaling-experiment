@@ -143,3 +143,22 @@ wheel must be a nightly close to that base or the checkout will not import.
   are harmless on H100 but unused; `kv_cache_dtype: fp8` works on Hopper.
 - **The harness's `b200_` file prefix** is a name only; copy a file to an
   `h100_` name and change `accelerator_type`, `name`, and the targets.
+
+## 8. If cluster storage is not shared (it was not: the H100 workspace is in another cloud)
+
+Everything that was only on the B200 cloud's storage is packed into one
+folder, `/home/ray/default/migration/` on the old workspace, 1.2 GB,
+with `SHA256SUMS`:
+
+| File | Size | Restores |
+|---|---|---|
+| `claude-home.tar.gz` | 98 MB | step 3: Claude sessions, memory, settings |
+| `2026-10-30_to_11-02_prefill-arrival-p95-session_c79a47ff.jsonl.gz` | 49 MB | the raw transcript |
+| `ai_dynamo_runtime-1.7.0-cp311-abi3-manylinux_2_35_x86_64.whl` | 78 MB | step 2; `pip install --no-deps --force-reinstall <wheel>` (not on PyPI, do not skip) |
+| `runs-raw-streams.tar.gz` | 260 MB | step 4; extract at the harness repo root: `tar xzf runs-raw-streams.tar.gz -C <repo>` |
+| `vllm-scheduler-traces.tar.gz` | 697 MB | extract into the new cluster storage: `mkdir -p /mnt/cluster_storage/serve-llm-autoscaling-experiment && tar xzf vllm-scheduler-traces.tar.gz -C /mnt/cluster_storage/serve-llm-autoscaling-experiment` |
+| `pip-freeze.txt`, `gpus.txt`, `keep_alive.py`, `RESTORE.md` | small | reference |
+
+Once the folder is on the new workspace (GitHub release assets, a bucket,
+or a download and upload), verify with `sha256sum -c SHA256SUMS`, then
+follow steps 1 to 4 using these files in place of the cluster-storage paths.
