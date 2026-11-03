@@ -91,3 +91,55 @@ so new traces land there too.
 - The fork's `celina/prefill-token-autoscaling-p95` tip (`803834bf81`,
   "Scale token autoscaling on arrival mean") postdates the runs described in
   the notes, which used the p95 rule at `debcf256b6`.
+
+## 7. Moving from B200 to H100: what changes
+
+Old workspace: `celina-serve-llm-autoscaling-b200`, cloud
+`cld_82np1njz31y9lwk56mc2xcc23x` (region `no-sys2-osl1`), image
+`anyscale/ray-llm:nightly-py312-cu130`, Ray wheel commit `e91b1de0e0`.
+The Ray branches are based on upstream `a450e8d44b`; the symlink trick in
+step 1 only replaces `ray.serve` and `ray.llm`, so the new workspace's Ray
+wheel must be a nightly close to that base or the checkout will not import.
+
+- **Cluster storage is per cloud.** If the H100 workspace is in a different
+  Anyscale cloud, nothing under `/mnt/cluster_storage` is visible there.
+  Check first. If it is not, copy `workspace-migration-2026-11-02/` (about
+  100 MB), `sessions/` (47 MB) and, if wanted, `runs/` (1.6 GB) and
+  `vllm-scheduler-traces/` (9.7 GB) through a bucket you control, or
+  download the small ones through the workspace file browser before
+  shutting down. Everything in git needs no copying.
+- **Caches that are gone and regenerate:** the HF model cache
+  (`~/.cache/huggingface`, 30 GB, Qwen/Qwen3.6-27B-FP8) downloads again on
+  first deploy, allow 10-20 min; the AIPerf dataset cache (`~/.cache/aiperf`,
+  8.4 GB, `semianalysis_cc_traces_weka_062126_256k`) downloads again on the
+  first benchmark. Set `HF_TOKEN` to avoid rate limits.
+- **Every experiment file says `accelerator_type: B200`.** Change to `H100`.
+- **Prefill rate.** B200 prefilled about 16K uncached tokens per second per
+  replica (one 16384-token chunk per step at about one step per second).
+  H100 FP8 compute is roughly 40% of B200's, so expect 6-8K tok/s. The
+  calibration behind the 20K target (about 1s of engine queue per 16K
+  ahead) and behind the per-replica session counts (4 sessions per replica
+  under 6K p95, 5 at 15K, 6+ missing 20K) is B200-specific. Re-measure
+  with the single-replica burst sweeps (`experiments/b200_burst_sweep*.yaml`,
+  `b200_fast_curve_single_replica.yaml`, analysis in
+  `runs/burst-sweep-pooled`) before trusting any target. A 20K target on
+  H100 means roughly 2.5-3s of queue; the 1s-equivalent is about 8K.
+- **Replica count.** At 270 uncached tok/s per pinned session, 32 sessions
+  needed 3-4 B200 replicas. On H100 expect 6-8, which is the `max_replicas:
+  8` cap. Either ramp to fewer sessions (16-20) or raise the cap, or the
+  policy comparison turns into a capacity test.
+- **KV cache.** H100 has 80 GB against B200's 180 GB. The 27B FP8 weights
+  take about 27 GB, leaving roughly 45 GB of fp8 KV at
+  `gpu_memory_utilization: 0.92` versus about 140 GB. Fewer sessions'
+  contexts stay in the prefix cache, so more re-prefill and more sensitivity
+  to pinning. `max_model_len: 262144` still fits a single request; check
+  `max_num_seqs` and watch vLLM's preemption counters
+  (`preemptions_before_first_token` in `load_requests.csv`).
+- **Scheduler step time.** `max_num_batched_tokens: 16384` gives longer
+  steps on H100, which raises ITL during prefill bursts. 8192 is worth
+  trying if ITL p95 goes over 50ms.
+- **Engine knobs that are Blackwell-only** in the logs (DeepGemm, cutlass
+  DSL, `quack-kernels`, `nvidia-cutlass-dsl` in the runtime env pip list)
+  are harmless on H100 but unused; `kv_cache_dtype: fp8` works on Hopper.
+- **The harness's `b200_` file prefix** is a name only; copy a file to an
+  `h100_` name and change `accelerator_type`, `name`, and the targets.
