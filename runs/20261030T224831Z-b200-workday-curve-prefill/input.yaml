@@ -1,0 +1,130 @@
+# The prefill-only token policy on a short workday-shaped AgentX session
+# curve on 8 B200s. The question: once sessions are past their first turns,
+# how close to target_prefill_tokens_per_replica does the policy hold the
+# per-replica uncached prefill backlog as the session count rises, holds and
+# falls, and how long does each scale step take?
+#
+# Policy: required replicas = ceil(mean over the last 60s of the router's
+# outstanding uncached prefill tokens / 20K). There is no decode term and no
+# request count; the 60s mean is the only smoothing, so upscale_delay_s is 0
+# and downscale_delay_s does the anti-flap work. 20K on the router's gauge
+# is ~0.5-1s of engine queue (the gauge counts a request's whole uncached
+# prompt until its prefill finishes, so it reads higher than the engine-side
+# load of runs/burst-sweep-pooled, where 20-40K is ~1s).
+#
+# Sizing, from the decode-bound curve run (runs/20261029T202908Z-*): each
+# live session adds ~870 uncached tokens/s, steady across ramp, hold and
+# ramp-down (a session's first request is small; its second is the ~47K
+# cold prompt, and later root turns and subagent spawns carry most of the
+# uncached work). While replicas keep up, a token stays outstanding ~2-3s
+# and the policy's 60s-mean backlog was ~1.5-2K per live session (8
+# sessions 21K, 13 sessions 20K, 17 sessions 26K); once a replica
+# saturates the queue stacks up and it jumps (21 sessions 85K). Against 20K
+# per replica, expect the second replica at ~10-13 sessions and the third
+# at ~16-20, with a fourth possible at the 24-session hold. With N replicas
+# and a ceiling rule the per-replica mean can only sit between
+# 20K x (N-1)/N and 20K, i.e. 13-20K at 3 and 15-20K at 4.
+#
+# Curve: one cold session every 30s, 1->24 over 690s; hold at 24 for 300s;
+# one retirement every 30s back to 1 over 690s (sessions retire at their
+# next turn boundary). The 30s cadence adds ~1.6K tokens/s of first-prompt
+# spikes to the arrivals, a small bump on the 60s mean; the policy is
+# tracking the sessions' ongoing work. Every session starts at turn 0 with
+# nothing cached.
+#
+# Delivered by the workday-curve AIPerf fork (runtime.aiperf_source).
+#
+# Read the result in analysis/autoscaling_evaluation.json:
+#   token_policy.target_tracking   per-replica backlog vs the 20K target
+#                                  (time-weighted mean, p50/p90, share of
+#                                  time within +-25% / above / below), from
+#                                  both the raw snapshot and the policy's
+#                                  60s mean
+#   token_policy.reaction          per scale-up: when the 60s mean first
+#                                  exceeded the current count, the delay to
+#                                  the decision and to the replica running
+#   scale_events / scaling         every decision and its startup lag
+# and in the timeline's token panel: raw backlog, 60s mean, and the
+# target x running-replicas band it is meant to track.
+#
+# Timeline: load 0-1680s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-workday-curve-prefill
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 20000
+        upscale_lookback_s: 60
+        upscale_aggregation: mean
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    # Unused by the token policy; Serve requires a value.
+    target_ongoing_requests: 8
+    # The 60s mean is the smoothing; a further upscale delay only adds
+    # reaction time. Downscale waits 180s so the mean dipping under a
+    # replica boundary during the hold does not flap (120s flapped once in
+    # the decode-bound curve run).
+    upscale_delay_s: 0
+    downscale_delay_s: 180
+    metrics_interval_s: 2
+    look_back_period_s: 60
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1680
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 24
+    # 0-690s ramp 1->24 (one cold session every 30s); 690-990s hold at 24;
+    # 990-1680s ramp down to 1, one retirement every 30s. The floor is 1
+    # because the series cannot go to 0, and load issuance ends at 1680s.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 690, sessions: 24}
+      - {time_s: 990, sessions: 24}
+      - {time_s: 1680, sessions: 1}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

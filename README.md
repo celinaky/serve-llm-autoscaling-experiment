@@ -496,7 +496,7 @@ deployment:
 | --- | --- | --- |
 | `default` | `ray.serve.autoscaling_policy:default_autoscaling_policy` | Scales on ongoing requests per replica (`target_ongoing_requests`); takes no kwargs |
 | `sla` | `ray.serve.experimental.llm_sla_autoscaling_policy:SLAOnlineAutoscalingPolicy` | Learns per-replica capacity from Prometheus and scales to meet `ttft_ms` and `itl_ms`; needs `scikit-learn` |
-| `token` | `ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy` | Scales on the KV-aware router's outstanding prefill tokens and active decode requests against `target_prefill_tokens_per_replica` and `target_decode_requests_per_replica`; requires `routing.policy: kv_aware` (`experiments/b200_workday_ramp_token.yaml`) |
+| `token` | `ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy` | Scales on the time-weighted mean over `upscale_lookback_s` of the KV-aware router's outstanding uncached prefill tokens divided by `target_prefill_tokens_per_replica`; requires `routing.policy: kv_aware` (`experiments/b200_workday_curve_prefill.yaml`) |
 
 The policy is always passed explicitly, including `default`. For `sla`:
 
