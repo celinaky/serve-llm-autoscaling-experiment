@@ -68,7 +68,7 @@ AUTOSCALING_POLICIES = {
 REQUIRED_POLICY_KWARGS = {
     "default": set(),
     "sla": {"ttft_ms", "itl_ms"},
-    "token": {"target_prefill_tokens_per_replica", "target_decode_requests_per_replica"},
+    "token": {"target_prefill_tokens_per_replica"},
 }
 
 
@@ -78,8 +78,8 @@ class AutoscalingPolicyConfig(BaseModel):
     ``kwargs`` go to the policy unchanged, except that ``sla`` defaults
     ``advisory`` to false: an advisory SLA policy only reports its
     recommendation and scales exactly like ``default``. ``token`` scales on
-    the KV-aware router's outstanding prefill tokens and active decode
-    requests, so it requires ``routing.policy: kv_aware``.
+    the lookback mean of the KV-aware router's outstanding uncached prefill
+    tokens, so it requires ``routing.policy: kv_aware``.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -152,6 +152,8 @@ ROUTER_CLASSES = {
 BODY_AWARE_POLICIES = {"prefix_cache_affinity", "kv_aware"}
 # HTTP header that carries session affinity; Serve's default session-id header.
 SESSION_HEADER = "X-Session-ID"
+# Routers that keep a session on one replica when every turn carries SESSION_HEADER.
+SESSION_PINNED_ROUTING = ("consistent_hash", "kv_aware")
 
 
 class RoutingConfig(BaseModel):
@@ -534,12 +536,12 @@ class ExperimentConfig(BaseModel):
     @model_validator(mode="after")
     def validate_session_header(self) -> "ExperimentConfig":
         if (
-            self.deployment.routing.policy == "consistent_hash"
+            self.deployment.routing.policy in SESSION_PINNED_ROUTING
             and "--session-header" in self.benchmark.extra_args
         ):
             raise ValueError(
-                "extra_args cannot override --session-header; consistent_hash "
-                f"routing sets it to {SESSION_HEADER}"
+                "extra_args cannot override --session-header; "
+                f"{self.deployment.routing.policy} routing sets it to {SESSION_HEADER}"
             )
         return self
 

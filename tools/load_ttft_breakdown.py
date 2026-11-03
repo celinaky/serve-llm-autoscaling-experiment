@@ -23,7 +23,12 @@ recompute.
   inflight    the instantaneous count that metric averages: requests started
               by any client (AIPerf and side probes) and not yet finished when
               the request started, itself excluded
-policy and inflight read the raw files load_breakdown.py and the telemetry
+  decoding    the token policy's decode term as of arrival: requests past their
+              first output token and not yet finished, the count the kv-aware
+              router's active_decode_requests snapshot reports, rebuilt from
+              each request's start, TTFT and end (itself excluded; it has no
+              first token yet)
+policy, inflight and decoding read the raw files load_breakdown.py and the telemetry
 leave in each run (telemetry/serve_metrics.jsonl,
 benchmark/*/profile_export.jsonl), which are not kept in git.
 --bands original keeps state_breakdown.py's four rows (<4K undivided).
@@ -57,12 +62,15 @@ ap = argparse.ArgumentParser()
 ap.add_argument("runs", nargs="+")
 ap.add_argument("--out", required=True)
 ap.add_argument("--min-n", type=int, default=3, help="fewest requests for a per-run dot")
-ap.add_argument("--max-load", type=float, default=600e3, help="20K bins up to this load, then one open bin")
-ap.add_argument("--measure", choices=["load", "sequences", "kv", "policy", "inflight"], default="load")
+ap.add_argument("--max-load", type=float, default=600e3, help="--bin-width bins up to this load, then one open bin")
+ap.add_argument("--bin-width", type=float, default=20e3, help="load bin width in tokens (load measure only)")
+ap.add_argument("--measure", choices=["load", "sequences", "kv", "policy", "inflight", "decoding"], default="load")
 ap.add_argument("--bands", choices=["split", "original"], default="split")
 a = ap.parse_args()
 SIZE_BANDS = SPLIT_BANDS if a.bands == "split" else ORIGINAL_BANDS
-out_name = {"load": "load", "sequences": "seqs", "kv": "kv", "policy": "policy", "inflight": "inflight"}[a.measure] + "_{}" + ("" if a.bands == "split" else "_4rows")
+out_name = {"load": "load", "sequences": "seqs", "kv": "kv", "policy": "policy", "inflight": "inflight", "decoding": "decoding"}[a.measure] \
+    + (f"{int(a.bin_width // 1e3)}k" if a.measure == "load" and a.bin_width != 20e3 else "") \
+    + "_{}" + ("" if a.bands == "split" else "_4rows")
 
 rows = []
 for R in a.runs:
@@ -85,9 +93,12 @@ def serve_requests(R):
     spans = {}
     for path in glob.glob(f"{R}/benchmark/*/profile_export.jsonl"):
         for line in open(path):
-            meta = json.loads(line)["metadata"]
+            rec = json.loads(line)
+            meta = rec["metadata"]
             if meta.get("request_start_ns") and meta.get("request_end_ns"):
-                spans[meta["x_request_id"]] = (meta["request_start_ns"], meta["request_end_ns"])
+                ttft = (rec.get("metrics") or {}).get("time_to_first_token", {}).get("value")
+                first_token = meta["request_start_ns"] + int(ttft * 1e6) if ttft is not None else None
+                spans[meta["x_request_id"]] = (meta["request_start_ns"], meta["request_end_ns"], first_token)
     scrapes = []
     for line in open(f"{R}/telemetry/serve_metrics.jsonl"):
         e = json.loads(line)
@@ -97,21 +108,26 @@ def serve_requests(R):
     return spans, sorted(scrapes)
 
 
-if a.measure in ("policy", "inflight"):
+if a.measure in ("policy", "inflight", "decoding"):
     by_run = {}
     for R in a.runs:
         spans, scrapes = serve_requests(R.rstrip("/"))
-        starts = sorted(s for s, _ in spans.values())
-        ends = sorted(e for _, e in spans.values())
-        by_run[os.path.basename(R.rstrip("/"))] = (spans, scrapes, starts, ends)
+        starts = sorted(s for s, _, _ in spans.values())
+        ends = sorted(e for _, e, _ in spans.values())
+        # Decoding spans: first token -> end, for requests that produced a first token.
+        decode_starts = sorted(f for _, _, f in spans.values() if f is not None)
+        decode_ends = sorted(e for _, e, f in spans.values() if f is not None)
+        by_run[os.path.basename(R.rstrip("/"))] = (spans, scrapes, starts, ends, decode_starts, decode_ends)
     kept = []
     for r in rows:
-        spans, scrapes, starts, ends = by_run[r["run"]]
+        spans, scrapes, starts, ends, decode_starts, decode_ends = by_run[r["run"]]
         if r["request_id"] not in spans:
             continue
         t = spans[r["request_id"]][0]
         # Started before it (strictly) and not finished by its start.
         r["inflight"] = bisect.bisect_left(starts, t) - bisect.bisect_right(ends, t)
+        # Past first token by its start and not finished: what the router counts as decoding.
+        r["decoding"] = bisect.bisect_right(decode_starts, t) - bisect.bisect_right(decode_ends, t)
         i = bisect.bisect_right(scrapes, (t, math.inf))
         r["policy_total_requests"] = scrapes[i - 1][1] if i else 0.0
         kept.append(r)
@@ -122,9 +138,10 @@ if a.measure in ("policy", "inflight"):
 if a.measure == "load":
     FIELD, NOUN, XLABEL = "engine_load_tokens", "uncached prefill token load", \
         "uncached prefill token load on the engine at arrival (tokens)"
-    top = int(a.max_load // 20e3)
-    BINS = [(0, 0, "0")] + [(i * 20e3, (i + 1) * 20e3, f"{i * 20}–{(i + 1) * 20}K" if i else "≤20K")
-                            for i in range(top)] + [(top * 20e3, math.inf, f">{top * 20}K")]
+    w, wk = a.bin_width, int(a.bin_width // 1e3)
+    top = int(a.max_load // w)
+    BINS = [(0, 0, "0")] + [(i * w, (i + 1) * w, f"{i * wk}–{(i + 1) * wk}K" if i else f"≤{wk}K")
+                            for i in range(top)] + [(top * w, math.inf, f">{top * wk}K")]
 elif a.measure == "sequences":
     FIELD, NOUN, XLABEL = "ongoing_sequences", "ongoing sequences", \
         "ongoing sequences on the engine at arrival (running + waiting)"
@@ -134,7 +151,12 @@ elif a.measure in ("policy", "inflight"):
     FIELD, NOUN, XLABEL = ("policy_total_requests", "the autoscaling policy's total requests",
                            "ray_serve_autoscaling_total_requests at arrival (queued + ongoing, look-back average)") \
         if a.measure == "policy" else \
-        ("inflight", "requests in flight", "requests in flight at arrival (started and not finished, all clients)")
+        ("inflight", "requests in flight", "default policy input: ongoing requests at the replica (queued + running in the engine) at arrival")
+    BINS = [(0, 3, "0–3")] + [(4 * i - 1, 4 * i + 3, f"{4 * i}–{4 * i + 3}") for i in range(1, 22)] + \
+        [(87, math.inf, "≥88")]
+elif a.measure == "decoding":
+    FIELD, NOUN, XLABEL = "decoding", "active decode requests", \
+        "token policy decode input: requests decoding on the replica (past first token, not finished) at arrival"
     BINS = [(0, 3, "0–3")] + [(4 * i - 1, 4 * i + 3, f"{4 * i}–{4 * i + 3}") for i in range(1, 22)] + \
         [(87, math.inf, "≥88")]
 else:

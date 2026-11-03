@@ -13,6 +13,7 @@ from .config import (
     AIPERF_SOURCE_DEFAULT,
     CONTINUOUS_MODE_DIRS,
     SESSION_HEADER,
+    SESSION_PINNED_ROUTING,
     AgentXWorkloadConfig,
     ExperimentConfig,
     SyntheticWorkloadConfig,
@@ -110,9 +111,10 @@ class AIPerfRunner:
             cmd.append("--streaming")
         if benchmark.use_server_token_count:
             cmd.append("--use-server-token-count")
-        if deployment.routing.policy == "consistent_hash":
-            # AIPerf sends one ID per session, so every turn hashes to the
-            # same replica. KV-aware routing scores prompt overlap instead.
+        if deployment.routing.policy in SESSION_PINNED_ROUTING:
+            # AIPerf sends one ID per session. consistent_hash hashes it to a
+            # replica; kv_aware scores the first turn on prompt overlap and
+            # load, then pins the session's later turns to that replica.
             cmd.extend(["--session-header", SESSION_HEADER])
         return cmd
 

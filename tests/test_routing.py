@@ -129,9 +129,9 @@ def test_agentx_kv_aware_experiment():
 
 
 @pytest.mark.parametrize("policy, header", [
-    ("consistent_hash", True), ("kv_aware", False), ("power_of_two", False),
+    ("consistent_hash", True), ("kv_aware", True), ("power_of_two", False),
 ])
-def test_session_header_only_for_consistent_hash(policy, header, monkeypatch, tmp_path):
+def test_session_header_only_for_session_pinned_routing(policy, header, monkeypatch, tmp_path):
     monkeypatch.setattr(benchmark.shutil, "which", lambda name: f"/bin/{name}")
     config = load_config(AGENTX_PATH)
     config.deployment.routing = RoutingConfig(policy=policy)

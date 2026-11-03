@@ -459,3 +459,47 @@ def test_ttft_decomposition_splits_floor_and_waiting():
     assert d["own_prefill_floor_ms"] == pytest.approx(d["actual_ms"] - d["waiting_ms"])
     # The slowest requests are the ones during the startup; giving them the floor pulls the p95 down.
     assert d["instant_startup_ms"] < d["actual_ms"]
+
+
+def test_target_tracking_and_reaction_for_the_prefill_only_policy():
+    from serve_llm_autoscaling.evaluation import reaction_times, target_tracking, token_policy_evaluation
+
+    # Lookback mean asks for 2 replicas from t=30 (crossing 1) and the
+    # decision comes at t=40; the second replica runs from t=100. Per
+    # replica the mean backlog is 20K, then 30K (1.5x the 20K target while
+    # the second replica starts), then 45K/2 = 22.5K on two.
+    series = {
+        "token_prefill_backlog": _points((0, 10000.0), (50, 60000.0), (100, 30000.0)),
+        "token_prefill_replicas": _points((0, 1.0), (30, 1.5), (40, 1.5), (100, 2.25)),
+        "desired_replicas": _points((0, 1), (40, 2)),
+    }
+    status = [_status(0, 1), _status(100, 2)]
+    plot_data = {
+        "experiment": {"autoscaling_policy_kwargs": {"target_prefill_tokens_per_replica": 20000}},
+        "serve_metric_series": series, "serve_status_samples": status,
+        "time_origin": {"profiling_start_ns": T0},
+    }
+    period = {"start_s": 0, "end_s": 200}
+    tracking = target_tracking(plot_data, period)
+    mean_view = tracking["lookback_mean_per_replica"]
+    assert mean_view["covered_s"] == 200
+    # 20K for 30s, 30K for 70s, 22.5K for 100s.
+    assert mean_view["mean"] == pytest.approx((20000 * 30 + 30000 * 70 + 22500 * 100) / 200)
+    assert mean_view["share_within_0.75x_1.25x"] == pytest.approx(130 / 200)
+    assert mean_view["share_above_1.25x"] == pytest.approx(70 / 200)
+    assert mean_view["share_above_2x"] == 0.0
+    raw = tracking["raw_backlog_per_replica"]
+    assert raw["max"] == 60000.0
+    assert raw["share_above_2x"] == pytest.approx(50 / 200)
+
+    events = scale_events(series, status, [])
+    reaction = reaction_times(plot_data, events)
+    assert reaction == [{
+        "time_s": 40, "from_replicas": 1, "to_replicas": 2,
+        "signal_crossed_at_s": 30, "decision_delay_s": 10, "total_delay_s": 70,
+    }]
+    result = token_policy_evaluation(plot_data, [], events, period)
+    assert result["scale_up_binding_terms"] == {"prefill": 1}
+    assert result["target_tracking"] == tracking
+    assert result["reaction"] == reaction
+    assert target_tracking({**plot_data, "experiment": {}}, period) is None

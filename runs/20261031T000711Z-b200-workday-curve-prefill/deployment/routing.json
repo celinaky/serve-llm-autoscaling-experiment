@@ -1,0 +1,26 @@
+{
+  "direct_streaming": true,
+  "environment": {
+    "RAY_SERVE_ENABLE_HA_PROXY": "1",
+    "RAY_SERVE_HAPROXY_INGRESS_REQUEST_ROUTER_BUFSIZE": "8388608",
+    "RAY_SERVE_INGRESS_REQUEST_ROUTER_FORWARD_BODY": "1",
+    "RAY_SERVE_LLM_ENABLE_DIRECT_STREAMING": "1"
+  },
+  "forward_request_body": true,
+  "haproxy_request_buffer_bytes": 8388608,
+  "policy": "kv_aware",
+  "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
+  "request_router_kwargs": {},
+  "resolved": {
+    "ai_dynamo_version": "1.6.1",
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter"
+  },
+  "verified": {
+    "deployments": [
+      "LLMRouter",
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ],
+    "topology": "direct_streaming"
+  }
+}

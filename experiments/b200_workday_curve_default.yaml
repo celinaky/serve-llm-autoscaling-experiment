@@ -1,18 +1,23 @@
-# Serve's default (ongoing-request) policy on the same workday curve as
-# b200_workday_curve_token.yaml; everything but the policy block is identical.
+# Ray Serve's default autoscaling policy (ongoing requests per replica) on
+# the same workday curve as b200_workday_curve_prefill_mean.yaml: ramp 1->32
+# sessions at one cold session every 30s (0-930s), hold at 32 for 930s
+# (930-1860s), no ramp down. Same seed, same KV-aware routing with session
+# pinning, same Serve delays (upscale 40s, downscale 1800s so nothing is
+# removed during the run).
 #
-# A symmetric workday-shaped AgentX session curve on 8 B200s: sessions ramp
-# 1->48 over 600s, hold at 48 for 600s, and ramp back to 1 over 600s, all in
-# one AIPerf process. The curve is delivered by the workday-curve AIPerf fork
-# (runtime.aiperf_source): the session limit follows the curve, and when it
-# falls below the live count, sessions are retired at their next turn
-# boundary. Every session starts cold at turn 0. One cold session every
-# ~12.8s on the way up; 48 sessions is roughly 5-6 replicas at ~10 sessions
-# each, so the 8-replica cap is not the limit. Note a hold is not steady
-# load: sessions are front-loaded and later turns are prefix-cached, so
-# demand peaks ~90s into the hold and then falls.
+# Policy: Serve's built-in rule, replicas = ceil(ongoing requests /
+# target_ongoing_requests), where ongoing requests is the 60s look-back
+# average of in-flight requests. It knows nothing about prompt size: a 665
+# token turn and a 150K cold prompt count the same. Each AgentX session has
+# at most one request in flight, so the signal is roughly the number of
+# active sessions, and the target of 8 means 4 replicas once all 32 are
+# live.
 #
-# Timeline: load 0-1800s, AIPerf drains for up to 120s, then 180s idle.
+# Compare against runs/20261102T203807Z-* (mean token policy, 3 replicas,
+# 11/16 windows) with the same tools: python tools/load_breakdown.py <run>
+# && python tools/arrival_load_windows.py <run> --per-requests 100
+#
+# Timeline: load 0-1860s, AIPerf drains for up to 120s, then 180s idle.
 name: b200-workday-curve-default
 deployment:
   application_name: ttft-benchmark
@@ -39,29 +44,32 @@ deployment:
     min_replicas: 1
     initial_replicas: 1
     max_replicas: 8
+    # The default policy's signal: ongoing requests per replica. Each AgentX
+    # session has at most one request in flight, so ongoing requests track
+    # active sessions; 32 sessions / 8 = 4 replicas at the hold.
     target_ongoing_requests: 8
-    upscale_delay_s: 10
-    downscale_delay_s: 120
+    # Same delays as the mean-policy run: 40s of asking for more before a
+    # replica is added, and no scale-down during the run.
+    upscale_delay_s: 40
+    downscale_delay_s: 1800
     metrics_interval_s: 2
-    look_back_period_s: 20
+    look_back_period_s: 60
 benchmark:
   generator: aiperf
   mode: agentx_concurrency_ramp
-  duration_s: 1800
+  duration_s: 1860
   grace_period_s: 120
   post_load_observation_s: 180
   workload:
     type: agentx
     public_dataset: semianalysis_cc_traces_weka_062126_256k
-    target_concurrency: 48
-    # 0-600s ramp 1->48 (one cold session every ~12.8s); 600-1200s hold at
-    # 48; 1200-1800s ramp down to 1, one retirement every ~12.8s. The floor is
-    # 1 because the series cannot go to 0, and load issuance ends at 1800s.
+    target_concurrency: 32
+    # 0-930s ramp 1->32 (one cold session every 30s); 930-1860s hold at 32.
+    # No ramp down: load issuance ends at 1860s and AIPerf drains.
     concurrency_series:
       - {time_s: 0, sessions: 1}
-      - {time_s: 600, sessions: 48}
-      - {time_s: 1200, sessions: 48}
-      - {time_s: 1800, sessions: 1}
+      - {time_s: 930, sessions: 32}
+      - {time_s: 1860, sessions: 32}
     trajectory_start_min_ratio: 0
     trajectory_start_max_ratio: 0
     seed: 42

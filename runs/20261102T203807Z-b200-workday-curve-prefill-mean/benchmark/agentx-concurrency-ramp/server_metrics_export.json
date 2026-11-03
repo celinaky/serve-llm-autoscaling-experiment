@@ -1,0 +1,759 @@
+{
+  "schema_version": "1.1",
+  "aiperf_version": "0.13.0",
+  "benchmark_id": "d3e405b84343",
+  "summary": {
+    "endpoints_configured": [
+      "http://127.0.0.1:8000/metrics"
+    ],
+    "endpoints_successful": [
+      "http://127.0.0.1:8000/metrics"
+    ],
+    "start_time": "2026-11-02T12:40:09.125922",
+    "end_time": "2026-11-02T13:13:09.127038",
+    "endpoint_info": {
+      "http://127.0.0.1:8000/metrics": {
+        "total_fetches": 5933,
+        "first_fetch_ns": 1793652006907871079,
+        "last_fetch_ns": 1793653991129692492,
+        "avg_fetch_latency_ms": 2.7677152120343838,
+        "unique_updates": 5506,
+        "first_update_ns": 1793652006907871079,
+        "last_update_ns": 1793653991074952122,
+        "duration_seconds": 1984.167081043,
+        "avg_update_interval_ms": 360.42998747375117,
+        "median_update_interval_ms": 334.714636
+      }
+    },
+    "phase_time_ranges": {
+      "profiling": {
+        "start_ns": 1793652009125921775,
+        "end_ns": 1793653989127038144
+      },
+      "warmup": {
+        "start_ns": 1793652009017124947,
+        "end_ns": 1793652009067949072
+      }
+    }
+  },
+  "metrics_phase": "profiling",
+  "metrics": {
+    "http_request_duration_highr_seconds": {
+      "type": "histogram",
+      "description": "Latency with many buckets but no API specific labels. Made for more accurate percentile calculations.",
+      "unit": "seconds",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "count": 0
+          },
+          "buckets": {
+            "0.01": 0,
+            "0.025": 0,
+            "0.05": 0,
+            "0.075": 0,
+            "0.1": 0,
+            "0.25": 0,
+            "0.5": 0,
+            "0.75": 0,
+            "1.0": 0,
+            "1.5": 0,
+            "2.0": 0,
+            "2.5": 0,
+            "3.0": 0,
+            "3.5": 0,
+            "4.0": 0,
+            "4.5": 0,
+            "5.0": 0,
+            "7.5": 0,
+            "10.0": 0,
+            "30.0": 0,
+            "60.0": 0,
+            "+Inf": 0
+          }
+        }
+      ]
+    },
+    "process_cpu_seconds": {
+      "type": "counter",
+      "description": "Total user and system CPU time spent in seconds.",
+      "unit": "seconds",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "total": 55.21999999999999,
+            "rate": 0.027859878827346318
+          }
+        }
+      ]
+    },
+    "process_max_fds": {
+      "type": "gauge",
+      "description": "Maximum number of open file descriptors.",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 1024.0,
+            "min": 1024.0,
+            "max": 1024.0,
+            "std": 0.0,
+            "p1": 1024.0,
+            "p5": 1024.0,
+            "p10": 1024.0,
+            "p25": 1024.0,
+            "p50": 1024.0,
+            "p75": 1024.0,
+            "p90": 1024.0,
+            "p95": 1024.0,
+            "p99": 1024.0
+          }
+        }
+      ]
+    },
+    "process_open_fds": {
+      "type": "gauge",
+      "description": "Number of open file descriptors.",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 154.33468286099864,
+            "min": 137.0,
+            "max": 169.0,
+            "std": 5.58351458261522,
+            "p1": 144.0,
+            "p5": 147.0,
+            "p10": 149.0,
+            "p25": 151.0,
+            "p50": 153.0,
+            "p75": 157.0,
+            "p90": 162.0,
+            "p95": 167.0,
+            "p99": 169.0
+          }
+        }
+      ]
+    },
+    "process_resident_memory_bytes": {
+      "type": "gauge",
+      "description": "Resident memory size in bytes.",
+      "unit": "bytes",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 2054182642.5263157,
+            "min": 2027393024.0,
+            "max": 2082443264.0,
+            "std": 16255683.972902028,
+            "p1": 2030538752.0,
+            "p5": 2033684480.0,
+            "p10": 2039975936.0,
+            "p25": 2041548800.0,
+            "p50": 2048372736.0,
+            "p75": 2060423168.0,
+            "p90": 2082443264.0,
+            "p95": 2082443264.0,
+            "p99": 2082443264.0
+          }
+        }
+      ]
+    },
+    "process_start_time_seconds": {
+      "type": "gauge",
+      "description": "Start time of the process since unix epoch in seconds.",
+      "unit": "seconds",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 1793652235.5189576,
+            "min": 1793651900.2,
+            "max": 1793652843.29,
+            "std": 405.63683499395887,
+            "p1": 1793651900.2,
+            "p5": 1793651900.2,
+            "p10": 1793651900.2,
+            "p25": 1793651900.2,
+            "p50": 1793651900.2,
+            "p75": 1793652607.16,
+            "p90": 1793652843.29,
+            "p95": 1793652843.29,
+            "p99": 1793652843.29
+          }
+        }
+      ]
+    },
+    "process_virtual_memory_bytes": {
+      "type": "gauge",
+      "description": "Virtual memory size in bytes.",
+      "unit": "bytes",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 225457623092.51282,
+            "min": 225113931776.0,
+            "max": 225552330752.0,
+            "std": 73820971.75256458,
+            "p1": 225283833856.0,
+            "p5": 225296102195.2,
+            "p10": 225382404096.0,
+            "p25": 225383452672.0,
+            "p50": 225454776320.0,
+            "p75": 225514545152.0,
+            "p90": 225552314368.0,
+            "p95": 225552314368.0,
+            "p99": 225552314368.0
+          }
+        }
+      ]
+    },
+    "python_gc_collections": {
+      "type": "counter",
+      "description": "Number of times this generation was collected",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "0"
+          },
+          "stats": {
+            "total": 124.0,
+            "rate": 0.06256111869958247
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "1"
+          },
+          "stats": {
+            "total": 11.0,
+            "rate": 0.005549776658833929
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "2"
+          },
+          "stats": {
+            "total": 1.0,
+            "rate": 0.0005045251508030845
+          }
+        }
+      ]
+    },
+    "python_gc_objects_collected": {
+      "type": "counter",
+      "description": "Objects collected during gc",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "0"
+          },
+          "stats": {
+            "total": 84.0,
+            "rate": 0.04238011266745909
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "1"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "2"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        }
+      ]
+    },
+    "python_gc_objects_uncollectable": {
+      "type": "counter",
+      "description": "Uncollectable objects found during GC",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "0"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "1"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "2"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        }
+      ]
+    },
+    "python_info": {
+      "type": "gauge",
+      "description": "Python platform information",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "implementation": "CPython",
+            "major": "3",
+            "minor": "12",
+            "patchlevel": "15",
+            "version": "3.12.15"
+          },
+          "stats": {
+            "avg": 1.0,
+            "min": 1.0,
+            "max": 1.0,
+            "std": 0.0,
+            "p1": 1.0,
+            "p5": 1.0,
+            "p10": 1.0,
+            "p25": 1.0,
+            "p50": 1.0,
+            "p75": 1.0,
+            "p90": 1.0,
+            "p95": 1.0,
+            "p99": 1.0
+          }
+        }
+      ]
+    }
+  },
+  "warmup_metrics": {
+    "http_request_duration_highr_seconds": {
+      "type": "histogram",
+      "description": "Latency with many buckets but no API specific labels. Made for more accurate percentile calculations.",
+      "unit": "seconds",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "count": 0
+          },
+          "buckets": {
+            "0.01": 0,
+            "0.025": 0,
+            "0.05": 0,
+            "0.075": 0,
+            "0.1": 0,
+            "0.25": 0,
+            "0.5": 0,
+            "0.75": 0,
+            "1.0": 0,
+            "1.5": 0,
+            "2.0": 0,
+            "2.5": 0,
+            "3.0": 0,
+            "3.5": 0,
+            "4.0": 0,
+            "4.5": 0,
+            "5.0": 0,
+            "7.5": 0,
+            "10.0": 0,
+            "30.0": 0,
+            "60.0": 0,
+            "+Inf": 0
+          }
+        }
+      ]
+    },
+    "process_cpu_seconds": {
+      "type": "counter",
+      "description": "Total user and system CPU time spent in seconds.",
+      "unit": "seconds",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        }
+      ]
+    },
+    "process_max_fds": {
+      "type": "gauge",
+      "description": "Maximum number of open file descriptors.",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 1024.0,
+            "min": 1024.0,
+            "max": 1024.0,
+            "std": 0.0,
+            "p1": 1024.0,
+            "p5": 1024.0,
+            "p10": 1024.0,
+            "p25": 1024.0,
+            "p50": 1024.0,
+            "p75": 1024.0,
+            "p90": 1024.0,
+            "p95": 1024.0,
+            "p99": 1024.0
+          }
+        }
+      ]
+    },
+    "process_open_fds": {
+      "type": "gauge",
+      "description": "Number of open file descriptors.",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 139.66666666666666,
+            "min": 138.0,
+            "max": 141.0,
+            "std": 1.5275252316519468,
+            "p1": 138.04,
+            "p5": 138.2,
+            "p10": 138.4,
+            "p25": 139.0,
+            "p50": 140.0,
+            "p75": 140.5,
+            "p90": 140.8,
+            "p95": 140.9,
+            "p99": 140.98
+          }
+        }
+      ]
+    },
+    "process_resident_memory_bytes": {
+      "type": "gauge",
+      "description": "Resident memory size in bytes.",
+      "unit": "bytes",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 2027393024.0,
+            "min": 2027393024.0,
+            "max": 2027393024.0,
+            "std": 0.0,
+            "p1": 2027393024.0,
+            "p5": 2027393024.0,
+            "p10": 2027393024.0,
+            "p25": 2027393024.0,
+            "p50": 2027393024.0,
+            "p75": 2027393024.0,
+            "p90": 2027393024.0,
+            "p95": 2027393024.0,
+            "p99": 2027393024.0
+          }
+        }
+      ]
+    },
+    "process_start_time_seconds": {
+      "type": "gauge",
+      "description": "Start time of the process since unix epoch in seconds.",
+      "unit": "seconds",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 1793651900.2,
+            "min": 1793651900.2,
+            "max": 1793651900.2,
+            "std": 0.0,
+            "p1": 1793651900.2,
+            "p5": 1793651900.2,
+            "p10": 1793651900.2,
+            "p25": 1793651900.2,
+            "p50": 1793651900.2,
+            "p75": 1793651900.2,
+            "p90": 1793651900.2,
+            "p95": 1793651900.2,
+            "p99": 1793651900.2
+          }
+        }
+      ]
+    },
+    "process_virtual_memory_bytes": {
+      "type": "gauge",
+      "description": "Virtual memory size in bytes.",
+      "unit": "bytes",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "stats": {
+            "avg": 225164277077.33334,
+            "min": 225113931776.0,
+            "max": 225189449728.0,
+            "std": 43600309.91584924,
+            "p1": 225115442135.04,
+            "p5": 225121483571.2,
+            "p10": 225129035366.4,
+            "p25": 225151690752.0,
+            "p50": 225189449728.0,
+            "p75": 225189449728.0,
+            "p90": 225189449728.0,
+            "p95": 225189449728.0,
+            "p99": 225189449728.0
+          }
+        }
+      ]
+    },
+    "python_gc_collections": {
+      "type": "counter",
+      "description": "Number of times this generation was collected",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "0"
+          },
+          "stats": {
+            "total": 1.0,
+            "rate": 6.558900477467622
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "1"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "2"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        }
+      ]
+    },
+    "python_gc_objects_collected": {
+      "type": "counter",
+      "description": "Objects collected during gc",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "0"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "1"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "2"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        }
+      ]
+    },
+    "python_gc_objects_uncollectable": {
+      "type": "counter",
+      "description": "Uncollectable objects found during GC",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "0"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "1"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        },
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "generation": "2"
+          },
+          "stats": {
+            "total": 0.0,
+            "rate": 0.0
+          }
+        }
+      ]
+    },
+    "python_info": {
+      "type": "gauge",
+      "description": "Python platform information",
+      "series": [
+        {
+          "endpoint_url": "http://127.0.0.1:8000/metrics",
+          "labels": {
+            "implementation": "CPython",
+            "major": "3",
+            "minor": "12",
+            "patchlevel": "15",
+            "version": "3.12.15"
+          },
+          "stats": {
+            "avg": 1.0,
+            "min": 1.0,
+            "max": 1.0,
+            "std": 0.0,
+            "p1": 1.0,
+            "p5": 1.0,
+            "p10": 1.0,
+            "p25": 1.0,
+            "p50": 1.0,
+            "p75": 1.0,
+            "p90": 1.0,
+            "p95": 1.0,
+            "p99": 1.0
+          }
+        }
+      ]
+    }
+  },
+  "input_config": {
+    "models": {
+      "items": [
+        {
+          "name": "Qwen/Qwen3.6-27B-FP8"
+        }
+      ]
+    },
+    "endpoint": {
+      "urls": [
+        "http://127.0.0.1:8000"
+      ],
+      "type": "chat",
+      "streaming": true,
+      "use_server_token_count": true,
+      "session_header": "X-Session-ID"
+    },
+    "datasets": [
+      {
+        "name": "main",
+        "type": "public",
+        "dataset": "semianalysis_cc_traces_weka_062126_256k",
+        "random_seed": 42
+      }
+    ],
+    "phases": [
+      {
+        "name": "profiling",
+        "kind": "profiling",
+        "type": "concurrency",
+        "duration": 1860.0,
+        "concurrency": 32,
+        "concurrency_series": {
+          "points": [
+            {
+              "time_s": 0.0,
+              "concurrency": 1
+            },
+            {
+              "time_s": 930.0,
+              "concurrency": 32
+            },
+            {
+              "time_s": 1860.0,
+              "concurrency": 32
+            }
+          ]
+        },
+        "grace_period": 120.0,
+        "timing_mode": "agentic_replay",
+        "trajectory_start_min_ratio": 0.0,
+        "trajectory_start_max_ratio": 0.0,
+        "system_idle_gap_cap_seconds": 10.0
+      }
+    ],
+    "artifacts": {
+      "dir": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261102T203807Z-b200-workday-curve-prefill-mean/benchmark/agentx-concurrency-ramp",
+      "records": [
+        "jsonl"
+      ],
+      "raw": false,
+      "auto_plot": false,
+      "plot_required": false
+    },
+    "tokenizer": {
+      "name": "Qwen/Qwen3.6-27B-FP8"
+    },
+    "gpu_telemetry": {
+      "enabled": true
+    },
+    "server_metrics": {
+      "enabled": true,
+      "urls": [],
+      "formats": [
+        "json",
+        "csv"
+      ]
+    },
+    "network_latency": {
+      "enabled": false
+    },
+    "otel": {},
+    "mlflow": {},
+    "wandb": {},
+    "runtime": {
+      "ui": "none"
+    },
+    "scenario": "inferencex-agentx-mvp"
+  }
+}

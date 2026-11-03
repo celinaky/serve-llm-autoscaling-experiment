@@ -492,10 +492,11 @@ def token_policy_evaluation(
         decode = lookups["token_decode_replicas"](event["time_s"])
         event["prefill_term_replicas"] = prefill
         event["decode_term_replicas"] = decode
-        if prefill is None or decode is None:
+        if prefill is None:
             event["binding_term"] = None
-        elif event["direction"] == "down":
-            event["binding_term"] = "both" if prefill == decode else ("prefill" if prefill > decode else "decode")
+        elif decode is None:
+            # The prefill-only policy has no other term.
+            event["binding_term"] = "prefill"
         else:
             event["binding_term"] = (
                 "both" if prefill == decode else ("prefill" if prefill > decode else "decode")
@@ -516,32 +517,156 @@ def token_policy_evaluation(
         replicas = running_at(start_s)
         backlog = lookups["token_prefill_backlog"](start_s)
         decodes = lookups["token_active_decodes"](start_s)
-        if not replicas or backlog is None or decodes is None:
+        if not replicas or backlog is None:
             continue
-        backlog, decodes = backlog / replicas, decodes / replicas
+        backlog = backlog / replicas
+        decodes = None if decodes is None else decodes / replicas
         truth = in_flight.get(i)
         if r.ttft_ms is not None and r.cold is False:
             pairs["prefill_backlog_vs_warm_ttft"].append((backlog, r.ttft_ms))
-            pairs["decodes_vs_warm_ttft"].append((decodes, r.ttft_ms))
+            if decodes is not None:
+                pairs["decodes_vs_warm_ttft"].append((decodes, r.ttft_ms))
             if truth is not None:
                 pairs["in_flight_prefill_vs_warm_ttft"].append((truth / replicas, r.ttft_ms))
         if i in excess:
             pairs["prefill_backlog_vs_excess_ttft"].append((backlog, excess[i]))
-            pairs["decodes_vs_excess_ttft"].append((decodes, excess[i]))
+            if decodes is not None:
+                pairs["decodes_vs_excess_ttft"].append((decodes, excess[i]))
             if truth is not None:
                 pairs["in_flight_prefill_vs_excess_ttft"].append((truth / replicas, excess[i]))
         if r.itl_ms is not None:
-            pairs["decodes_vs_itl"].append((decodes, r.itl_ms))
             pairs["prefill_backlog_vs_itl"].append((backlog, r.itl_ms))
+            if decodes is not None:
+                pairs["decodes_vs_itl"].append((decodes, r.itl_ms))
     return {
         "scale_up_binding_terms": dict(collections.Counter(
             e["binding_term"] for e in events if e["direction"] == "up"
         )),
+        "target_tracking": target_tracking(plot_data, period),
+        "reaction": reaction_times(plot_data, events),
         "signal_strength": {
             name: {"samples": len(p), "spearman": spearman(p), "quartiles": _quartile_table(p)}
             for name, p in pairs.items()
         },
     }
+
+
+def _time_weighted_summary(
+    segments: list[tuple[float, float]], target: float
+) -> dict[str, Any]:
+    """Summarize a step function given as ``(value, duration_s)`` segments.
+
+    Percentiles are time-weighted: p90 is the value below which the series
+    spent 90% of the covered time. The bands are relative to ``target``.
+    """
+    covered = sum(d for _, d in segments)
+    if not covered:
+        return {"covered_s": 0.0}
+    ordered = sorted(segments)
+
+    def percentile(q: float) -> float:
+        acc = 0.0
+        for value, duration in ordered:
+            acc += duration
+            if acc >= q * covered:
+                return value
+        return ordered[-1][0]
+
+    def share(predicate) -> float:
+        return sum(d for v, d in segments if predicate(v)) / covered
+
+    return {
+        "covered_s": covered,
+        "mean": sum(v * d for v, d in segments) / covered,
+        "p50": percentile(0.5),
+        "p90": percentile(0.9),
+        "max": max(v for v, _ in segments),
+        "share_below_0.75x": share(lambda v: v < 0.75 * target),
+        "share_within_0.75x_1.25x": share(lambda v: 0.75 * target <= v <= 1.25 * target),
+        "share_above_1.25x": share(lambda v: v > 1.25 * target),
+        "share_above_2x": share(lambda v: v > 2 * target),
+    }
+
+
+def target_tracking(plot_data: dict[str, Any], period: dict[str, float]) -> dict[str, Any] | None:
+    """How close the per-replica uncached prefill backlog stayed to the target.
+
+    Two views of the same quantity, both divided by the running replica count
+    at each sample: the raw router snapshot (what an arriving request waits
+    behind) and the policy's lookback mean (what it scales on). Time is
+    integrated over ``period`` between successive samples. The policy
+    cannot hold a per-replica backlog below the target when the global
+    backlog needs fewer than one replica, so the "below" share is expected
+    at the start and end of a curve.
+    """
+    kwargs = (plot_data.get("experiment") or {}).get("autoscaling_policy_kwargs") or {}
+    target = kwargs.get("target_prefill_tokens_per_replica")
+    series = plot_data["serve_metric_series"]
+    if not target or "token_prefill_replicas" not in series:
+        return None
+    status = [s for s in plot_data["serve_status_samples"] if s.get("error") is None]
+    running_at = _step_lookup(status, "running_replicas")
+    start, end = period["start_s"], period["end_s"]
+
+    def segments(points: list[dict[str, Any]], scale: float) -> list[tuple[float, float]]:
+        out = []
+        for point, following in zip(points, points[1:] + [None]):
+            t = max(point["relative_time_s"], start)
+            until = end if following is None else min(following["relative_time_s"], end)
+            replicas = running_at(point["relative_time_s"])
+            if until <= t or not replicas:
+                continue
+            out.append((point["value"] * scale / replicas, until - t))
+        return out
+
+    result = {
+        "target_prefill_tokens_per_replica": target,
+        "lookback_mean_per_replica": _time_weighted_summary(
+            segments(series["token_prefill_replicas"]["points"], target), target
+        ),
+    }
+    if "token_prefill_backlog" in series:
+        result["raw_backlog_per_replica"] = _time_weighted_summary(
+            segments(series["token_prefill_backlog"]["points"], 1.0), target
+        )
+    return result
+
+
+def reaction_times(plot_data: dict[str, Any], events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """For each scale-up: when the policy's own mean first asked for more.
+
+    ``signal_crossed_at_s`` is the start of the unbroken stretch, ending at
+    the decision, in which the lookback-mean required replicas exceeded the
+    count the deployment was at. ``decision_delay_s`` is from there to the
+    desired-count change (Serve's upscale delay and the controller loop);
+    ``total_delay_s`` adds the replica start, when the evaluation could
+    match it.
+    """
+    series = plot_data["serve_metric_series"]
+    points = (series.get("token_prefill_replicas") or {}).get("points") or []
+    out = []
+    for event in events:
+        if event["direction"] != "up":
+            continue
+        crossed = None
+        for point in reversed(points):
+            if point["relative_time_s"] > event["time_s"]:
+                continue
+            if math.ceil(point["value"]) <= event["from_replicas"]:
+                break
+            crossed = point["relative_time_s"]
+        out.append({
+            "time_s": event["time_s"],
+            "from_replicas": event["from_replicas"],
+            "to_replicas": event["to_replicas"],
+            "signal_crossed_at_s": crossed,
+            "decision_delay_s": None if crossed is None else event["time_s"] - crossed,
+            "total_delay_s": (
+                None if crossed is None or event["running_matched_at_s"] is None
+                else event["running_matched_at_s"] - crossed
+            ),
+        })
+    return out
 
 
 # --- TTFT decomposition -----------------------------------------------------------

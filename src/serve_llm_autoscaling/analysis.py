@@ -67,8 +67,9 @@ METRIC_SERIES = {
     "sla_training_buckets": ("serve_sla_autoscaling_training_buckets", "sum", ()),
     "sla_predicted_ttft_ms": ("serve_sla_autoscaling_predicted_ttft_ms", "sum", ()),
     "sla_predicted_itl_ms": ("serve_sla_autoscaling_predicted_itl_ms", "sum", ()),
-    # The token policy publishes the three required-replica values; the raw
-    # prefill backlog and active-decode inputs are kept in case it ever does.
+    # The token policy publishes its raw prefill backlog snapshot, the
+    # lookback-mean prefill required replicas and the required replicas. The
+    # decode series are kept so runs from the two-term policy still load.
     "token_prefill_backlog": (
         "serve_autoscaling_policy_metric", "sum", (), {"metric": "outstanding_effective_prefill_tokens"}
     ),
@@ -83,6 +84,14 @@ METRIC_SERIES = {
     ),
     "token_desired_replicas": (
         "serve_autoscaling_policy_metric", "sum", (), {"metric": "required_replicas"}
+    ),
+    # The arrival-p95 policy publishes the p95 of uncached prefill tokens that
+    # were ahead of each request on its selected replica, over its lookback.
+    "token_arrival_p95": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "prefill_arrival_p95_tokens"}
+    ),
+    "token_arrival_samples": (
+        "serve_autoscaling_policy_metric", "sum", (), {"metric": "prefill_arrival_samples"}
     ),
     "vllm_running_requests": ("vllm_num_requests_running", "sum", ("ReplicaId",)),
     "vllm_waiting_requests": ("vllm_num_requests_waiting", "sum", ("ReplicaId",)),
@@ -788,7 +797,7 @@ def build_plot_data(
             "target_replicas_metric": "target_replicas" in series,
             "healthy_replicas": "healthy_replicas" in series,
             "sla_policy_metrics": "sla_recommended_replicas" in series,
-            "token_policy_metrics": "token_prefill_backlog" in series,
+            "token_policy_metrics": "token_prefill_replicas" in series,
             "sla_policy_events": bool(sla_events),
             "vllm_latency": "vllm_mean_ttft_ms" in series,
         },

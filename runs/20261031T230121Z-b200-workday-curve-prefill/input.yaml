@@ -1,0 +1,122 @@
+# The arrival-p95 token policy (branch celina/prefill-token-autoscaling-p95,
+# commit debcf256b6)
+# on a workday-shaped AgentX session curve on 8 B200s: ramp 1->32 sessions at
+# one cold session every 30s, then hold at 32 for 930s. No ramp down for
+# now.
+#
+# Policy: at routing time the KV-aware router records, for every request,
+# the uncached prefill tokens already outstanding on the replica it chose
+# (the request's own tokens excluded). The policy takes the p95 of those
+# samples over the last upscale_lookback_s and asks for
+#   ceil(current_replicas x p95 / target_prefill_tokens_per_replica).
+# That is the same quantity the evaluation scores from the engine traces
+# (tools/arrival_load_windows.py): a window meets the target when the p95 of
+# load at arrival is at or under 20K, about 1s of engine queue.
+#
+# Why this signal: with session pinning (ray-project/ray#67224) the earlier
+# runs showed the 60s mean of total backlog reading ~1 replica at the
+# 32-session hold while the p95 of load at arrival needed 2-3. The mean
+# measures work, the p95 measures how often requests collide, and the
+# target is about collisions. Scaling on the mean caused every scale-down
+# in runs/20261031T000711Z-* and runs/20261031T182704Z-*, and every
+# scale-down evicted pinned sessions whose re-prefill then drove a burst to
+# the replica cap.
+#
+# Sample gate: the policy holds the current count until the window has
+# min_arrival_samples arrivals. The first attempt without it (stopped at
+# 15:37 on 10-31) took a single collision among 15 samples as a p95 of 65K
+# and compounded the ratio 1->4->7 in two minutes. There is no per-decision
+# step cap: the ratio can move the count by several replicas at once.
+#
+# Delays: the p95 window is 120s (~100 requests at the hold). Upscale delay
+# 10s; downscale delay 600s so a dip has to persist for ten minutes before a
+# replica, and the sessions pinned to it, is removed. Scale-down is still
+# known to evict sessions; that is the next thing to address.
+#
+# Read the result in analysis/autoscaling_evaluation.json and the window
+# chart: python tools/load_breakdown.py <run> && python
+# tools/arrival_load_windows.py <run> --per-requests 100
+#
+# Timeline: load 0-1860s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-workday-curve-prefill
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 20000
+        # Window for the p95 of per-request load at arrival; must not exceed
+        # look_back_period_s.
+        upscale_lookback_s: 120
+        # Hold the current count until the window has this many arrivals; the
+        # p95 of a dozen requests is their maximum. ~100 arrive per 120s at
+        # the hold, ~50 at around 10 sessions.
+        min_arrival_samples: 50
+        upscale_aggregation: mean
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    # Unused by the token policy; Serve requires a value.
+    target_ongoing_requests: 8
+    upscale_delay_s: 10
+    # A replica is removed only after the p95 has asked for fewer replicas
+    # for ten minutes straight; removing one evicts its pinned sessions.
+    downscale_delay_s: 600
+    metrics_interval_s: 2
+    look_back_period_s: 120
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1860
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 32
+    # 0-930s ramp 1->32 (one cold session every 30s); 930-1860s hold at 32.
+    # No ramp down for now: load issuance ends at 1860s and AIPerf drains.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 930, sessions: 32}
+      - {time_s: 1860, sessions: 32}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

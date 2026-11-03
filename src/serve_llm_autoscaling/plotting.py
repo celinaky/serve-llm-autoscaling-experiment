@@ -157,19 +157,32 @@ def _sla_panel(ax: Any, data: dict[str, Any]) -> dict[Any, Any]:
 
 
 def _token_panel(ax: Any, data: dict[str, Any]) -> dict[Any, Any]:
-    """The token policy's inputs beside the replicas each term asked for."""
+    """The token policy's prefill backlog, its lookback mean and the replicas it asks for.
+
+    The target band is ``target_prefill_tokens_per_replica`` times the
+    running replica count: the backlog the policy is trying to hold.
+    """
     metrics = data["serve_metric_series"]
+    kwargs = data["experiment"].get("autoscaling_policy_kwargs") or {}
+    target = kwargs.get("target_prefill_tokens_per_replica")
     right = ax.twinx()
     xs, ys = _series(metrics, "token_prefill_backlog")
-    ax.plot(xs, [y / 1000 for y in ys], color="tab:blue", lw=1.5, label="outstanding prefill (K tokens)")
-    xs, ys = _series(metrics, "token_active_decodes")
-    right.plot(xs, ys, color="tab:orange", lw=1.5, label="active decode requests")
-    for key, label, style in (("token_prefill_replicas", "prefill term wants", {"color": "tab:blue"}),
-                              ("token_decode_replicas", "decode term wants", {"color": "tab:orange"})):
-        xs, ys = _series(metrics, key, step=True)
-        right.step(xs, ys, where="post", ls=":", lw=1.2, label=label, **style)
+    ax.plot(xs, [y / 1000 for y in ys], color="tab:blue", lw=1.0, alpha=0.6, label="outstanding uncached prefill (K tokens)")
+    xs, ys = _series(metrics, "token_prefill_replicas", step=True)
+    if target:
+        ax.step(xs, [y * target / 1000 for y in ys], where="post", color="tab:blue", lw=1.5,
+                label="lookback mean (K tokens)")
+        status = [s for s in data["serve_status_samples"] if s.get("error") is None]
+        ax.step([s["relative_time_s"] for s in status],
+                [s["running_replicas"] * target / 1000 for s in status],
+                where="post", color="tab:red", lw=1.2, ls="--", label="target x running replicas")
+    right.step(xs, ys, where="post", ls=":", lw=1.2, color="tab:green", label="prefill term wants (replicas)")
+    xs, ys = _series(metrics, "token_arrival_p95", step=True)
+    if xs:
+        ax.step(xs, [y / 1000 for y in ys], where="post", color="tab:purple", lw=1.5,
+                label="p95 load at arrival, policy lookback (K tokens)")
     ax.set_ylabel("K tokens")
-    right.set_ylabel("requests / replicas")
+    right.set_ylabel("replicas")
     ax.set_ylim(bottom=0)
     right.set_ylim(bottom=0)
     ax.set_title("Token policy inputs", loc="left", fontsize=10)

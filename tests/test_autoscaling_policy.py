@@ -38,9 +38,7 @@ def _sla(**kwargs) -> ExperimentConfig:
     return _config({"name": "sla", "kwargs": {**SLA_KWARGS, **kwargs}})
 
 
-TOKEN_KWARGS = {
-    "target_prefill_tokens_per_replica": 60000, "target_decode_requests_per_replica": 16,
-}
+TOKEN_KWARGS = {"target_prefill_tokens_per_replica": 60000}
 
 
 def _token(routing="kv_aware", **kwargs) -> ExperimentConfig:
@@ -100,8 +98,8 @@ def test_token_policy_passes_targets_through():
 
 
 def test_token_policy_requires_its_targets():
-    with pytest.raises(ValidationError, match=r"token requires kwargs \['target_decode_requests_per_replica'\]"):
-        _config({"name": "token", "kwargs": {"target_prefill_tokens_per_replica": 60000}})
+    with pytest.raises(ValidationError, match=r"token requires kwargs \['target_prefill_tokens_per_replica'\]"):
+        _config({"name": "token", "kwargs": {"upscale_lookback_s": 60}})
 
 
 @pytest.mark.parametrize("routing", ["power_of_two", "consistent_hash", "prefix_cache_affinity"])

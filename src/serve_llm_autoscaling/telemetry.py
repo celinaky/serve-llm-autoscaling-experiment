@@ -43,8 +43,9 @@ SELECTED_METRICS = (
     "serve_sla_autoscaling_inference_duration_ms",
     # Values a policy publishes under its "__policy_metrics" state key, which
     # the controller exports as one gauge tagged by metric name. The token
-    # policy publishes prefill_required_replicas, decode_required_replicas
-    # and required_replicas.
+    # policy publishes outstanding_effective_prefill_tokens (latest raw
+    # snapshot), prefill_required_replicas (lookback mean) and
+    # required_replicas.
     "serve_autoscaling_policy_metric",
     # vLLM engine metrics, exported per replica with a ReplicaId label. The
     # SLA policy learns from the first two, so they show what it sees.

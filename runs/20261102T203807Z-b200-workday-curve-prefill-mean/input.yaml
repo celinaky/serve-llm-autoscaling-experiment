@@ -1,0 +1,109 @@
+# The mean-of-backlog token policy (branch
+# celina/prefill-token-autoscaling-policy, commit ed547dd6dc) on the same
+# workday curve as b200_workday_curve_prefill.yaml: ramp 1->32 sessions at
+# one cold session every 30s (0-930s), hold at 32 for 930s (930-1860s), no
+# ramp down. Same seed, so the same sessions start at the same times.
+#
+# Policy: the KV-aware router keeps one gauge, the total uncached prefill
+# tokens outstanding across all replicas (a request's whole prompt counts
+# until its first token). The policy takes the time-weighted mean of that
+# gauge over the last upscale_lookback_s and asks for
+#   ceil(mean / target_prefill_tokens_per_replica).
+# No per-replica or per-request view: this is the signal the first pinned
+# runs (runs/20261031T000711Z-* and runs/20261031T182704Z-*) scaled on.
+#
+# What changed from runs/20261031T182704Z-*, the earlier run of this policy
+# on this curve: upscale_delay_s 0 -> 40 so the controller only adds
+# replicas after the mean has asked for more for 40s straight, and
+# downscale_delay_s 180 -> 1800 so no replica is removed during the run
+# (every scale-down in the earlier runs evicted pinned sessions and set off
+# a re-prefill wave). With no scale-down, the count only ratchets up, so
+# this run shows what the mean signal asks for at each point of the ramp
+# and hold, and whether a 40s delay keeps it from over-reacting to single
+# cold prompts.
+#
+# Compare against runs/20261031T230121Z-* (arrival-p95 policy, 10s upscale
+# delay) with the same tools: python tools/load_breakdown.py <run> && python
+# tools/policy_decision_timeline.py <run> --backlog
+#
+# Timeline: load 0-1860s, AIPerf drains for up to 120s, then 180s idle.
+name: b200-workday-curve-prefill-mean
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 20000
+        # Window for the time-weighted mean of the router's total outstanding
+        # uncached prefill tokens; must not exceed look_back_period_s. Same
+        # 60s as the earlier mean-policy runs.
+        upscale_lookback_s: 60
+        upscale_aggregation: mean
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    # Unused by the token policy; Serve requires a value.
+    target_ongoing_requests: 8
+    # The mean must ask for more replicas for 40s straight before any are
+    # added, on top of the 60s mean itself.
+    upscale_delay_s: 40
+    # Longer than the load phase: no scale-down during this run.
+    downscale_delay_s: 1800
+    metrics_interval_s: 2
+    look_back_period_s: 60
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1860
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 32
+    # 0-930s ramp 1->32 (one cold session every 30s); 930-1860s hold at 32.
+    # No ramp down: load issuance ends at 1860s and AIPerf drains.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 930, sessions: 32}
+      - {time_s: 1860, sessions: 32}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0
