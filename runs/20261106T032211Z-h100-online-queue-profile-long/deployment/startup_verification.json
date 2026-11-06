@@ -1,0 +1,31 @@
+{
+  "verified_at_s": 1793935649.8794425,
+  "native_queue_time_samples": 30,
+  "nonzero_workload_samples": 14,
+  "sources": {
+    "agentx-concurrency-ramp": {
+      "completed_records": 8,
+      "errors": 0,
+      "matched_learner_samples": 8
+    },
+    "side-probe-tiny": {
+      "completed_records": 8,
+      "errors": 0,
+      "matched_learner_samples": 8
+    },
+    "side-probe-medium": {
+      "completed_records": 8,
+      "errors": 0,
+      "matched_learner_samples": 8
+    },
+    "side-probe-cold": {
+      "completed_records": 3,
+      "errors": 0,
+      "matched_learner_samples": 3
+    }
+  },
+  "scheduler_tracing_enabled": false,
+  "fixed_engine_replicas": 1,
+  "workload_duration_s": 7200,
+  "expected_side_probes": 2808
+}

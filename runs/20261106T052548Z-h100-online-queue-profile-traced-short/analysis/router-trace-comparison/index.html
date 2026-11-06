@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>Router versus scheduler traces</title><style>img{width:100%}body{font:16px system-ui;max-width:1800px;margin:auto}</style><h1>Router versus scheduler traces</h1><pre>{
+  &quot;dropped_trace_events&quot;: 0,
+  &quot;incomplete_trace_requests&quot;: 0,
+  &quot;native_samples&quot;: 661,
+  &quot;traced_completed_requests&quot;: 660,
+  &quot;matched_requests&quot;: 660,
+  &quot;preempted_requests_excluded_from_plot&quot;: 0,
+  &quot;native_vs_trace_initial_queue_abs_error_ms&quot;: {
+    &quot;median&quot;: 1.2451328802853823,
+    &quot;p95&quot;: 2.933492802549153,
+    &quot;maximum&quot;: 16.73193695023656
+  },
+  &quot;engine_arrival_replay_vs_original_max_token_difference&quot;: 0.0,
+  &quot;note&quot;: &quot;Ground-truth replay is retrospective and uses completed chunks. Missing trace requests or dropped events limit completeness. Effective router reservations may include cache-tier weights.&quot;
+}</pre><a href="points.csv">Paired points CSV</a><img src="comparison.png"><img src="validation.png"><h2>Where the waiting-time difference comes from</h2><p>Async CPU scheduling can precede batch execution. This run has no intervening skipped batches between request prefill steps. Execution starts below use the same previous-completion inference as the original reconstruction, not CUDA start events.</p><p><a href="wait_components_by_load.csv">Load-bin statistics CSV</a> · <a href="wait_components_summary.json">Accounting summary</a></p><img src="wait_decomposition.png">

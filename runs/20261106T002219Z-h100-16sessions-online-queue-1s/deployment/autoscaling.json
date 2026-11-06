@@ -1,0 +1,9 @@
+{
+  "policy": "token",
+  "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+  "policy_kwargs": {
+    "target_queue_time_ms": 1000,
+    "upscale_aggregation": "mean",
+    "upscale_lookback_s": 60
+  }
+}

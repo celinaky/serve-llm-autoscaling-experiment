@@ -1,0 +1,18 @@
+{
+  "driver_pid": 3483462,
+  "started_at_s": 1793942748.3308098,
+  "config": "/home/ray/default/online-prefill-harness/experiments/h100_online_queue_profile_traced_short.yaml",
+  "scheduler_trace_dir": "/mnt/cluster_storage/serve-llm-autoscaling-experiment/paired-scheduler-traces/h100_online_queue_profile_traced_short-1793942745650028954",
+  "run_directory": "/home/ray/default/online-prefill-harness/runs/20261106T052548Z-h100-online-queue-profile-traced-short",
+  "probe_stop_s": 1793944133.8272276,
+  "probe_processes": {
+    "tiny": 3491387,
+    "medium": 3491388,
+    "cold": 3491389
+  },
+  "probe_exit_codes": {
+    "tiny": 0,
+    "medium": 0,
+    "cold": 0
+  }
+}

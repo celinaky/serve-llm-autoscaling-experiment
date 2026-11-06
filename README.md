@@ -767,3 +767,65 @@ warns that the analysis has no Serve telemetry.
 The workspace is assumed to be dedicated to the experiment. Teardown calls
 `serve.shutdown()` and therefore removes the complete Serve instance, while
 leaving the Ray cluster running.
+
+### Online token-budget calibration
+
+On the online-calibration Ray branch, select the token policy with a queue-time
+SLO instead of a fixed token budget:
+
+```yaml
+deployment:
+  routing:
+    policy: kv_aware
+    request_router_kwargs:
+      enable_prefill_queue_learning: true
+      calibration_min_samples: 100
+      calibration_window_samples: 1000
+      calibration_refresh_interval_s: 120
+      prefill_decay_tokens_per_second: 0
+  engine:
+    disable_log_stats: false
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_queue_time_ms: 2000
+analysis:
+  prefill_calibration_trace_dir: /mnt/cluster_storage/prefill-calibration
+```
+
+Merge these fields into a complete experiment config. The runner creates a
+run-specific audit directory on shared storage; every router must be able to
+write it. No scheduler tracing is needed. Before enough samples and a valid fit
+are available the learned policy holds its initial replica target, so provision
+at least one initial replica. Each router learns independently.
+
+The default window is the latest 1,000 valid paired requests, with a minimum of
+100. The first fit runs at sample 100 and publishes through the next metrics
+report; subsequent fits run every 120 seconds. All three settings are tunable. The router
+publishes model coefficients and the policy converts its queue SLO to a token
+budget. Mean queue time is not a tail-latency guarantee.
+
+After the run, `analysis/prefill-calibration/index.html` displays the exact
+training points, regression, previous fit, queue SLO and derived budget for each
+fit, plus model-budget and controller-target timelines. `samples.csv`,
+`fits.json` and `verification.json` preserve machine-readable evidence. Missing
+closure markers, dropped audit records or reconstructed-fit mismatches mark
+verification incomplete. A kept-running deployment can therefore have
+reproducible fits while its audit is still marked incomplete.
+
+For paired validation, `tools/run_online_queue_profile.py` accepts
+`--scheduler-trace-root PATH` alongside the native learner. It records each
+request's router reservation and scheduler batch history, then generates
+`analysis/router-trace-comparison/index.html` and `points.csv`. The report
+compares remaining engine work, router reservations, native first-scheduling
+queue time, and the original waiting-before-and-between-prefill-steps measure.
+It also checks the native labels against trace admissions and records GPU-local
+and external cached-token counts. The learner does not consume the traces.
+
+Recreate plots entirely offline:
+
+```bash
+PYTHONPATH=src python -m serve_llm_autoscaling.calibration runs/RUN \
+  --target-queue-time-ms 2000
+```

@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "/home/ray/anaconda3/bin/python",
+    "/home/ray/default/online-prefill-harness/tools/side_probe.py",
+    "--out",
+    "/home/ray/default/online-prefill-harness/runs/20261106T052548Z-h100-online-queue-profile-traced-short/benchmark/side-probe-medium",
+    "--until-ns",
+    "1793944133827227685",
+    "--url",
+    "http://127.0.0.1:8000/v1/chat/completions",
+    "--model",
+    "Qwen/Qwen3.6-27B-FP8",
+    "--max-tokens",
+    "8",
+    "--rate",
+    "0.2",
+    "--min-new",
+    "1000",
+    "--max-new",
+    "8000",
+    "--prefix",
+    "40000",
+    "--seed",
+    "72"
+  ]
+}

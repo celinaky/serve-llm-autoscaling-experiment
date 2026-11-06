@@ -1,0 +1,505 @@
+diff --git a/doc/source/serve/llm/user-guides/kv-aware-routing.md b/doc/source/serve/llm/user-guides/kv-aware-routing.md
+index 327b77bf7b..db712e47d5 100644
+--- a/doc/source/serve/llm/user-guides/kv-aware-routing.md
++++ b/doc/source/serve/llm/user-guides/kv-aware-routing.md
+@@ -249,3 +249,43 @@ If the ingress router fails to route a request, Ray Serve LLM can send it to an
+ - {doc}`Prefix-aware routing <prefix-aware-routing>` - Text-based cache affinity without the extra dependency
+ - {ref}`routing-policies-guide` - Request routing concepts and available policies
+ - [Dynamo standalone selection service](https://docs.nvidia.com/dynamo/knowledge-base/modular-components/router/standalone-selection) - The selection service that scores replicas, and its full settings
++
++## Online prefill-token calibration (experimental)
++
++The experimental token policy can learn a token budget for a **mean initial
++engine queue-time** target. Configure the LLM deployment's autoscaling policy:
++
++```yaml
++policy:
++  policy_function: ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy
++  policy_kwargs:
++    target_queue_time_ms: 2000
++```
++
++In `request_router_config.request_router_kwargs`, set
++`enable_prefill_queue_learning: true`. Optional settings are
++`calibration_min_samples: 100`, `calibration_window_samples: 1000`, and
++`calibration_refresh_interval_s: 120`. Keep `prefill_decay_tokens_per_second: 0`
++and `engine_kwargs.disable_log_stats: false`. Do not also set a fixed token target.
++
++Each ingress router learns from its own requests using the selected worker's
++undecayed reservations before adding the incoming request, paired with native
++vLLM `scheduled_ts - queued_ts` reported at first output. This is a routing-time
++estimate, not reconstructed remaining GPU work. Non-streaming final-only outputs
++delay observation until completion. Learning needs traffic on initial replicas.
++
++Until a valid model is published, the policy holds its current target replica
++count. Thereafter it uses the smallest eligible budget across fresh router
++reports. The router attempts its first fit as soon as it receives the minimum
++number of valid samples and publishes valid coefficients through the next
++ordinary metrics report. Later attempts follow the refresh interval, measured
++from that first fit. Ordinary metric transport repeats the last snapshot.
++Fixed-token configurations are unchanged.
++
++For reproducible diagnostics, set the routers' environment variable
++`RAY_SERVE_LLM_PREFILL_CALIBRATION_TRACE_DIR` to shared writable storage. JSONL
++records contain accepted samples and complete rolling windows for every fit
++attempt, with coefficients, router boot identity, and published model versions.
++Audit writing is bounded and best effort; dropped records and missing clean
++shutdown markers must be treated as incomplete verification. No prompt text or
++token IDs are recorded.
+diff --git a/python/ray/llm/_internal/serve/core/ingress/router.py b/python/ray/llm/_internal/serve/core/ingress/router.py
+index c5549d187a..30df72b5da 100644
+--- a/python/ray/llm/_internal/serve/core/ingress/router.py
++++ b/python/ray/llm/_internal/serve/core/ingress/router.py
+@@ -259,9 +259,9 @@ class LLMRouter:
+             if token_key:
+                 request_headers[KV_TOKEN_KEY_HEADER] = token_key
+         if request_headers:
+-            response[
+-                RAY_SERVE_INGRESS_REQUEST_ROUTER_OPT_HEADERS_FIELD
+-            ] = request_headers
++            response[RAY_SERVE_INGRESS_REQUEST_ROUTER_OPT_HEADERS_FIELD] = (
++                request_headers
++            )
+         return response
+ 
+     def _get_multiplexed_model_id(self, request_body: Optional[Dict[str, Any]]) -> str:
+@@ -291,6 +291,9 @@ class LLMRouter:
+ 
+     def __del__(self) -> None:
+         """Close the token channel ZMQ sockets upon cleanup."""
++        tracker = getattr(self, "_kv_token_tracker", None)
++        if tracker is not None:
++            tracker.close_calibration()
+         token_sender = getattr(self, "_token_sender", None)
+         if token_sender is not None:
+             token_sender.close()
+diff --git a/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py b/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py
+index 189756ac42..a09b0943ec 100644
+--- a/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py
++++ b/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py
+@@ -241,8 +241,7 @@ class SchedulerTraceMixin:
+ 
+     if TYPE_CHECKING:
+ 
+-        def get_request_counts(self) -> Tuple[int, int]:
+-            ...
++        def get_request_counts(self) -> Tuple[int, int]: ...
+ 
+     def __init__(self, *args, **kwargs) -> None:
+         super().__init__(*args, **kwargs)
+@@ -379,6 +378,12 @@ class SchedulerTraceMixin:
+                 "phase": "prefill" if is_prefill else "decode",
+                 "prompt_tokens": prompt_tokens,
+                 "cached_prefix_tokens": cached_tokens,
++                "local_cached_prefix_tokens": getattr(
++                    prefill_stats, "num_local_cached_tokens", None
++                ),
++                "external_cached_prefix_tokens": getattr(
++                    prefill_stats, "num_external_cached_tokens", None
++                ),
+                 "computed_before": before,
+                 "completed_or_cached_before": completed_or_cached_before,
+                 "locally_computed_before": max(
+@@ -498,6 +503,8 @@ class SchedulerTraceMixin:
+                 ),
+                 prompt_tokens=entry["prompt_tokens"],
+                 cached_prefix_tokens=entry["cached_prefix_tokens"],
++                local_cached_prefix_tokens=entry["local_cached_prefix_tokens"],
++                external_cached_prefix_tokens=entry["external_cached_prefix_tokens"],
+                 scheduled_tokens=entry["scheduled_tokens"],
+             )
+         for request_id in sorted(scheduler_output.preempted_req_ids or ()):
+diff --git a/python/ray/llm/_internal/serve/engines/vllm/vllm_engine.py b/python/ray/llm/_internal/serve/engines/vllm/vllm_engine.py
+index 6fa9e84a80..1e1f91f42d 100644
+--- a/python/ray/llm/_internal/serve/engines/vllm/vllm_engine.py
++++ b/python/ray/llm/_internal/serve/engines/vllm/vllm_engine.py
+@@ -615,6 +615,19 @@ class VLLMEngine(LLMEngine):
+         from vllm.v1.engine.async_llm import AsyncLLM
+         from vllm.v1.executor.abstract import Executor
+ 
++        router_config = (
++            self.llm_config.deployment_config.get("request_router_config") or {}
++        )
++        router_kwargs = (
++            router_config.get("request_router_kwargs", {})
++            if isinstance(router_config, dict)
++            else router_config.request_router_kwargs
++        )
++        if (
++            router_kwargs.get("enable_prefill_queue_learning")
++            and vllm_engine_args.disable_log_stats
++        ):
++            raise ValueError("Prefill queue learning requires disable_log_stats=False")
+         vllm_engine_config.parallel_config.placement_group = placement_group
+         from ray.llm._internal.serve.engines.vllm.scheduler_trace import (
+             configure_scheduler_trace,
+@@ -808,10 +821,12 @@ class VLLMEngine(LLMEngine):
+             raw_request_info
+         )
+         try:
+-            transcription_response = await self._oai_serving_transcription.create_transcription(  # type: ignore[attr-defined]
+-                audio_data,
+-                request,
+-                raw_request=raw_request,
++            transcription_response = (
++                await self._oai_serving_transcription.create_transcription(  # type: ignore[attr-defined]
++                    audio_data,
++                    request,
++                    raw_request=raw_request,
++                )
+             )
+         except (ValueError, VLLMClientError) as e:
+             yield self._make_error_response(self._oai_serving_transcription, e)
+diff --git a/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py b/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py
+index 2bdf2600b0..7eb4c76fb1 100644
+--- a/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py
++++ b/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py
+@@ -54,6 +54,10 @@ class KVAwareRouter(MultiplexMixin, RequestRouter):
+         self,
+         session_affinity_ttl_s: float = DEFAULT_SESSION_AFFINITY_TTL_S,
+         prefill_decay_tokens_per_second: float = 0.0,
++        enable_prefill_queue_learning: bool = False,
++        calibration_min_samples: int = 100,
++        calibration_window_samples: int = 1000,
++        calibration_refresh_interval_s: float = 120,
+     ):
+         """Bind to the ``KVTokenTracker`` the LLMRouter registered in this
+         process. When absent (e.g. the proxy's fallback router), KV-aware
+diff --git a/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py b/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py
+index e9a91b8e52..ac634a5b25 100644
+--- a/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py
++++ b/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py
+@@ -263,6 +263,10 @@ class KVTokenTracker:
+         serve_deployment_id: Optional[Any] = None,
+         session_affinity_ttl_s: float = DEFAULT_SESSION_AFFINITY_TTL_S,
+         prefill_decay_tokens_per_second: float = 0.0,
++        enable_prefill_queue_learning: bool = False,
++        calibration_min_samples: int = 100,
++        calibration_window_samples: int = 1000,
++        calibration_refresh_interval_s: float = 120,
+     ):
+         if (
+             isinstance(prefill_decay_tokens_per_second, bool)
+@@ -275,6 +279,20 @@ class KVTokenTracker:
+             )
+         # The tracked LLMServer deployment id, passed in by the LLMRouter
+         # that builds the tracker.
++        self._calibrator = None
++        self._calibration_pending = {}
++        self._worker_prefill_tokens = {}
++        self._calibration_timer = None
++        if enable_prefill_queue_learning:
++            if prefill_decay_tokens_per_second:
++                raise ValueError("Prefill queue learning requires decay disabled")
++            from .prefill_calibration import PrefillQueueCalibrator
++
++            self._calibrator = PrefillQueueCalibrator(
++                calibration_min_samples,
++                calibration_window_samples,
++                calibration_refresh_interval_s,
++            )
+         self._serve_deployment_id = serve_deployment_id
+         # KV-cache block size, learned once from the first replica's reported
+         # engine config and passed to the selection service, which uses it to
+@@ -307,9 +325,9 @@ class KVTokenTracker:
+         )
+         self._prefill_decay_timer: Optional[asyncio.TimerHandle] = None
+         self._active_decode_requests = 0
+-        self._autoscaling_metrics_sink: Optional[
+-            Callable[[Dict[str, int]], None]
+-        ] = None
++        self._autoscaling_metrics_sink: Optional[Callable[[Dict[str, int]], None]] = (
++            None
++        )
+         self._autoscaling_publish_defer_depth = 0
+         self._autoscaling_publish_dirty = False
+         # Reverse index of in-flight request ids per worker, kept in lockstep with
+@@ -429,9 +447,36 @@ class KVTokenTracker:
+         """Set the local sink for router-owned autoscaling metrics."""
+         self._autoscaling_metrics_sink = sink
+         self._publish_autoscaling_snapshot()
++        if self._calibrator and self._calibration_timer is None:
++            self._schedule_calibration_refresh()
++
++    def close_calibration(self):
++        if self._calibration_timer is not None:
++            self._calibration_timer.cancel()
++            self._calibration_timer = None
++        if self._calibrator and self._calibrator.audit:
++            self._calibrator.audit.close()
++
++    def _schedule_calibration_refresh(self):
++        delay = max(
++            0,
++            self._calibrator.last_refresh
++            + self._calibrator.refresh_interval_s
++            - time.monotonic(),
++        )
++        self._calibration_timer = asyncio.get_running_loop().call_later(
++            delay, self._refresh_calibration
++        )
++
++    def _refresh_calibration(self):
++        self._calibration_timer = None
++        self._calibrator.refresh()
++        self._publish_autoscaling_snapshot()
++        self._schedule_calibration_refresh()
+ 
+     def _get_autoscaling_snapshot(self) -> Dict[str, int]:
+         return {
++            **(self._calibrator.model if self._calibrator else {}),
+             OUTSTANDING_EFFECTIVE_PREFILL_TOKENS: (
+                 self._prefill_decay.remaining_tokens()
+                 if self._prefill_decay is not None
+@@ -714,6 +759,20 @@ class KVTokenTracker:
+             "session_id": session_id,
+         }
+         selection = await self._svc.select_and_reserve(request)
++        if self._calibrator is not None:
++            self._calibration_pending[request_id] = dict(
++                worker_id=selection["worker_id"],
++                workload_tokens=self._worker_prefill_tokens.get(
++                    selection["worker_id"], 0
++                ),
++                routed_at_s=time.time(),
++                prompt_tokens=len(token_ids),
++                router_effective_prefill_tokens=selection["effective_prefill_tokens"],
++                router_overlap_longest_matched=selection["overlap"]["longest_matched"],
++            )
++            self._calibrator.record_routing(
++                request_id, self._calibration_pending[request_id]
++            )
+         self._track_request_state(
+             request_id,
+             selection["worker_id"],
+@@ -770,6 +829,9 @@ class KVTokenTracker:
+             expected_output_tokens=expected_output_tokens,
+             total_blocks=math.ceil(prompt_tokens / block_size),
+         )
++        self._worker_prefill_tokens[worker_id] = (
++            self._worker_prefill_tokens.get(worker_id, 0) + effective_prefill_tokens
++        )
+         self._outstanding_effective_prefill_tokens += effective_prefill_tokens
+         if self._prefill_decay is not None:
+             self._prefill_decay.add(request_id, worker_id, effective_prefill_tokens)
+@@ -802,7 +864,9 @@ class KVTokenTracker:
+         finally:
+             self._flush_autoscaling_snapshot()
+ 
+-    async def on_prefill_complete(self, request_id: str) -> None:
++    async def on_prefill_complete(
++        self, request_id: str, queue_time_ms: Optional[float] = None
++    ) -> None:
+         """Record a request's prefill -> decode transition, dropping its prefill
+         load in the selection service."""
+         state = self._requests.get(request_id)
+@@ -810,6 +874,10 @@ class KVTokenTracker:
+             return
+         if self._prefill_decay is not None:
+             self._prefill_decay.remove(request_id, state.worker_id)
++        snapshot = self._calibration_pending.pop(request_id, None)
++        if snapshot is not None and self._calibrator is not None:
++            self._calibrator.observe(request_id, snapshot, queue_time_ms)
++        self._worker_prefill_tokens[state.worker_id] -= state.effective_prefill_tokens
+         state.prefill_completed = True
+         self._outstanding_effective_prefill_tokens -= state.effective_prefill_tokens
+         self._active_decode_requests += 1
+@@ -853,6 +921,11 @@ class KVTokenTracker:
+         """Remove one request's contribution from its current lifecycle phase."""
+         if self._prefill_decay is not None:
+             self._prefill_decay.remove(request_id, state.worker_id)
++        self._calibration_pending.pop(request_id, None)
++        if not state.prefill_completed:
++            self._worker_prefill_tokens[state.worker_id] -= (
++                state.effective_prefill_tokens
++            )
+         if state.prefill_completed:
+             self._active_decode_requests -= 1
+         else:
+@@ -960,6 +1033,16 @@ def build_kv_token_tracker(
+         prefill_decay_tokens_per_second=router_kwargs.get(
+             "prefill_decay_tokens_per_second", 0.0
+         ),
++        enable_prefill_queue_learning=router_kwargs.get(
++            "enable_prefill_queue_learning", False
++        ),
++        calibration_min_samples=router_kwargs.get("calibration_min_samples", 100),
++        calibration_window_samples=router_kwargs.get(
++            "calibration_window_samples", 1000
++        ),
++        calibration_refresh_interval_s=router_kwargs.get(
++            "calibration_refresh_interval_s", 120
++        ),
+         indexer_threads=llm_config.experimental_configs.get(
+             KV_INDEXER_THREADS_KEY, DEFAULT_KV_INDEXER_THREADS
+         ),
+diff --git a/python/ray/llm/_internal/serve/routing_policies/kv_aware/vllm/token_tracking.py b/python/ray/llm/_internal/serve/routing_policies/kv_aware/vllm/token_tracking.py
+index fa2506c0f7..500dbde9f9 100644
+--- a/python/ray/llm/_internal/serve/routing_policies/kv_aware/vllm/token_tracking.py
++++ b/python/ray/llm/_internal/serve/routing_policies/kv_aware/vllm/token_tracking.py
+@@ -122,7 +122,20 @@ class RequestTokenTracker:
+         if not self._prefill_marked:
+             # The first output token signals prefill completion.
+             self._prefill_marked = True
+-            self._forwarder.report("on_prefill_complete", self._request_id)
++            metrics = getattr(output, "metrics", None)
++            queue_ms = None
++            if (
++                metrics is not None
++                and metrics.queued_ts > 0
++                and metrics.scheduled_ts >= metrics.queued_ts
++            ):
++                queue_ms = 1000 * (metrics.scheduled_ts - metrics.queued_ts)
++            if queue_ms is None:
++                self._forwarder.report("on_prefill_complete", self._request_id)
++            else:
++                self._forwarder.report(
++                    "on_prefill_complete", self._request_id, queue_ms
++                )
+         if self._report_decode_progress:
+             self._forwarder.report(
+                 "on_decode_progress", self._request_id, self._cumulative
+diff --git a/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py b/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py
+index 0fed1f4e87..5832326a99 100644
+--- a/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py
++++ b/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py
+@@ -160,7 +160,9 @@ def test_scheduler_trace_records_request_batch_and_first_token(monkeypatch, tmp_
+         num_computed_tokens=4,
+         num_in_flight_tokens=0,
+         num_preemptions=0,
+-        prefill_stats=SimpleNamespace(num_cached_tokens=2),
++        prefill_stats=SimpleNamespace(
++            num_cached_tokens=2, num_local_cached_tokens=1, num_external_cached_tokens=1
++        ),
+     )
+ 
+     scheduler.add_request(request)
+@@ -183,6 +185,8 @@ def test_scheduler_trace_records_request_batch_and_first_token(monkeypatch, tmp_
+             "phase": "prefill",
+             "prompt_tokens": 13,
+             "cached_prefix_tokens": 2,
++            "local_cached_prefix_tokens": 1,
++            "external_cached_prefix_tokens": 1,
+             "computed_before": 4,
+             "completed_or_cached_before": 4,
+             "locally_computed_before": 2,
+@@ -196,5 +200,7 @@ def test_scheduler_trace_records_request_batch_and_first_token(monkeypatch, tmp_
+ 
+     assert event_by_name["request_first_token"]["batches_waited"] == 0
+     assert event_by_name["request_admitted"]["cached_prefix_tokens"] == 2
++    assert event_by_name["request_admitted"]["local_cached_prefix_tokens"] == 1
++    assert event_by_name["request_admitted"]["external_cached_prefix_tokens"] == 1
+     assert event_by_name["batch_completed"]["first_token_request_ids"] == ["request-1"]
+     assert event_by_name["request_finished"]["external_request_id"] == "client-1"
+diff --git a/python/ray/serve/experimental/llm_token_autoscaling_policy.py b/python/ray/serve/experimental/llm_token_autoscaling_policy.py
+index 7f05cfaa7e..6c75922f0e 100644
+--- a/python/ray/serve/experimental/llm_token_autoscaling_policy.py
++++ b/python/ray/serve/experimental/llm_token_autoscaling_policy.py
+@@ -67,6 +67,11 @@ def _time_weighted_mean(
+ class LLMTokenAutoscalingPolicy:
+     """Scale an aggregated LLM deployment on outstanding uncached prefill tokens.
+ 
++    Set ``target_queue_time_ms`` instead of a fixed token target to consume
++    router queue-model snapshots. Until a fresh usable model is available,
++    learned mode holds the current target replica count. The router must enable
++    prefill queue learning and disable prefill decay.
++
+     Both directions follow the time-weighted mean over ``upscale_lookback_s``
+     of the router's outstanding effective (uncached) prefill tokens divided by
+     ``target_prefill_tokens_per_replica``. Router replicas report the same
+@@ -81,12 +86,27 @@ class LLMTokenAutoscalingPolicy:
+ 
+     def __init__(
+         self,
+-        target_prefill_tokens_per_replica: int,
++        target_prefill_tokens_per_replica: int = None,
+         upscale_lookback_s: float = 30,
+         upscale_aggregation: _UpscaleAggregation = "max",
+         scale_down_sensitivity: float = 0.8,
++        target_queue_time_ms: float = None,
+     ):
+-        if target_prefill_tokens_per_replica <= 0:
++        if (target_prefill_tokens_per_replica is None) == (
++            target_queue_time_ms is None
++        ):
++            raise ValueError(
++                "Specify exactly one fixed token target or target_queue_time_ms"
++            )
++        self._target_queue_time_ms = target_queue_time_ms
++        if target_queue_time_ms is not None and (
++            not math.isfinite(target_queue_time_ms) or target_queue_time_ms <= 0
++        ):
++            raise ValueError("target_queue_time_ms must be positive and finite")
++        if (
++            target_prefill_tokens_per_replica is not None
++            and target_prefill_tokens_per_replica <= 0
++        ):
+             raise ValueError("target_prefill_tokens_per_replica must be positive")
+         if not math.isfinite(upscale_lookback_s) or upscale_lookback_s <= 0:
+             raise ValueError("upscale_lookback_s must be positive and finite")
+@@ -157,6 +177,57 @@ class LLMTokenAutoscalingPolicy:
+             # No observation in the lookback window is also fail-closed.
+             return ctx.target_num_replicas, {}
+ 
++        learned_metrics = {}
++        if self._target_queue_time_ms is not None:
++            raw = ctx.raw_router_metrics or {}
++            prefix = "prefill_queue_model_"
++            budgets = []
++            for source in snapshots_by_source:
++                fields = {}
++                stamps = []
++                for field in (
++                    "intercept_ms",
++                    "slope_ms_per_token",
++                    "sample_count",
++                    "updated_at_s",
++                    "version",
++                ):
++                    series = raw.get(prefix + field, {}).get(source, [])
++                    if (
++                        not series
++                        or series[-1].timestamp < now - ctx.config.look_back_period_s
++                    ):
++                        break
++                    fields[field] = series[-1].value
++                    stamps.append(series[-1].timestamp)
++                if len(fields) != 5 or len(set(stamps)) != 1:
++                    continue
++                a, b = fields["intercept_ms"], fields["slope_ms_per_token"]
++                if not all(math.isfinite(v) for v in fields.values()) or b <= 0:
++                    continue
++                budget = (self._target_queue_time_ms - a) / b
++                if math.isfinite(budget) and budget > 0:
++                    budgets.append((max(1, math.floor(budget)), fields))
++            if not budgets:
++                return ctx.target_num_replicas, {
++                    "reason": "no_usable_queue_model",
++                    SERVE_AUTOSCALING_POLICY_METRICS_KEY: {
++                        "prefill_queue_model_ready": 0,
++                        "target_queue_time_ms": self._target_queue_time_ms,
++                        OUTSTANDING_EFFECTIVE_PREFILL_TOKENS: max(
++                            max(0, values[-1][1])
++                            for values in snapshots_by_source.values()
++                        ),
++                        REQUIRED_REPLICAS: ctx.target_num_replicas,
++                    },
++                }
++            budget, fields = min(budgets, key=lambda item: item[0])
++            self._target_prefill_tokens_per_replica = budget
++            learned_metrics = {prefix + key: value for key, value in fields.items()}
++            learned_metrics["learned_prefill_tokens_per_replica"] = budget
++            learned_metrics["target_queue_time_ms"] = self._target_queue_time_ms
++            learned_metrics["prefill_queue_model_ready"] = 1
++
+         prefill_required_replicas = self._mean_required_capacity(
+             snapshots_by_source, now
+         )
+@@ -173,6 +244,7 @@ class LLMTokenAutoscalingPolicy:
+             REQUIRED_REPLICAS: required_replicas,
+             "lookback_s": self._upscale_lookback_s,
+             SERVE_AUTOSCALING_POLICY_METRICS_KEY: {
++                **learned_metrics,
+                 OUTSTANDING_EFFECTIVE_PREFILL_TOKENS: outstanding_prefill_tokens,
+                 PREFILL_REQUIRED_REPLICAS: prefill_required_replicas,
+                 REQUIRED_REPLICAS: required_replicas,

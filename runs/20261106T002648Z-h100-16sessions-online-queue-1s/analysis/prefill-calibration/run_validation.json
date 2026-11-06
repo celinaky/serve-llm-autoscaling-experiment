@@ -1,0 +1,114 @@
+{
+  "run_status": "succeeded",
+  "training_samples": 313,
+  "first_100_observation_span_s": 398.54750514030457,
+  "sample100_to_fit_s": 0.00012135505676269531,
+  "fit_to_first_ready_scrape_s": 9.554956197738647,
+  "published_fits": [
+    {
+      "updated_at_s": 1793925395.9269626,
+      "sample_count": 100,
+      "intercept_ms": 5.160117995176506,
+      "slope_ms_per_token": 0.020059195397078098,
+      "budget_tokens": 49595.20371139791,
+      "r_squared": 0.24325131414879653,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793925515.9274545,
+      "sample_count": 145,
+      "intercept_ms": 45.75985494850663,
+      "slope_ms_per_token": 0.018318831607048752,
+      "budget_tokens": 52090.666343825076,
+      "r_squared": 0.22171107426535497,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793925635.9278498,
+      "sample_count": 181,
+      "intercept_ms": 54.333728568457914,
+      "slope_ms_per_token": 0.015870146273101182,
+      "budget_tokens": 59587.747658909866,
+      "r_squared": 0.18672118689766704,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793925755.9283571,
+      "sample_count": 229,
+      "intercept_ms": 70.70949570030147,
+      "slope_ms_per_token": 0.016627547986399295,
+      "budget_tokens": 55888.60757219423,
+      "r_squared": 0.19426645415193766,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793925875.928303,
+      "sample_count": 269,
+      "intercept_ms": 10.529246563228241,
+      "slope_ms_per_token": 0.041911502730361774,
+      "budget_tokens": 23608.572563063302,
+      "r_squared": 0.28710698432461856,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793925995.9285898,
+      "sample_count": 304,
+      "intercept_ms": 0.9248325272235434,
+      "slope_ms_per_token": 0.05465345235721901,
+      "budget_tokens": 18280.184039294483,
+      "r_squared": 0.4245777662994794,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793926115.9290223,
+      "sample_count": 313,
+      "intercept_ms": 48.95805905187916,
+      "slope_ms_per_token": 0.05536776033810623,
+      "budget_tokens": 17176.817973862977,
+      "r_squared": 0.40438100002253385,
+      "independent_numpy_fit_matches": true
+    },
+    {
+      "updated_at_s": 1793926235.929593,
+      "sample_count": 313,
+      "intercept_ms": 48.95805905187916,
+      "slope_ms_per_token": 0.05536776033810623,
+      "budget_tokens": 17176.817973862977,
+      "r_squared": 0.40438100002253385,
+      "independent_numpy_fit_matches": true
+    }
+  ],
+  "all_native_queue_labels": {
+    "count": 313,
+    "mean_ms": 428.2125351822581,
+    "p50_ms": 0.007079914212226868,
+    "p95_ms": 2077.9484819620825,
+    "p99_ms": 7093.472230155019,
+    "fraction_at_most_1000ms": 0.9329073482428115,
+    "max_ms": 12002.50379787758
+  },
+  "routed_after_first_fit_native_queue_labels": {
+    "count": 213,
+    "mean_ms": 575.4236620818068,
+    "p50_ms": 0.00812998041510582,
+    "p95_ms": 2277.7535804547365,
+    "p99_ms": 10175.838422635554,
+    "fraction_at_most_1000ms": 0.9154929577464789,
+    "max_ms": 12002.50379787758
+  },
+  "engine_replica_target_transitions": [
+    [
+      1793924993.476345,
+      1.0
+    ],
+    [
+      1793925925.7457972,
+      2.0
+    ]
+  ],
+  "nonfatal_reservation_cleanup_errors": 2,
+  "audit_dropped_records": 0,
+  "second_replica_startup_s": 165.6,
+  "second_replica_ready_after_load_stopped": true,
+  "standard_report_limitation": "Baseline lifecycle parser did not identify AIPerf phase boundaries and labels the full load window steady; use the explicit concurrency curve and calibration timestamps for ramp/hold interpretation."
+}

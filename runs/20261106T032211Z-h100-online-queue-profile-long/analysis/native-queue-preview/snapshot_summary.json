@@ -1,0 +1,24 @@
+{
+  "snapshot_at_s": 1793940268.7827134,
+  "run_status": "running",
+  "samples": 2610,
+  "nonzero_workload_samples": 2061,
+  "all_sample_ols": {
+    "intercept_ms": -2363.924202795779,
+    "slope_ms_per_token": 0.11240691004037592,
+    "r_squared": 0.9450070003674608
+  },
+  "zoom_sample_count": 1260,
+  "zoom_ols": {
+    "intercept_ms": -199.00553659634699,
+    "slope_ms_per_token": 0.08297684362037541,
+    "r_squared": 0.4735296974009974
+  },
+  "latest_online_model": {
+    "intercept_ms": -149.52397772472432,
+    "slope_ms_per_token": 0.08128202419374274,
+    "sample_count": 1000,
+    "updated_at_s": 1793940243.7022204
+  },
+  "latest_model_window_r_squared": 0.8967861129604546
+}

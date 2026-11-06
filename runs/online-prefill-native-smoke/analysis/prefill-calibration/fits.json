@@ -1,0 +1,24 @@
+[
+  {
+    "router_id": "1330a3f2787e48cd8b5d9e8861bbdd65",
+    "attempt_id": 1,
+    "wall_time_s": 1793923827.7559628,
+    "reason": "published",
+    "sample_count": 100,
+    "verified": true,
+    "derived_budget": 13530.83383248429,
+    "candidate": {
+      "intercept_ms": -80.82903646252066,
+      "slope_ms_per_token": 0.07987896753766269,
+      "sample_count": 100,
+      "updated_at_s": 1793923827.755957
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -80.82903646252066,
+      "prefill_queue_model_slope_ms_per_token": 0.07987896753766269,
+      "prefill_queue_model_sample_count": 100,
+      "prefill_queue_model_updated_at_s": 1793923827.755957,
+      "prefill_queue_model_version": 1
+    }
+  }
+]

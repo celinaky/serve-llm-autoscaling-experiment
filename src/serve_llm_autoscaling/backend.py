@@ -301,8 +301,23 @@ class RayServeBackend:
         if deployment.routing.policy is not None:
             spec["deployment_config"]["request_router_config"] = {
                 "request_router_class": deployment.routing.router_class,
-                "request_router_kwargs": deployment.routing.request_router_kwargs,
+                "request_router_kwargs": dict(deployment.routing.request_router_kwargs),
             }
+        learned = "target_queue_time_ms" in deployment.autoscaling.policy.kwargs
+        if learned:
+            kwargs = spec["deployment_config"]["request_router_config"]["request_router_kwargs"]
+            kwargs["enable_prefill_queue_learning"] = True
+            if kwargs.get("prefill_decay_tokens_per_second", 0):
+                raise ValueError("Learned token policy requires decay disabled")
+            if spec["engine_kwargs"].get("disable_log_stats", False):
+                raise ValueError("Learned token policy requires statistics")
+            spec["engine_kwargs"]["disable_log_stats"] = False
+        if self.config.analysis.prefill_calibration_trace_dir is not None:
+            if not learned:
+                raise ValueError("Calibration auditing requires a learned token policy")
+            spec.setdefault("runtime_env", {}).setdefault("env_vars", {})[
+                "RAY_SERVE_LLM_PREFILL_CALIBRATION_TRACE_DIR"
+            ] = str(self.config.analysis.prefill_calibration_trace_dir.resolve())
         if deployment.experimental_configs:
             spec["experimental_configs"] = deployment.experimental_configs
         if deployment.max_ongoing_requests is not None:

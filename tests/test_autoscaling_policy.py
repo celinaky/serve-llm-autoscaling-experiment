@@ -98,7 +98,7 @@ def test_token_policy_passes_targets_through():
 
 
 def test_token_policy_requires_its_targets():
-    with pytest.raises(ValidationError, match=r"token requires kwargs \['target_prefill_tokens_per_replica'\]"):
+    with pytest.raises(ValidationError, match="exactly one token target or queue-time target"):
         _config({"name": "token", "kwargs": {"upscale_lookback_s": 60}})
 
 

@@ -1,0 +1,9 @@
+{
+  "model": "Qwen/Qwen3.6-27B-FP8",
+  "vllm": "0.31.0",
+  "samples": 100,
+  "executor": "mp",
+  "scheduler_injection": false,
+  "validation": "Native AsyncLLM outputs plus new learner, direct new policy evaluation, offline audit replay",
+  "limitations": "Not a full Ray Serve controller deployment; timer boundary advanced explicitly in the smoke driver; native engine destructor emitted an ignored shutdown exception after clean worker exit"
+}

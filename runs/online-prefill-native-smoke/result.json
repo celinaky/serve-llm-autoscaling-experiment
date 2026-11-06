@@ -1,0 +1,30 @@
+{
+  "samples": 100,
+  "model": {
+    "prefill_queue_model_intercept_ms": -80.82903646252066,
+    "prefill_queue_model_slope_ms_per_token": 0.07987896753766269,
+    "prefill_queue_model_sample_count": 100,
+    "prefill_queue_model_updated_at_s": 1793923827.755957,
+    "prefill_queue_model_version": 1
+  },
+  "policy": [
+    2,
+    {
+      "outstanding_effective_prefill_tokens": 20000,
+      "required_replicas": 2,
+      "lookback_s": 30,
+      "__policy_metrics": {
+        "prefill_queue_model_intercept_ms": -80.82903646252066,
+        "prefill_queue_model_slope_ms_per_token": 0.07987896753766269,
+        "prefill_queue_model_sample_count": 100,
+        "prefill_queue_model_updated_at_s": 1793923827.755957,
+        "prefill_queue_model_version": 1,
+        "learned_prefill_tokens_per_replica": 13530,
+        "target_queue_time_ms": 1000,
+        "outstanding_effective_prefill_tokens": 20000,
+        "prefill_required_replicas": 1.4781966001478197,
+        "required_replicas": 2
+      }
+    }
+  ]
+}

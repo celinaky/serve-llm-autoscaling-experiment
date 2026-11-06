@@ -1,0 +1,221 @@
+{
+  "snapshot_samples": 2610,
+  "joined_low_range_samples": 1260,
+  "largest_queue_samples": [
+    {
+      "request_id": "a0e60291-b5fe-4ccf-9bda-485e97d60057",
+      "source": "agentx-concurrency-ramp",
+      "x": 82872.0,
+      "y": 21846.790448063985,
+      "prompt": 44651,
+      "cached": 43904,
+      "uncached": 747,
+      "routed_at_s": 1793939185.655217
+    },
+    {
+      "request_id": "5745d946-7be0-48c0-bb87-1e0941608e38",
+      "source": "side-probe-medium",
+      "x": 93811.0,
+      "y": 21472.986044129357,
+      "prompt": 43098,
+      "cached": 40768,
+      "uncached": 2330,
+      "routed_at_s": 1793939186.0691557
+    },
+    {
+      "request_id": "575b3fcb-ff82-4231-ae13-17e0cb23e6a4",
+      "source": "agentx-concurrency-ramp",
+      "x": 95778.0,
+      "y": 21437.160364119336,
+      "prompt": 99389,
+      "cached": 98784,
+      "uncached": 605,
+      "routed_at_s": 1793939192.9936023
+    },
+    {
+      "request_id": "13769288-79e9-4a73-a8e5-c851f77c7875",
+      "source": "side-probe-tiny",
+      "x": 96141.0,
+      "y": 20567.993954056874,
+      "prompt": 42395,
+      "cached": 40768,
+      "uncached": 1627,
+      "routed_at_s": 1793939188.21925
+    },
+    {
+      "request_id": "b792e9bf-6922-4b1d-b229-ae57b4a28db6",
+      "source": "side-probe-tiny",
+      "x": 83876.0,
+      "y": 20523.279482964426,
+      "prompt": 42396,
+      "cached": 40768,
+      "uncached": 1628,
+      "routed_at_s": 1793938670.4427807
+    },
+    {
+      "request_id": "307a775c-6f57-41e9-80fd-05e59a1baf66",
+      "source": "side-probe-tiny",
+      "x": 97768.0,
+      "y": 19904.503983911127,
+      "prompt": 42082,
+      "cached": 40768,
+      "uncached": 1314,
+      "routed_at_s": 1793939189.4338973
+    },
+    {
+      "request_id": "f2cbcbf9-def0-4608-a896-1305dc31c5f9",
+      "source": "side-probe-tiny",
+      "x": 99082.0,
+      "y": 19689.781334949657,
+      "prompt": 42110,
+      "cached": 40768,
+      "uncached": 1342,
+      "routed_at_s": 1793939189.669677
+    },
+    {
+      "request_id": "294b7c60-1d89-4f8d-bb61-9c06f67b36f3",
+      "source": "side-probe-medium",
+      "x": 68008.0,
+      "y": 19182.953839888796,
+      "prompt": 46444,
+      "cached": 40768,
+      "uncached": 5676,
+      "routed_at_s": 1793938670.3075106
+    },
+    {
+      "request_id": "16be20d0-906c-4bb1-9a19-34face70a792",
+      "source": "side-probe-tiny",
+      "x": 95696.0,
+      "y": 18797.936071176082,
+      "prompt": 42228,
+      "cached": 40768,
+      "uncached": 1460,
+      "routed_at_s": 1793938672.1448693
+    },
+    {
+      "request_id": "270b3742-af8a-4210-9301-3d09404ee131",
+      "source": "agentx-concurrency-ramp",
+      "x": 84377.0,
+      "y": 18124.293999979272,
+      "prompt": 89440,
+      "cached": 86240,
+      "uncached": 3200,
+      "routed_at_s": 1793939104.367425
+    },
+    {
+      "request_id": "082dce9b-844f-4c50-9585-a13ca825aeeb",
+      "source": "side-probe-medium",
+      "x": 96046.0,
+      "y": 17737.266740994528,
+      "prompt": 50062,
+      "cached": 40768,
+      "uncached": 9294,
+      "routed_at_s": 1793938673.2900114
+    },
+    {
+      "request_id": "c9dca14d-3b83-4260-a6c9-67a2a78b7878",
+      "source": "side-probe-tiny",
+      "x": 67358.0,
+      "y": 17605.046259006485,
+      "prompt": 42124,
+      "cached": 40768,
+      "uncached": 1356,
+      "routed_at_s": 1793939151.9762113
+    },
+    {
+      "request_id": "851f7c88-7a1c-440c-9b15-accd9840eb35",
+      "source": "agentx-concurrency-ramp",
+      "x": 53899.0,
+      "y": 17597.46225690469,
+      "prompt": 44260,
+      "cached": 43904,
+      "uncached": 356,
+      "routed_at_s": 1793939150.7709312
+    },
+    {
+      "request_id": "75f46f15-007a-446d-b65d-0ce0dc4ceaeb",
+      "source": "agentx-concurrency-ramp",
+      "x": 40234.0,
+      "y": 17252.503955038264,
+      "prompt": 56710,
+      "cached": 54880,
+      "uncached": 1830,
+      "routed_at_s": 1793937802.7044234
+    },
+    {
+      "request_id": "466dc15f-afac-4c95-8dc8-6cf37fa405cc",
+      "source": "agentx-concurrency-ramp",
+      "x": 73865.0,
+      "y": 16962.782742921263,
+      "prompt": 85637,
+      "cached": 81536,
+      "uncached": 4101,
+      "routed_at_s": 1793939164.4408743
+    },
+    {
+      "request_id": "5a933047-2082-44bb-919a-07c67efcd26f",
+      "source": "side-probe-cold",
+      "x": 94672.0,
+      "y": 16918.11446310021,
+      "prompt": 37798,
+      "cached": 0,
+      "uncached": 37798,
+      "routed_at_s": 1793939110.1091197
+    },
+    {
+      "request_id": "07ff483b-d0c4-4a2e-af06-dac0f078ca13",
+      "source": "side-probe-tiny",
+      "x": 98350.0,
+      "y": 16851.23274405487,
+      "prompt": 42239,
+      "cached": 40768,
+      "uncached": 1471,
+      "routed_at_s": 1793939164.568547
+    },
+    {
+      "request_id": "dada49ea-1504-453b-9d2b-55c11495528b",
+      "source": "side-probe-medium",
+      "x": 55893.0,
+      "y": 16771.977023920044,
+      "prompt": 44780,
+      "cached": 40768,
+      "uncached": 4012,
+      "routed_at_s": 1793939153.3924918
+    },
+    {
+      "request_id": "731d3cf9-33b0-47bd-aa64-2376646aa4a9",
+      "source": "side-probe-medium",
+      "x": 55431.0,
+      "y": 16506.279735825956,
+      "prompt": 43287,
+      "cached": 40768,
+      "uncached": 2519,
+      "routed_at_s": 1793939151.8505726
+    },
+    {
+      "request_id": "923e85cb-4fb0-472a-ab7a-45ef18baa05d",
+      "source": "side-probe-tiny",
+      "x": 66446.0,
+      "y": 16446.042492054403,
+      "prompt": 42224,
+      "cached": 40768,
+      "uncached": 1456,
+      "routed_at_s": 1793939108.0351691
+    }
+  ],
+  "notes": "Descriptive only: cached_tokens is a post-hoc total and does not distinguish GPU from CPU hits. Router per-request effective reservation and per-request KV transfer wait were not logged.",
+  "confound_evidence": {
+    "cold_probes_in_low_range": 85,
+    "cold_probes_with_zero_reported_cached_tokens": 85,
+    "near_outlier_cluster_engine_log": {
+      "log_file": "/tmp/ray/session_latest/logs/worker-ebf846e8ebfb2649eda93d9ab5a65d6845317a4e3285b8c2ec5e667f-74000000-3250112.out",
+      "log_clock_time": "11-05 20:26:32",
+      "gpu_kv_cache_utilization": 0.975,
+      "offload_deferred_lookup_observations": 5,
+      "sum_deferred_lookup_seconds": 28.49491840437986,
+      "caution": "Aggregate durations across requests may overlap and cannot be assigned to individual outliers."
+    },
+    "cache_weight_note": "Dynamo cached-token estimates use tier-specific cache-hit credits. Effective prefill reservations are therefore cache-adjusted work units, not guaranteed literal uncached tokens.",
+    "current_run_modified": false
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "analysis": {
+    "plot_error": null,
+    "warnings": [
+      "phase_manifest.json unavailable; time origin is the first profiling credit"
+    ]
+  },
+  "autoscaling": {
+    "policy": "token",
+    "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+    "policy_kwargs": {
+      "target_queue_time_ms": 1000,
+      "upscale_aggregation": "mean",
+      "upscale_lookback_s": 60
+    },
+    "verified_deployments": [
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ]
+  },
+  "environment": {
+    "aiperf_source": "git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0",
+    "aiperf_version": "0.13.0",
+    "cluster_resources": {
+      "CPU": 184.0,
+      "GPU": 8.0,
+      "accelerator_type:H100": 1.0,
+      "anyscale/accelerator_shape:8xH100-80G": 1.0,
+      "anyscale/node-group:head": 1.0,
+      "anyscale/provider:aws": 1.0,
+      "anyscale/region:us-east-1": 1.0,
+      "memory": 2061584302080.0,
+      "node:10.1.154.0": 1.0,
+      "node:__internal_head__": 1.0,
+      "object_store_memory": 200000000000.0
+    },
+    "python_executable": "/home/ray/anaconda3/bin/python",
+    "python_version": "3.12.15",
+    "ray_path": "/home/ray/anaconda3/lib/python3.12/site-packages/ray/__init__.py",
+    "ray_version": "3.0.0.dev0"
+  },
+  "error": null,
+  "failure_stage": null,
+  "finished_at": "2026-11-06T00:52:33.577411+00:00",
+  "git_revision": "8e58d1142156f465ccd2a0adab28448cccb9a2f1",
+  "name": "h100-16sessions-online-queue-1s",
+  "prefill_calibration": {
+    "directory": "/mnt/cluster_storage/serve-llm-autoscaling-experiment/online-prefill-calibration/20261106T002648Z-h100-16sessions-online-queue-1s",
+    "fits": 12,
+    "samples": 313,
+    "status": "verified",
+    "target_queue_time_ms": 1000,
+    "warnings": []
+  },
+  "readiness_s": 0.02519848383963108,
+  "routing": {
+    "ai_dynamo_version": "1.6.1",
+    "deployments": [
+      "LLMRouter",
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ],
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
+    "topology": "direct_streaming"
+  },
+  "started_at": "2026-11-06T00:26:48.437841+00:00",
+  "status": "succeeded",
+  "telemetry": {
+    "serve_metrics.jsonl": {
+      "error_records": 0,
+      "records": 338
+    },
+    "serve_status.jsonl": {
+      "error_records": 0,
+      "records": 1350
+    }
+  }
+}

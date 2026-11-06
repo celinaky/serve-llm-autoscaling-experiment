@@ -1,0 +1,14 @@
+{
+  "pid": 3483462,
+  "started_at_s": 1793942745.594171,
+  "argv": [
+    "/home/ray/anaconda3/bin/python",
+    "tools/run_online_queue_profile.py",
+    "experiments/h100_online_queue_profile_traced_short.yaml",
+    "--probes",
+    "experiments/h100_online_queue_profile_long.probes.json",
+    "--scheduler-trace-root",
+    "/mnt/cluster_storage/serve-llm-autoscaling-experiment/paired-scheduler-traces"
+  ],
+  "log": "/home/ray/default/online-prefill-harness/runs/h100-online-queue-profile-traced-short-driver.log"
+}

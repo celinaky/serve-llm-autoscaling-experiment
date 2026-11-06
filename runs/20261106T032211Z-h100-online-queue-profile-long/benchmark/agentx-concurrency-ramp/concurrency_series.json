@@ -1,0 +1,136 @@
+{
+  "points": [
+    {
+      "time_s": 0.0,
+      "concurrency": 1
+    },
+    {
+      "time_s": 30.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 450.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 480.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 900.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 930.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 1350.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 1380.0,
+      "concurrency": 24
+    },
+    {
+      "time_s": 1800.0,
+      "concurrency": 24
+    },
+    {
+      "time_s": 1830.0,
+      "concurrency": 12
+    },
+    {
+      "time_s": 2250.0,
+      "concurrency": 12
+    },
+    {
+      "time_s": 2280.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 2700.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 2730.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 3150.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 3180.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 3600.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 3630.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 4050.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 4080.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 4500.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 4530.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 4950.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 4980.0,
+      "concurrency": 24
+    },
+    {
+      "time_s": 5400.0,
+      "concurrency": 24
+    },
+    {
+      "time_s": 5430.0,
+      "concurrency": 12
+    },
+    {
+      "time_s": 5850.0,
+      "concurrency": 12
+    },
+    {
+      "time_s": 5880.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 6300.0,
+      "concurrency": 32
+    },
+    {
+      "time_s": 6330.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 6750.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 6780.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 7200.0,
+      "concurrency": 16
+    }
+  ]
+}

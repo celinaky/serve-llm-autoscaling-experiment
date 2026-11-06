@@ -1,0 +1,28 @@
+{
+  "probes": [
+    {
+      "name": "tiny",
+      "rate": 0.15,
+      "min_new": 100,
+      "max_new": 500,
+      "prefix": 40000,
+      "seed": 71
+    },
+    {
+      "name": "medium",
+      "rate": 0.2,
+      "min_new": 1000,
+      "max_new": 8000,
+      "prefix": 40000,
+      "seed": 72
+    },
+    {
+      "name": "cold",
+      "rate": 0.04,
+      "min_new": 20000,
+      "max_new": 40000,
+      "prefix": 0,
+      "seed": 73
+    }
+  ]
+}

@@ -247,6 +247,14 @@ def run_experiment(
     keep_deployment: bool | None = None,
 ) -> Path:
     artifacts = RunArtifacts.create(config, config_path)
+    if config.analysis.prefill_calibration_trace_dir is not None:
+        directory = config.analysis.prefill_calibration_trace_dir / artifacts.root.name
+        directory.mkdir(parents=True, exist_ok=True)
+        config = config.model_copy(deep=True)
+        config.analysis.prefill_calibration_trace_dir = directory
+        write_config(config, artifacts.root / "resolved.yaml")
+        artifacts.manifest["prefill_calibration"] = {"directory": str(directory)}
+        artifacts.flush_manifest()
     backend = RayServeBackend(config, replace=replace)
     deployed = False
     stage = "environment_check"
@@ -333,4 +341,16 @@ def run_experiment(
                 )
         elif deployed:
             artifacts.record_event("teardown_skipped")
+        if config.analysis.prefill_calibration_trace_dir is not None:
+            try:
+                from .calibration import collect_and_render
+
+                result = collect_and_render(
+                    artifacts.root, config.analysis.prefill_calibration_trace_dir,
+                    config.deployment.autoscaling.policy.kwargs["target_queue_time_ms"],
+                )
+                artifacts.manifest["prefill_calibration"].update(result)
+            except Exception as exc:
+                artifacts.manifest["prefill_calibration"]["error"] = str(exc)
+            artifacts.flush_manifest()
         print(format_run_summary(artifacts.root), flush=True)

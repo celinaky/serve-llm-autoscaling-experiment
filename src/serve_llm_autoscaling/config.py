@@ -68,7 +68,7 @@ AUTOSCALING_POLICIES = {
 REQUIRED_POLICY_KWARGS = {
     "default": set(),
     "sla": {"ttft_ms", "itl_ms"},
-    "token": {"target_prefill_tokens_per_replica"},
+    "token": set(),
 }
 
 
@@ -96,6 +96,9 @@ class AutoscalingPolicyConfig(BaseModel):
             raise ValueError(
                 f"autoscaling policy {self.name} requires kwargs {sorted(missing)}"
             )
+        if self.name == "token":
+            if ("target_prefill_tokens_per_replica" in self.kwargs) == ("target_queue_time_ms" in self.kwargs):
+                raise ValueError("token policy requires exactly one token target or queue-time target")
         if self.name == "sla":
             self.kwargs.setdefault("advisory", False)
         return self
@@ -500,6 +503,9 @@ class RuntimeConfig(BaseModel):
 
 
 class AnalysisConfig(BaseModel):
+    # Shared storage visible from every router; the runner appends a run ID.
+    prefill_calibration_trace_dir: Path | None = None
+
     window_s: float = Field(default=5, gt=0)
     # Rolling window for tail latency and window-mean SLO attainment; smooths
     # sparse request windows and matches the SLA policy's observation window.

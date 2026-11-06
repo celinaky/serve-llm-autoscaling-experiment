@@ -1,0 +1,12 @@
+{
+  "verified_at_s": 1793943096.9294417,
+  "native_samples": 74,
+  "router_routing_records": 76,
+  "joined_native_and_trace_requests": 74,
+  "scheduler_tracing_enabled": true,
+  "traces_have_cache_tier_counts": true,
+  "queue_label_difference_median_ms": 0.8638249710202217,
+  "queue_label_difference_p95_ms": 2.2236223565414486,
+  "dropped_trace_events": 0,
+  "incomplete_trace_requests": 1
+}

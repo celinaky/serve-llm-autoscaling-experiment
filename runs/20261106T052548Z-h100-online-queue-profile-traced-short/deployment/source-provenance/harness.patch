@@ -1,0 +1,172 @@
+diff --git a/README.md b/README.md
+index 1cc0a7e..533ce51 100644
+--- a/README.md
++++ b/README.md
+@@ -767,3 +767,56 @@ warns that the analysis has no Serve telemetry.
+ The workspace is assumed to be dedicated to the experiment. Teardown calls
+ `serve.shutdown()` and therefore removes the complete Serve instance, while
+ leaving the Ray cluster running.
++
++### Online token-budget calibration
++
++On the online-calibration Ray branch, select the token policy with a queue-time
++SLO instead of a fixed token budget:
++
++```yaml
++deployment:
++  routing:
++    policy: kv_aware
++    request_router_kwargs:
++      enable_prefill_queue_learning: true
++      calibration_min_samples: 100
++      calibration_window_samples: 1000
++      calibration_refresh_interval_s: 120
++      prefill_decay_tokens_per_second: 0
++  engine:
++    disable_log_stats: false
++  autoscaling:
++    policy:
++      name: token
++      kwargs:
++        target_queue_time_ms: 2000
++analysis:
++  prefill_calibration_trace_dir: /mnt/cluster_storage/prefill-calibration
++```
++
++Merge these fields into a complete experiment config. The runner creates a
++run-specific audit directory on shared storage; every router must be able to
++write it. No scheduler tracing is needed. Before enough samples and a valid fit
++are available the learned policy holds its initial replica target, so provision
++at least one initial replica. Each router learns independently.
++
++The default window is the latest 1,000 valid paired requests, with a minimum of
++100. The first fit runs at sample 100 and publishes through the next metrics
++report; subsequent fits run every 120 seconds. All three settings are tunable. The router
++publishes model coefficients and the policy converts its queue SLO to a token
++budget. Mean queue time is not a tail-latency guarantee.
++
++After the run, `analysis/prefill-calibration/index.html` displays the exact
++training points, regression, previous fit, queue SLO and derived budget for each
++fit, plus model-budget and controller-target timelines. `samples.csv`,
++`fits.json` and `verification.json` preserve machine-readable evidence. Missing
++closure markers, dropped audit records or reconstructed-fit mismatches mark
++verification incomplete. A kept-running deployment can therefore have
++reproducible fits while its audit is still marked incomplete.
++
++Recreate plots entirely offline:
++
++```bash
++PYTHONPATH=src python -m serve_llm_autoscaling.calibration runs/RUN \
++  --target-queue-time-ms 2000
++```
+diff --git a/src/serve_llm_autoscaling/backend.py b/src/serve_llm_autoscaling/backend.py
+index be5d191..0530605 100644
+--- a/src/serve_llm_autoscaling/backend.py
++++ b/src/serve_llm_autoscaling/backend.py
+@@ -301,8 +301,23 @@ class RayServeBackend:
+         if deployment.routing.policy is not None:
+             spec["deployment_config"]["request_router_config"] = {
+                 "request_router_class": deployment.routing.router_class,
+-                "request_router_kwargs": deployment.routing.request_router_kwargs,
++                "request_router_kwargs": dict(deployment.routing.request_router_kwargs),
+             }
++        learned = "target_queue_time_ms" in deployment.autoscaling.policy.kwargs
++        if learned:
++            kwargs = spec["deployment_config"]["request_router_config"]["request_router_kwargs"]
++            kwargs["enable_prefill_queue_learning"] = True
++            if kwargs.get("prefill_decay_tokens_per_second", 0):
++                raise ValueError("Learned token policy requires decay disabled")
++            if spec["engine_kwargs"].get("disable_log_stats", False):
++                raise ValueError("Learned token policy requires statistics")
++            spec["engine_kwargs"]["disable_log_stats"] = False
++        if self.config.analysis.prefill_calibration_trace_dir is not None:
++            if not learned:
++                raise ValueError("Calibration auditing requires a learned token policy")
++            spec.setdefault("runtime_env", {}).setdefault("env_vars", {})[
++                "RAY_SERVE_LLM_PREFILL_CALIBRATION_TRACE_DIR"
++            ] = str(self.config.analysis.prefill_calibration_trace_dir.resolve())
+         if deployment.experimental_configs:
+             spec["experimental_configs"] = deployment.experimental_configs
+         if deployment.max_ongoing_requests is not None:
+diff --git a/src/serve_llm_autoscaling/config.py b/src/serve_llm_autoscaling/config.py
+index 4b3643b..47e3b86 100644
+--- a/src/serve_llm_autoscaling/config.py
++++ b/src/serve_llm_autoscaling/config.py
+@@ -68,7 +68,7 @@ AUTOSCALING_POLICIES = {
+ REQUIRED_POLICY_KWARGS = {
+     "default": set(),
+     "sla": {"ttft_ms", "itl_ms"},
+-    "token": {"target_prefill_tokens_per_replica"},
++    "token": set(),
+ }
+ 
+ 
+@@ -96,6 +96,9 @@ class AutoscalingPolicyConfig(BaseModel):
+             raise ValueError(
+                 f"autoscaling policy {self.name} requires kwargs {sorted(missing)}"
+             )
++        if self.name == "token":
++            if ("target_prefill_tokens_per_replica" in self.kwargs) == ("target_queue_time_ms" in self.kwargs):
++                raise ValueError("token policy requires exactly one token target or queue-time target")
+         if self.name == "sla":
+             self.kwargs.setdefault("advisory", False)
+         return self
+@@ -500,6 +503,9 @@ class RuntimeConfig(BaseModel):
+ 
+ 
+ class AnalysisConfig(BaseModel):
++    # Shared storage visible from every router; the runner appends a run ID.
++    prefill_calibration_trace_dir: Path | None = None
++
+     window_s: float = Field(default=5, gt=0)
+     # Rolling window for tail latency and window-mean SLO attainment; smooths
+     # sparse request windows and matches the SLA policy's observation window.
+diff --git a/src/serve_llm_autoscaling/runner.py b/src/serve_llm_autoscaling/runner.py
+index 9d7831b..ccc2338 100644
+--- a/src/serve_llm_autoscaling/runner.py
++++ b/src/serve_llm_autoscaling/runner.py
+@@ -247,6 +247,14 @@ def run_experiment(
+     keep_deployment: bool | None = None,
+ ) -> Path:
+     artifacts = RunArtifacts.create(config, config_path)
++    if config.analysis.prefill_calibration_trace_dir is not None:
++        directory = config.analysis.prefill_calibration_trace_dir / artifacts.root.name
++        directory.mkdir(parents=True, exist_ok=True)
++        config = config.model_copy(deep=True)
++        config.analysis.prefill_calibration_trace_dir = directory
++        write_config(config, artifacts.root / "resolved.yaml")
++        artifacts.manifest["prefill_calibration"] = {"directory": str(directory)}
++        artifacts.flush_manifest()
+     backend = RayServeBackend(config, replace=replace)
+     deployed = False
+     stage = "environment_check"
+@@ -333,4 +341,16 @@ def run_experiment(
+                 )
+         elif deployed:
+             artifacts.record_event("teardown_skipped")
++        if config.analysis.prefill_calibration_trace_dir is not None:
++            try:
++                from .calibration import collect_and_render
++
++                result = collect_and_render(
++                    artifacts.root, config.analysis.prefill_calibration_trace_dir,
++                    config.deployment.autoscaling.policy.kwargs["target_queue_time_ms"],
++                )
++                artifacts.manifest["prefill_calibration"].update(result)
++            except Exception as exc:
++                artifacts.manifest["prefill_calibration"]["error"] = str(exc)
++            artifacts.flush_manifest()
+         print(format_run_summary(artifacts.root), flush=True)
+diff --git a/tests/test_autoscaling_policy.py b/tests/test_autoscaling_policy.py
+index 4f3bf08..fc75244 100644
+--- a/tests/test_autoscaling_policy.py
++++ b/tests/test_autoscaling_policy.py
+@@ -98,7 +98,7 @@ def test_token_policy_passes_targets_through():
+ 
+ 
+ def test_token_policy_requires_its_targets():
+-    with pytest.raises(ValidationError, match=r"token requires kwargs \['target_prefill_tokens_per_replica'\]"):
++    with pytest.raises(ValidationError, match="exactly one token target or queue-time target"):
+         _config({"name": "token", "kwargs": {"upscale_lookback_s": 60}})
+ 
+ 

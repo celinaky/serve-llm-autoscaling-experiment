@@ -1,0 +1,43 @@
+placed 660 of 660 successful AIPerf requests; chunk budget 15680 tokens, block 1568 tokens
+requests preempted before their first token: 0 (0 tokens recomputed)
+requests that sat in a step without tokens after admission: 0 (0 steps in all)
+engine uncached prefill load at arrival, tokens: p10 0  p25 0  p50 0  p75 6184  p90 30143  p95 50462  p99 109609  p100 151510
+requests arriving to an engine with no uncached prefill load: 401
+kind  step load    n step ms
+cold       ≤16K   50     573
+cold     16–32K   39     852
+cold     32–64K   25    1149
+cold    64–128K    9    1372
+warm       ≤16K  497     358
+warm     16–32K   25    1217
+warm     32–64K   11    1339
+warm    64–128K    4    1315
+kind     load    n   TTFT  queue prefill   pre post steps  step own unc   (ms; steps = own steps; step = mean step ms)
+cold        0   66   3219     27    3046   114   31  3.73   817   34931
+cold     ≤16K   28   3961    485    2818   625   32  3.25   867   28451
+cold   16–32K   11   4529   1392    2401   709   27  2.45   978   16926
+cold   32–64K   10   7227   2896    3594   690   46  3.30  1089   24654
+cold     >64K    8  11079   6564    3560   885   71  2.62  1356   18208
+warm        0  335    797     59     536   166   36  1.70   315    4352
+warm     ≤16K  120   1842    409     793   594   46  1.72   462    4891
+warm   16–32K   36   3683   1326    1392   902   63  1.89   737    5069
+warm   32–64K   35   5949   3364    1711   810   64  1.91   894    4395
+warm     >64K   11  11427   7751    2758   845   73  2.09  1319    5325
+wrote /home/ray/default/online-prefill-harness/runs/20261106T052548Z-h100-online-queue-profile-traced-short/analysis/load_breakdown.png, load_breakdown.csv, load_breakdown_steps.csv, load_requests.csv
+660 requests; wrote /home/ray/default/online-prefill-harness/runs/20261106T052548Z-h100-online-queue-profile-traced-short/analysis/load5k_ttft_breakdown.png and .csv
+wrote /home/ray/default/online-prefill-harness/runs/20261106T052548Z-h100-online-queue-profile-traced-short/analysis/load5k_queue_by_size.png
+{
+  "dropped_trace_events": 0,
+  "incomplete_trace_requests": 0,
+  "native_samples": 661,
+  "traced_completed_requests": 660,
+  "matched_requests": 660,
+  "preempted_requests_excluded_from_plot": 0,
+  "native_vs_trace_initial_queue_abs_error_ms": {
+    "median": 1.2451328802853823,
+    "p95": 2.933492802549153,
+    "maximum": 16.73193695023656
+  },
+  "engine_arrival_replay_vs_original_max_token_difference": 0.0,
+  "note": "Ground-truth replay is retrospective and uses completed chunks. Missing trace requests or dropped events limit completeness. Effective router reservations may include cache-tier weights."
+}

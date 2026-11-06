@@ -1,0 +1,23 @@
+{
+  "online": {
+    "requests": 313,
+    "zero_feature_count": 229,
+    "nonzero_feature_count": 84,
+    "above_50k_count": 13,
+    "nonzero_feature_queue_below_1ms_count": 45,
+    "zero_feature_queue_above_1s_count": 3,
+    "r_squared": 0.40438100002253397
+  },
+  "offline_0_to_100k": {
+    "requests": 4456,
+    "zero_feature_count": 1763,
+    "nonzero_feature_count": 2693,
+    "above_50k_count": 797,
+    "nonzero_feature_queue_below_1ms_count": 976,
+    "zero_feature_queue_above_1s_count": 0,
+    "r_squared": 0.8191446123281463
+  },
+  "online_nonzero_load_size_cells": 39,
+  "online_nonzero_load_size_cells_below_3_samples": 30,
+  "caveat": "Descriptive correlations only. Workload distributions, x sources, CPU offload, and instrumentation differ. These figures do not establish a cause for the weaker online relationship."
+}

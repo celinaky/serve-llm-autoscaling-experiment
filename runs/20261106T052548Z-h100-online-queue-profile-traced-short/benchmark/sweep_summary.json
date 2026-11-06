@@ -1,0 +1,95 @@
+[
+  {
+    "aiperf_request_throughput": 0.14834416063897868,
+    "artifact_dir": "/home/ray/default/online-prefill-harness/runs/20261106T052548Z-h100-online-queue-profile-traced-short/benchmark/agentx-concurrency-ramp",
+    "concurrency_series": [
+      {
+        "sessions": 1,
+        "time_s": 0.0
+      },
+      {
+        "sessions": 4,
+        "time_s": 20.0
+      },
+      {
+        "sessions": 4,
+        "time_s": 180.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 200.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 360.0
+      },
+      {
+        "sessions": 12,
+        "time_s": 380.0
+      },
+      {
+        "sessions": 12,
+        "time_s": 540.0
+      },
+      {
+        "sessions": 6,
+        "time_s": 560.0
+      },
+      {
+        "sessions": 6,
+        "time_s": 720.0
+      },
+      {
+        "sessions": 16,
+        "time_s": 740.0
+      },
+      {
+        "sessions": 16,
+        "time_s": 900.0
+      },
+      {
+        "sessions": 4,
+        "time_s": 920.0
+      },
+      {
+        "sessions": 4,
+        "time_s": 1080.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1100.0
+      },
+      {
+        "sessions": 8,
+        "time_s": 1200.0
+      }
+    ],
+    "elapsed_s": 1518.8070884100161,
+    "error": null,
+    "failed_requests": 0,
+    "level": 16,
+    "mean_e2el_ms": 51248.02092460714,
+    "mean_failed_qps": 0.0,
+    "mean_offered_qps": 0.18666666666666668,
+    "mean_started_qps": 0.18666666666666668,
+    "mean_successful_qps": 0.1825,
+    "mean_tpot_ms": 79.27638133449939,
+    "mean_ttft_ms": 2731.979556808036,
+    "mode": "agentx_concurrency_ramp",
+    "output_token_throughput": 128.5620694673406,
+    "p50_tpot_ms": 54.042776718555494,
+    "p50_ttft_ms": 1352.2151979999999,
+    "p90_tpot_ms": 103.42969143548011,
+    "p90_ttft_ms": 6541.764422900001,
+    "p99_e2el_ms": 301514.9138337001,
+    "p99_tpot_ms": 765.5055380459369,
+    "p99_ttft_ms": 14640.973463810016,
+    "profiling_interval_s": 1200.0,
+    "prompt_cache_read_pct": 72.5409910104505,
+    "request_count": 224.0,
+    "request_throughput": 0.14834416063897868,
+    "target_concurrency": 16,
+    "total_prompt_cache_read_tokens": 8311968.0,
+    "total_token_throughput": 7716.832772906682
+  }
+]

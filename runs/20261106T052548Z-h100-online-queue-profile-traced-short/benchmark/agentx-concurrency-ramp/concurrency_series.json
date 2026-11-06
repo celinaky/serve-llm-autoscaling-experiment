@@ -1,0 +1,64 @@
+{
+  "points": [
+    {
+      "time_s": 0.0,
+      "concurrency": 1
+    },
+    {
+      "time_s": 20.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 180.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 200.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 360.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 380.0,
+      "concurrency": 12
+    },
+    {
+      "time_s": 540.0,
+      "concurrency": 12
+    },
+    {
+      "time_s": 560.0,
+      "concurrency": 6
+    },
+    {
+      "time_s": 720.0,
+      "concurrency": 6
+    },
+    {
+      "time_s": 740.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 900.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 920.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 1080.0,
+      "concurrency": 4
+    },
+    {
+      "time_s": 1100.0,
+      "concurrency": 8
+    },
+    {
+      "time_s": 1200.0,
+      "concurrency": 8
+    }
+  ]
+}

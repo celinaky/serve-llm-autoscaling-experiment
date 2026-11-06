@@ -1,0 +1,1289 @@
+[
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 1,
+    "wall_time_s": 1793935478.4766998,
+    "reason": "insufficient_samples",
+    "sample_count": 0,
+    "verified": null,
+    "derived_budget": null,
+    "candidate": null,
+    "published_model": {}
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 2,
+    "wall_time_s": 1793935598.4778876,
+    "reason": "insufficient_samples",
+    "sample_count": 3,
+    "verified": null,
+    "derived_budget": null,
+    "candidate": null,
+    "published_model": {}
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 3,
+    "wall_time_s": 1793935718.4781847,
+    "reason": "insufficient_samples",
+    "sample_count": 62,
+    "verified": null,
+    "derived_budget": null,
+    "candidate": null,
+    "published_model": {}
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 4,
+    "wall_time_s": 1793935803.6847835,
+    "reason": "published",
+    "sample_count": 100,
+    "verified": true,
+    "derived_budget": 45733.52655315469,
+    "candidate": {
+      "intercept_ms": -108.46971724692344,
+      "slope_ms_per_token": 0.024237573631208667,
+      "sample_count": 100,
+      "updated_at_s": 1793935803.6847003
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -108.46971724692344,
+      "prefill_queue_model_slope_ms_per_token": 0.024237573631208667,
+      "prefill_queue_model_sample_count": 100,
+      "prefill_queue_model_updated_at_s": 1793935803.6847003,
+      "prefill_queue_model_version": 1
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 5,
+    "wall_time_s": 1793935923.6848588,
+    "reason": "published",
+    "sample_count": 152,
+    "verified": true,
+    "derived_budget": 47157.97212374166,
+    "candidate": {
+      "intercept_ms": -101.65560811732496,
+      "slope_ms_per_token": 0.023360962282826764,
+      "sample_count": 152,
+      "updated_at_s": 1793935923.6848478
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -101.65560811732496,
+      "prefill_queue_model_slope_ms_per_token": 0.023360962282826764,
+      "prefill_queue_model_sample_count": 152,
+      "prefill_queue_model_updated_at_s": 1793935923.6848478,
+      "prefill_queue_model_version": 2
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 6,
+    "wall_time_s": 1793936043.6856503,
+    "reason": "published",
+    "sample_count": 204,
+    "verified": true,
+    "derived_budget": 49755.59141821846,
+    "candidate": {
+      "intercept_ms": -78.05098216308457,
+      "slope_ms_per_token": 0.021666931322382926,
+      "sample_count": 204,
+      "updated_at_s": 1793936043.6856413
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -78.05098216308457,
+      "prefill_queue_model_slope_ms_per_token": 0.021666931322382926,
+      "prefill_queue_model_sample_count": 204,
+      "prefill_queue_model_updated_at_s": 1793936043.6856413,
+      "prefill_queue_model_version": 3
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 7,
+    "wall_time_s": 1793936163.6860998,
+    "reason": "published",
+    "sample_count": 269,
+    "verified": true,
+    "derived_budget": 55989.58664247062,
+    "candidate": {
+      "intercept_ms": -83.52345762939615,
+      "slope_ms_per_token": 0.01935223177389016,
+      "sample_count": 269,
+      "updated_at_s": 1793936163.686084
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -83.52345762939615,
+      "prefill_queue_model_slope_ms_per_token": 0.01935223177389016,
+      "prefill_queue_model_sample_count": 269,
+      "prefill_queue_model_updated_at_s": 1793936163.686084,
+      "prefill_queue_model_version": 4
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 8,
+    "wall_time_s": 1793936283.685941,
+    "reason": "published",
+    "sample_count": 336,
+    "verified": true,
+    "derived_budget": 59580.76944906649,
+    "candidate": {
+      "intercept_ms": -82.12731235845855,
+      "slope_ms_per_token": 0.01816235880074579,
+      "sample_count": 336,
+      "updated_at_s": 1793936283.6859314
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -82.12731235845855,
+      "prefill_queue_model_slope_ms_per_token": 0.01816235880074579,
+      "prefill_queue_model_sample_count": 336,
+      "prefill_queue_model_updated_at_s": 1793936283.6859314,
+      "prefill_queue_model_version": 5
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 9,
+    "wall_time_s": 1793936403.6871738,
+    "reason": "published",
+    "sample_count": 394,
+    "verified": true,
+    "derived_budget": 37913.599250944884,
+    "candidate": {
+      "intercept_ms": -124.7709305822998,
+      "slope_ms_per_token": 0.029666688280835487,
+      "sample_count": 394,
+      "updated_at_s": 1793936403.687163
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -124.7709305822998,
+      "prefill_queue_model_slope_ms_per_token": 0.029666688280835487,
+      "prefill_queue_model_sample_count": 394,
+      "prefill_queue_model_updated_at_s": 1793936403.687163,
+      "prefill_queue_model_version": 6
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 10,
+    "wall_time_s": 1793936523.6885855,
+    "reason": "published",
+    "sample_count": 474,
+    "verified": true,
+    "derived_budget": 43025.98190426457,
+    "candidate": {
+      "intercept_ms": -134.53842045423906,
+      "slope_ms_per_token": 0.02636868167189435,
+      "sample_count": 474,
+      "updated_at_s": 1793936523.6885748
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -134.53842045423906,
+      "prefill_queue_model_slope_ms_per_token": 0.02636868167189435,
+      "prefill_queue_model_sample_count": 474,
+      "prefill_queue_model_updated_at_s": 1793936523.6885748,
+      "prefill_queue_model_version": 7
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 11,
+    "wall_time_s": 1793936643.68851,
+    "reason": "published",
+    "sample_count": 548,
+    "verified": true,
+    "derived_budget": 23192.82171718699,
+    "candidate": {
+      "intercept_ms": -237.75312061224815,
+      "slope_ms_per_token": 0.053367940119809304,
+      "sample_count": 548,
+      "updated_at_s": 1793936643.6885004
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -237.75312061224815,
+      "prefill_queue_model_slope_ms_per_token": 0.053367940119809304,
+      "prefill_queue_model_sample_count": 548,
+      "prefill_queue_model_updated_at_s": 1793936643.6885004,
+      "prefill_queue_model_version": 8
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 12,
+    "wall_time_s": 1793936763.6890686,
+    "reason": "published",
+    "sample_count": 614,
+    "verified": true,
+    "derived_budget": 19682.034958525925,
+    "candidate": {
+      "intercept_ms": -1072.0772650867125,
+      "slope_ms_per_token": 0.10527759296500608,
+      "sample_count": 614,
+      "updated_at_s": 1793936763.6890604
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1072.0772650867125,
+      "prefill_queue_model_slope_ms_per_token": 0.10527759296500608,
+      "prefill_queue_model_sample_count": 614,
+      "prefill_queue_model_updated_at_s": 1793936763.6890604,
+      "prefill_queue_model_version": 9
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 13,
+    "wall_time_s": 1793936883.688961,
+    "reason": "published",
+    "sample_count": 681,
+    "verified": true,
+    "derived_budget": 18546.155604286956,
+    "candidate": {
+      "intercept_ms": -1031.8814063559084,
+      "slope_ms_per_token": 0.10955809115967072,
+      "sample_count": 681,
+      "updated_at_s": 1793936883.6889532
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1031.8814063559084,
+      "prefill_queue_model_slope_ms_per_token": 0.10955809115967072,
+      "prefill_queue_model_sample_count": 681,
+      "prefill_queue_model_updated_at_s": 1793936883.6889532,
+      "prefill_queue_model_version": 10
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 14,
+    "wall_time_s": 1793937003.6890292,
+    "reason": "published",
+    "sample_count": 758,
+    "verified": true,
+    "derived_budget": 13484.574147040017,
+    "candidate": {
+      "intercept_ms": -268.6761914617782,
+      "slope_ms_per_token": 0.09408351925894996,
+      "sample_count": 758,
+      "updated_at_s": 1793937003.6890206
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -268.6761914617782,
+      "prefill_queue_model_slope_ms_per_token": 0.09408351925894996,
+      "prefill_queue_model_sample_count": 758,
+      "prefill_queue_model_updated_at_s": 1793937003.6890206,
+      "prefill_queue_model_version": 11
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 15,
+    "wall_time_s": 1793937123.689784,
+    "reason": "published",
+    "sample_count": 819,
+    "verified": true,
+    "derived_budget": 15048.684992220262,
+    "candidate": {
+      "intercept_ms": -512.1139393700869,
+      "slope_ms_per_token": 0.10048146666315405,
+      "sample_count": 819,
+      "updated_at_s": 1793937123.68977
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -512.1139393700869,
+      "prefill_queue_model_slope_ms_per_token": 0.10048146666315405,
+      "prefill_queue_model_sample_count": 819,
+      "prefill_queue_model_updated_at_s": 1793937123.68977,
+      "prefill_queue_model_version": 12
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 16,
+    "wall_time_s": 1793937243.6905813,
+    "reason": "published",
+    "sample_count": 881,
+    "verified": true,
+    "derived_budget": 13882.452020305038,
+    "candidate": {
+      "intercept_ms": -362.8490796929964,
+      "slope_ms_per_token": 0.09817063136250267,
+      "sample_count": 881,
+      "updated_at_s": 1793937243.690571
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -362.8490796929964,
+      "prefill_queue_model_slope_ms_per_token": 0.09817063136250267,
+      "prefill_queue_model_sample_count": 881,
+      "prefill_queue_model_updated_at_s": 1793937243.690571,
+      "prefill_queue_model_version": 13
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 17,
+    "wall_time_s": 1793937363.6908937,
+    "reason": "published",
+    "sample_count": 937,
+    "verified": true,
+    "derived_budget": 14722.839072553485,
+    "candidate": {
+      "intercept_ms": -477.04746408574283,
+      "slope_ms_per_token": 0.10032354879428619,
+      "sample_count": 937,
+      "updated_at_s": 1793937363.690885
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -477.04746408574283,
+      "prefill_queue_model_slope_ms_per_token": 0.10032354879428619,
+      "prefill_queue_model_sample_count": 937,
+      "prefill_queue_model_updated_at_s": 1793937363.690885,
+      "prefill_queue_model_version": 14
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 18,
+    "wall_time_s": 1793937483.6916683,
+    "reason": "published",
+    "sample_count": 988,
+    "verified": true,
+    "derived_budget": 24916.709641822566,
+    "candidate": {
+      "intercept_ms": -1780.9299715492307,
+      "slope_ms_per_token": 0.11160903712910208,
+      "sample_count": 988,
+      "updated_at_s": 1793937483.6916592
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1780.9299715492307,
+      "prefill_queue_model_slope_ms_per_token": 0.11160903712910208,
+      "prefill_queue_model_sample_count": 988,
+      "prefill_queue_model_updated_at_s": 1793937483.6916592,
+      "prefill_queue_model_version": 15
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 19,
+    "wall_time_s": 1793937603.6925154,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 25077.48177217531,
+    "candidate": {
+      "intercept_ms": -1756.6352008429967,
+      "slope_ms_per_token": 0.10992472154447414,
+      "sample_count": 1000,
+      "updated_at_s": 1793937603.6925025
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1756.6352008429967,
+      "prefill_queue_model_slope_ms_per_token": 0.10992472154447414,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793937603.6925025,
+      "prefill_queue_model_version": 16
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 20,
+    "wall_time_s": 1793937723.6925485,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 22650.76365355333,
+    "candidate": {
+      "intercept_ms": -1483.7436734714502,
+      "slope_ms_per_token": 0.10965386030513871,
+      "sample_count": 1000,
+      "updated_at_s": 1793937723.6925406
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1483.7436734714502,
+      "prefill_queue_model_slope_ms_per_token": 0.10965386030513871,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793937723.6925406,
+      "prefill_queue_model_version": 17
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 21,
+    "wall_time_s": 1793937843.692689,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 23267.260197742296,
+    "candidate": {
+      "intercept_ms": -1552.9476029610742,
+      "slope_ms_per_token": 0.10972274265488274,
+      "sample_count": 1000,
+      "updated_at_s": 1793937843.692682
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1552.9476029610742,
+      "prefill_queue_model_slope_ms_per_token": 0.10972274265488274,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793937843.692682,
+      "prefill_queue_model_version": 18
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 22,
+    "wall_time_s": 1793937963.6933975,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 26636.30905380124,
+    "candidate": {
+      "intercept_ms": -1932.2798219158285,
+      "slope_ms_per_token": 0.11008581616893974,
+      "sample_count": 1000,
+      "updated_at_s": 1793937963.693387
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1932.2798219158285,
+      "prefill_queue_model_slope_ms_per_token": 0.11008581616893974,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793937963.693387,
+      "prefill_queue_model_version": 19
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 23,
+    "wall_time_s": 1793938083.6933172,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 35267.52883054938,
+    "candidate": {
+      "intercept_ms": -3064.4122564829304,
+      "slope_ms_per_token": 0.11524516719079739,
+      "sample_count": 1000,
+      "updated_at_s": 1793938083.6933105
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3064.4122564829304,
+      "prefill_queue_model_slope_ms_per_token": 0.11524516719079739,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938083.6933105,
+      "prefill_queue_model_version": 20
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 24,
+    "wall_time_s": 1793938203.6934106,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 57692.467145130635,
+    "candidate": {
+      "intercept_ms": -6259.366772644265,
+      "slope_ms_per_token": 0.12582867628771482,
+      "sample_count": 1000,
+      "updated_at_s": 1793938203.6934032
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -6259.366772644265,
+      "prefill_queue_model_slope_ms_per_token": 0.12582867628771482,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938203.6934032,
+      "prefill_queue_model_version": 21
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 25,
+    "wall_time_s": 1793938323.6934695,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 51930.24210835379,
+    "candidate": {
+      "intercept_ms": -5348.739463076316,
+      "slope_ms_per_token": 0.12225514854772883,
+      "sample_count": 1000,
+      "updated_at_s": 1793938323.6934593
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -5348.739463076316,
+      "prefill_queue_model_slope_ms_per_token": 0.12225514854772883,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938323.6934593,
+      "prefill_queue_model_version": 22
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 26,
+    "wall_time_s": 1793938443.6938183,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 47439.36801720701,
+    "candidate": {
+      "intercept_ms": -4702.429484473469,
+      "slope_ms_per_token": 0.12020458372053158,
+      "sample_count": 1000,
+      "updated_at_s": 1793938443.6938095
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -4702.429484473469,
+      "prefill_queue_model_slope_ms_per_token": 0.12020458372053158,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938443.6938095,
+      "prefill_queue_model_version": 23
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 27,
+    "wall_time_s": 1793938563.694424,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 53749.25193198965,
+    "candidate": {
+      "intercept_ms": -5208.740882587372,
+      "slope_ms_per_token": 0.11551306593891679,
+      "sample_count": 1000,
+      "updated_at_s": 1793938563.6944137
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -5208.740882587372,
+      "prefill_queue_model_slope_ms_per_token": 0.11551306593891679,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938563.6944137,
+      "prefill_queue_model_version": 24
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 28,
+    "wall_time_s": 1793938683.694506,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 63094.58392106643,
+    "candidate": {
+      "intercept_ms": -6335.977989834952,
+      "slope_ms_per_token": 0.11626953589253432,
+      "sample_count": 1000,
+      "updated_at_s": 1793938683.6944985
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -6335.977989834952,
+      "prefill_queue_model_slope_ms_per_token": 0.11626953589253432,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938683.6944985,
+      "prefill_queue_model_version": 25
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 29,
+    "wall_time_s": 1793938803.6945438,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 51158.42790650281,
+    "candidate": {
+      "intercept_ms": -4891.636666360151,
+      "slope_ms_per_token": 0.11516453705590234,
+      "sample_count": 1000,
+      "updated_at_s": 1793938803.694537
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -4891.636666360151,
+      "prefill_queue_model_slope_ms_per_token": 0.11516453705590234,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938803.694537,
+      "prefill_queue_model_version": 26
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 30,
+    "wall_time_s": 1793938923.6946137,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 43214.213915771,
+    "candidate": {
+      "intercept_ms": -3952.5379609590163,
+      "slope_ms_per_token": 0.11460437463034798,
+      "sample_count": 1000,
+      "updated_at_s": 1793938923.6946068
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3952.5379609590163,
+      "prefill_queue_model_slope_ms_per_token": 0.11460437463034798,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793938923.6946068,
+      "prefill_queue_model_version": 27
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 31,
+    "wall_time_s": 1793939043.6954677,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 41436.32655206691,
+    "candidate": {
+      "intercept_ms": -3716.174250608805,
+      "slope_ms_per_token": 0.11381738303183526,
+      "sample_count": 1000,
+      "updated_at_s": 1793939043.6954577
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3716.174250608805,
+      "prefill_queue_model_slope_ms_per_token": 0.11381738303183526,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939043.6954577,
+      "prefill_queue_model_version": 28
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 32,
+    "wall_time_s": 1793939163.6958568,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 42283.269612726195,
+    "candidate": {
+      "intercept_ms": -3781.164005789833,
+      "slope_ms_per_token": 0.11307460491065771,
+      "sample_count": 1000,
+      "updated_at_s": 1793939163.6958477
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3781.164005789833,
+      "prefill_queue_model_slope_ms_per_token": 0.11307460491065771,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939163.6958477,
+      "prefill_queue_model_version": 29
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 33,
+    "wall_time_s": 1793939283.6968048,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 31727.447607576225,
+    "candidate": {
+      "intercept_ms": -2602.9915802889955,
+      "slope_ms_per_token": 0.11356071326168178,
+      "sample_count": 1000,
+      "updated_at_s": 1793939283.6967976
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2602.9915802889955,
+      "prefill_queue_model_slope_ms_per_token": 0.11356071326168178,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939283.6967976,
+      "prefill_queue_model_version": 30
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 34,
+    "wall_time_s": 1793939403.6977081,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 38837.632649665116,
+    "candidate": {
+      "intercept_ms": -3430.472073878642,
+      "slope_ms_per_token": 0.1140767799583388,
+      "sample_count": 1000,
+      "updated_at_s": 1793939403.697699
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3430.472073878642,
+      "prefill_queue_model_slope_ms_per_token": 0.1140767799583388,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939403.697699,
+      "prefill_queue_model_version": 31
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 35,
+    "wall_time_s": 1793939523.6991265,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 35368.031481839185,
+    "candidate": {
+      "intercept_ms": -3024.135777227537,
+      "slope_ms_per_token": 0.11377890169810141,
+      "sample_count": 1000,
+      "updated_at_s": 1793939523.6991203
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3024.135777227537,
+      "prefill_queue_model_slope_ms_per_token": 0.11377890169810141,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939523.6991203,
+      "prefill_queue_model_version": 32
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 36,
+    "wall_time_s": 1793939643.69933,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 34622.2996285008,
+    "candidate": {
+      "intercept_ms": -2891.2817268889194,
+      "slope_ms_per_token": 0.11239235315512223,
+      "sample_count": 1000,
+      "updated_at_s": 1793939643.699319
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2891.2817268889194,
+      "prefill_queue_model_slope_ms_per_token": 0.11239235315512223,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939643.699319,
+      "prefill_queue_model_version": 33
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 37,
+    "wall_time_s": 1793939763.7002604,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 33445.69949277737,
+    "candidate": {
+      "intercept_ms": -2584.663899615596,
+      "slope_ms_per_token": 0.10717861949305943,
+      "sample_count": 1000,
+      "updated_at_s": 1793939763.700252
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2584.663899615596,
+      "prefill_queue_model_slope_ms_per_token": 0.10717861949305943,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939763.700252,
+      "prefill_queue_model_version": 34
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 38,
+    "wall_time_s": 1793939883.7011096,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 30542.64908400739,
+    "candidate": {
+      "intercept_ms": -2153.2828116364326,
+      "slope_ms_per_token": 0.10324195530529606,
+      "sample_count": 1000,
+      "updated_at_s": 1793939883.701095
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2153.2828116364326,
+      "prefill_queue_model_slope_ms_per_token": 0.10324195530529606,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793939883.701095,
+      "prefill_queue_model_version": 35
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 39,
+    "wall_time_s": 1793940003.7023132,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 25362.703763865073,
+    "candidate": {
+      "intercept_ms": -1491.9554658200395,
+      "slope_ms_per_token": 0.09825275290130525,
+      "sample_count": 1000,
+      "updated_at_s": 1793940003.702301
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1491.9554658200395,
+      "prefill_queue_model_slope_ms_per_token": 0.09825275290130525,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940003.702301,
+      "prefill_queue_model_version": 36
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 40,
+    "wall_time_s": 1793940123.7021575,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 16680.527102222204,
+    "candidate": {
+      "intercept_ms": -444.2992301437698,
+      "slope_ms_per_token": 0.08658594667259395,
+      "sample_count": 1000,
+      "updated_at_s": 1793940123.7021503
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -444.2992301437698,
+      "prefill_queue_model_slope_ms_per_token": 0.08658594667259395,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940123.7021503,
+      "prefill_queue_model_version": 37
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 41,
+    "wall_time_s": 1793940243.7022295,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 14142.413271902955,
+    "candidate": {
+      "intercept_ms": -149.52397772472432,
+      "slope_ms_per_token": 0.08128202419374274,
+      "sample_count": 1000,
+      "updated_at_s": 1793940243.7022204
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -149.52397772472432,
+      "prefill_queue_model_slope_ms_per_token": 0.08128202419374274,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940243.7022204,
+      "prefill_queue_model_version": 38
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 42,
+    "wall_time_s": 1793940363.7025404,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 4271.052222000574,
+    "candidate": {
+      "intercept_ms": 730.6999084574832,
+      "slope_ms_per_token": 0.06305239963007894,
+      "sample_count": 1000,
+      "updated_at_s": 1793940363.7025304
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": 730.6999084574832,
+      "prefill_queue_model_slope_ms_per_token": 0.06305239963007894,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940363.7025304,
+      "prefill_queue_model_version": 39
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 43,
+    "wall_time_s": 1793940483.703188,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 5356.918499242221,
+    "candidate": {
+      "intercept_ms": 685.7235467567593,
+      "slope_ms_per_token": 0.05866739493753687,
+      "sample_count": 1000,
+      "updated_at_s": 1793940483.7031767
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": 685.7235467567593,
+      "prefill_queue_model_slope_ms_per_token": 0.05866739493753687,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940483.7031767,
+      "prefill_queue_model_version": 40
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 44,
+    "wall_time_s": 1793940603.7034762,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 5916.011134943867,
+    "candidate": {
+      "intercept_ms": 652.3338982958835,
+      "slope_ms_per_token": 0.05876697892784059,
+      "sample_count": 1000,
+      "updated_at_s": 1793940603.7034655
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": 652.3338982958835,
+      "prefill_queue_model_slope_ms_per_token": 0.05876697892784059,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940603.7034655,
+      "prefill_queue_model_version": 41
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 45,
+    "wall_time_s": 1793940723.703341,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 25387.081729897178,
+    "candidate": {
+      "intercept_ms": -2028.3824093227322,
+      "slope_ms_per_token": 0.11928832315359619,
+      "sample_count": 1000,
+      "updated_at_s": 1793940723.703332
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2028.3824093227322,
+      "prefill_queue_model_slope_ms_per_token": 0.11928832315359619,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940723.703332,
+      "prefill_queue_model_version": 42
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 46,
+    "wall_time_s": 1793940843.703307,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 25411.343203531764,
+    "candidate": {
+      "intercept_ms": -2276.0301035775483,
+      "slope_ms_per_token": 0.12891998968091672,
+      "sample_count": 1000,
+      "updated_at_s": 1793940843.703299
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2276.0301035775483,
+      "prefill_queue_model_slope_ms_per_token": 0.12891998968091672,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940843.703299,
+      "prefill_queue_model_version": 43
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 47,
+    "wall_time_s": 1793940963.704027,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 29343.367726060136,
+    "candidate": {
+      "intercept_ms": -3117.5195447079386,
+      "slope_ms_per_token": 0.1403219829144263,
+      "sample_count": 1000,
+      "updated_at_s": 1793940963.7040153
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -3117.5195447079386,
+      "prefill_queue_model_slope_ms_per_token": 0.1403219829144263,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793940963.7040153,
+      "prefill_queue_model_version": 44
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 48,
+    "wall_time_s": 1793941083.7044122,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 27523.489483577057,
+    "candidate": {
+      "intercept_ms": -2824.380870783876,
+      "slope_ms_per_token": 0.138949709594993,
+      "sample_count": 1000,
+      "updated_at_s": 1793941083.704403
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2824.380870783876,
+      "prefill_queue_model_slope_ms_per_token": 0.138949709594993,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941083.704403,
+      "prefill_queue_model_version": 45
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 49,
+    "wall_time_s": 1793941203.7044125,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 23743.498704812526,
+    "candidate": {
+      "intercept_ms": -2162.0676343647647,
+      "slope_ms_per_token": 0.1331761453388439,
+      "sample_count": 1000,
+      "updated_at_s": 1793941203.7044039
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -2162.0676343647647,
+      "prefill_queue_model_slope_ms_per_token": 0.1331761453388439,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941203.7044039,
+      "prefill_queue_model_version": 46
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 50,
+    "wall_time_s": 1793941323.7049057,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 21616.386163044463,
+    "candidate": {
+      "intercept_ms": -1546.5477356044285,
+      "slope_ms_per_token": 0.11780635839852018,
+      "sample_count": 1000,
+      "updated_at_s": 1793941323.7048976
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1546.5477356044285,
+      "prefill_queue_model_slope_ms_per_token": 0.11780635839852018,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941323.7048976,
+      "prefill_queue_model_version": 47
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 51,
+    "wall_time_s": 1793941443.7059538,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 22204.029642282163,
+    "candidate": {
+      "intercept_ms": -1616.7736183711095,
+      "slope_ms_per_token": 0.1178512936853634,
+      "sample_count": 1000,
+      "updated_at_s": 1793941443.7059438
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1616.7736183711095,
+      "prefill_queue_model_slope_ms_per_token": 0.1178512936853634,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941443.7059438,
+      "prefill_queue_model_version": 48
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 52,
+    "wall_time_s": 1793941563.7069972,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 20442.274841350805,
+    "candidate": {
+      "intercept_ms": -1396.6545385728095,
+      "slope_ms_per_token": 0.11724010938962803,
+      "sample_count": 1000,
+      "updated_at_s": 1793941563.7069843
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1396.6545385728095,
+      "prefill_queue_model_slope_ms_per_token": 0.11724010938962803,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941563.7069843,
+      "prefill_queue_model_version": 49
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 53,
+    "wall_time_s": 1793941683.7081196,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 20463.090123448987,
+    "candidate": {
+      "intercept_ms": -1410.0078112279953,
+      "slope_ms_per_token": 0.11777340551641946,
+      "sample_count": 1000,
+      "updated_at_s": 1793941683.7081113
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1410.0078112279953,
+      "prefill_queue_model_slope_ms_per_token": 0.11777340551641946,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941683.7081113,
+      "prefill_queue_model_version": 50
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 54,
+    "wall_time_s": 1793941803.709191,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 14979.664601874683,
+    "candidate": {
+      "intercept_ms": -693.9621181268521,
+      "slope_ms_per_token": 0.11308411524213001,
+      "sample_count": 1000,
+      "updated_at_s": 1793941803.7091815
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -693.9621181268521,
+      "prefill_queue_model_slope_ms_per_token": 0.11308411524213001,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941803.7091815,
+      "prefill_queue_model_version": 51
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 55,
+    "wall_time_s": 1793941923.7105398,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 12998.550817745112,
+    "candidate": {
+      "intercept_ms": -450.08016138073435,
+      "slope_ms_per_token": 0.11155706368444872,
+      "sample_count": 1000,
+      "updated_at_s": 1793941923.7105286
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -450.08016138073435,
+      "prefill_queue_model_slope_ms_per_token": 0.11155706368444872,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793941923.7105286,
+      "prefill_queue_model_version": 52
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 56,
+    "wall_time_s": 1793942043.710253,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 10510.278126854208,
+    "candidate": {
+      "intercept_ms": -142.88971283406136,
+      "slope_ms_per_token": 0.108740196885364,
+      "sample_count": 1000,
+      "updated_at_s": 1793942043.7102456
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -142.88971283406136,
+      "prefill_queue_model_slope_ms_per_token": 0.108740196885364,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793942043.7102456,
+      "prefill_queue_model_version": 53
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 57,
+    "wall_time_s": 1793942163.7103362,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 11468.270768722288,
+    "candidate": {
+      "intercept_ms": -248.18911635127733,
+      "slope_ms_per_token": 0.1088384763076484,
+      "sample_count": 1000,
+      "updated_at_s": 1793942163.7103274
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -248.18911635127733,
+      "prefill_queue_model_slope_ms_per_token": 0.1088384763076484,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793942163.7103274,
+      "prefill_queue_model_version": 54
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 58,
+    "wall_time_s": 1793942283.7108154,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 11870.922742592971,
+    "candidate": {
+      "intercept_ms": -292.0891995248094,
+      "slope_ms_per_token": 0.1088448832110399,
+      "sample_count": 1000,
+      "updated_at_s": 1793942283.7108047
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -292.0891995248094,
+      "prefill_queue_model_slope_ms_per_token": 0.1088448832110399,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793942283.7108047,
+      "prefill_queue_model_version": 55
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 59,
+    "wall_time_s": 1793942403.7119079,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 11795.333125719904,
+    "candidate": {
+      "intercept_ms": -283.837594271492,
+      "slope_ms_per_token": 0.10884284323196133,
+      "sample_count": 1000,
+      "updated_at_s": 1793942403.711897
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -283.837594271492,
+      "prefill_queue_model_slope_ms_per_token": 0.10884284323196133,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793942403.711897,
+      "prefill_queue_model_version": 56
+    }
+  },
+  {
+    "router_id": "6ee92ea4af364abbb5cea38d09953638",
+    "attempt_id": 60,
+    "wall_time_s": 1793942523.7127254,
+    "reason": "published",
+    "sample_count": 1000,
+    "verified": true,
+    "derived_budget": 25639.916523810178,
+    "candidate": {
+      "intercept_ms": -1799.3019578679086,
+      "slope_ms_per_token": 0.10917749889194736,
+      "sample_count": 1000,
+      "updated_at_s": 1793942523.7127132
+    },
+    "published_model": {
+      "prefill_queue_model_intercept_ms": -1799.3019578679086,
+      "prefill_queue_model_slope_ms_per_token": 0.10917749889194736,
+      "prefill_queue_model_sample_count": 1000,
+      "prefill_queue_model_updated_at_s": 1793942523.7127132,
+      "prefill_queue_model_version": 57
+    }
+  }
+]

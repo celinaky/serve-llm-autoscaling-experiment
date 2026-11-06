@@ -1,0 +1,42 @@
+{
+  "online_run": "/home/ray/default/online-prefill-harness/runs/20261106T002648Z-h100-16sessions-online-queue-1s",
+  "offline_runs": [
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261103T180724Z-h100-queue-profile",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261103T184121Z-h100-queue-profile-light",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261103T191932Z-h100-queue-profile-mid",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261103T193648Z-h100-queue-profile-steady",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261103T202154Z-h100-queue-profile-steady2"
+  ],
+  "trace_files": [
+    "/mnt/cluster_storage/serve-llm-autoscaling-experiment/standalone-engine-traces/20261103T180437Z/k-c35e22130000_pid-1677910.0000.jsonl",
+    "/mnt/cluster_storage/serve-llm-autoscaling-experiment/standalone-engine-traces/20261103T180437Z/k-c35e22130000_pid-1677910.0001.jsonl",
+    "/mnt/cluster_storage/serve-llm-autoscaling-experiment/standalone-engine-traces/20261103T180437Z/k-c35e22130000_pid-1677910.0002.jsonl"
+  ],
+  "online_samples": 313,
+  "online_workers": [
+    "3458907930081543147"
+  ],
+  "offline_samples": 5290,
+  "online_samples_in_0_100k": 312,
+  "offline_samples_in_0_100k": 4456,
+  "bin_width": 5000,
+  "max_displayed_load": 100000,
+  "zoom_max_displayed_load": 30000,
+  "missing_online_benchmark_joins": 0,
+  "missing_offline_admission_joins": 0,
+  "notes": [
+    "Online x: selected replica's undecayed router reservations before incoming request admission; excludes the incoming request.",
+    "Offline x: existing trace reconstruction of actual remaining uncached prefill work at scheduler arrival; excludes the incoming request.",
+    "Original offline y: engine TTFT minus the full measured duration of every prefill step involving this request, including its first step. Counts waiting before and between its prefill steps, plus any residual engine overhead not assigned to those steps; these are scheduler batch wall-time measurements, not isolated CUDA kernel timings.",
+    "Aligned offline y: trace request_admitted.queue_wait_ms, stopping at first scheduling. Online y: native vLLM scheduled_ts minus queued_ts.",
+    "Online engine scheduler traces were disabled; actual remaining engine work and total inter-chunk queue time cannot be reconstructed for this run.",
+    "Online own-size bands are post-hoc ISL minus server-reported cached prompt tokens; these are grouping labels, not the model feature.",
+    "Offline profiles include side probes and different offered load; online is one 16-session ramp/hold. Offline no CPU KV offload; online native 64 GiB CPU KV offload.",
+    "Offline preempted requests excluded, matching the original profiling plot. All online collected samples retained, without a preemption exclusion because none was captured in their audit schema."
+  ],
+  "original_pooled_profile_reproduced": {
+    "cells": 102,
+    "max_mean_error_ms": 0.0,
+    "all_counts_match": true
+  }
+}

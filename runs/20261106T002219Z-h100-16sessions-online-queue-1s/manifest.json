@@ -1,0 +1,52 @@
+{
+  "autoscaling": {
+    "policy": "token",
+    "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+    "policy_kwargs": {
+      "target_queue_time_ms": 1000,
+      "upscale_aggregation": "mean",
+      "upscale_lookback_s": 60
+    }
+  },
+  "environment": {
+    "aiperf_source": "git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0",
+    "aiperf_version": "0.13.0",
+    "cluster_resources": {
+      "CPU": 184.0,
+      "GPU": 8.0,
+      "accelerator_type:H100": 1.0,
+      "anyscale/accelerator_shape:8xH100-80G": 1.0,
+      "anyscale/node-group:head": 1.0,
+      "anyscale/provider:aws": 1.0,
+      "anyscale/region:us-east-1": 1.0,
+      "memory": 2061584302080.0,
+      "node:10.1.154.0": 1.0,
+      "node:__internal_head__": 1.0,
+      "object_store_memory": 200000000000.0
+    },
+    "python_executable": "/home/ray/anaconda3/bin/python",
+    "python_version": "3.12.15",
+    "ray_path": "/home/ray/anaconda3/lib/python3.12/site-packages/ray/__init__.py",
+    "ray_version": "3.0.0.dev0"
+  },
+  "failure_stage": null,
+  "git_revision": "8e58d1142156f465ccd2a0adab28448cccb9a2f1",
+  "name": "h100-16sessions-online-queue-1s",
+  "prefill_calibration": {
+    "directory": "/mnt/cluster_storage/serve-llm-autoscaling-experiment/online-prefill-calibration/20261106T002219Z-h100-16sessions-online-queue-1s",
+    "fits": 0,
+    "samples": 0,
+    "status": "incomplete",
+    "target_queue_time_ms": 1000,
+    "warnings": [
+      "c919b6d3351746b1b0c022f364bf8dc1.jsonl: producer still running or missing audit closure"
+    ]
+  },
+  "routing": {
+    "ai_dynamo_version": "1.6.1",
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter"
+  },
+  "started_at": "2026-11-06T00:22:19.959414+00:00",
+  "status": "running"
+}
