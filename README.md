@@ -465,6 +465,40 @@ stage `topology`. The requested routing, the environment switches, the
 resolved router class and the verified deployments are written to
 `deployment/routing.json` and summarized under `routing` in `manifest.json`.
 
+## H100 prefill autoscaling validation
+
+Use `experiments/h100_workday_curve_prefill_mean.yaml` to replay the H100
+16-session AgentX workload with the prefill-token autoscaling policy:
+
+```bash
+autoscale-harness validate experiments/h100_workday_curve_prefill_mean.yaml
+autoscale-harness run experiments/h100_workday_curve_prefill_mean.yaml
+```
+
+The seeded workload ramps from one to 16 sessions over 450 seconds, then
+holds until 1050 seconds. It uses a 20,000-token target, a 60-second mean,
+a 40-second upscale delay, and a 1800-second downscale delay. The delay
+exceeds the load, 120-second drain, and 180-second observation combined.
+Serve can use all eight H100 GPUs; stop standalone GPU profilers first.
+
+The experiment enables native CPU KV offloading with 64 GiB per replica
+(up to 512 GiB at eight replicas). The harness validates the offload capacity,
+requires prefix caching for the native backend, and rejects an explicit
+`kv_transfer_config` combined with the offloading size shortcut. Omit the
+size to disable offloading. Offload settings are forwarded per replica;
+vLLM owns their split across tensor-parallel ranks.
+
+Telemetry retains local-compute token counts, external cache hits, and
+offload store/load bytes, latency, allocation failures, and CPU-cache usage
+when the runtime exports them. Successful stores alone do not establish
+useful cache reloads.
+
+After changing the workspace image, use a compatible Ray build containing
+the complete policy stack and check the policy constructor accepts the
+experiment's kwargs. This experiment uses the standard scaling and latency
+reports and does not require the prototype's custom request-audit patch,
+Mooncake services, or automatic scheduler diagnostics.
+
 ## Autoscaling policy
 
 `deployment.autoscaling.policy` is the only autoscaling key the harness

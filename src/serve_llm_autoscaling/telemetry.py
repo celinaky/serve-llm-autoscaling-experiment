@@ -55,6 +55,23 @@ SELECTED_METRICS = (
     "vllm_num_requests_waiting",
     "vllm_prefix_cache_hits",
     "vllm_prefix_cache_queries",
+    # Native CPU offload: hits alone do not prove useful reloads. Preserve
+    # byte counters, transfer/lookup latency and computed-prefill histograms.
+    "vllm_external_prefix_cache_hits",
+    "vllm_external_prefix_cache_queries",
+    "vllm_request_prefill_kv_computed_tokens",
+    "vllm_prompt_tokens_by_source",
+    "vllm_request_success",
+    "vllm_kv_offload_store_bytes",
+    "vllm_kv_offload_load_bytes",
+    "vllm_kv_offload_store_time",
+    "vllm_kv_offload_load_time",
+    "vllm_kv_offload_store_size",
+    "vllm_kv_offload_load_size",
+    "vllm_kv_offload_lookup_sync_delay_seconds",
+    "vllm_kv_offload_lookup_async_delay_seconds",
+    "vllm_kv_offload_allocation_failure",
+    "vllm_kv_offload_cpu_cache_usage_perc",
 )
 SCRAPE_TIMEOUT_S = 2.0
 

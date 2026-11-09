@@ -51,10 +51,29 @@ class EngineConfig(BaseModel):
     max_num_seqs: int | None = Field(default=None, ge=1)
     max_num_batched_tokens: int | None = Field(default=None, ge=1)
     enable_prefix_caching: bool | None = None
+    # GiB of host memory per replica, across tensor-parallel ranks.
+    kv_offloading_size: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    kv_offloading_backend: Literal["native", "lmcache"] | None = None
     # Reports usage.prompt_tokens_details.cached_tokens so AIPerf can record
     # prefix-cache hits. vLLM only computes the count with prefix caching on.
     enable_prompt_tokens_details: bool = True
     kv_cache_dtype: str | None = None
+
+    @model_validator(mode="after")
+    def validate_kv_offloading(self) -> "EngineConfig":
+        if self.kv_offloading_size is None:
+            return self
+        if (self.model_extra or {}).get("kv_transfer_config") is not None:
+            raise ValueError(
+                "kv_offloading_size cannot be combined with kv_transfer_config: "
+                "vLLM's offloading settings overwrite the selected connector"
+            )
+        if self.kv_offloading_backend in (None, "native"):
+            if self.enable_prefix_caching is not True:
+                raise ValueError(
+                    "native KV offloading requires enable_prefix_caching: true"
+                )
+        return self
 
 
 # Autoscaling policy -> Ray Serve policy_function. Every policy is passed

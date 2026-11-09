@@ -3,7 +3,35 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from serve_llm_autoscaling.config import ExperimentConfig, load_config
+from serve_llm_autoscaling.config import EngineConfig, ExperimentConfig, load_config
+
+
+@pytest.mark.parametrize("backend", [None, "native"])
+def test_native_offloading_accepts_fractional_gib_and_requires_prefix_caching(backend):
+    settings = {"kv_offloading_size": 0.5, "kv_offloading_backend": backend}
+    for prefix in (None, False):
+        with pytest.raises(ValidationError, match="requires enable_prefix_caching"):
+            EngineConfig(**settings, enable_prefix_caching=prefix)
+    assert EngineConfig(**settings, enable_prefix_caching=True).kv_offloading_size == 0.5
+
+
+@pytest.mark.parametrize("size", [0, -1, float("inf"), float("nan")])
+def test_rejects_invalid_offload_capacity(size):
+    with pytest.raises(ValidationError):
+        EngineConfig(kv_offloading_size=size, enable_prefix_caching=True)
+
+
+@pytest.mark.parametrize("connector", ["MooncakeStoreConnector", "MultiConnector", "OffloadingConnector"])
+def test_rejects_offload_shortcut_overwriting_connector(connector):
+    with pytest.raises(ValidationError, match="overwrite the selected connector"):
+        EngineConfig(kv_offloading_size=64, enable_prefix_caching=True,
+                     kv_transfer_config={"kv_connector": connector, "kv_role": "kv_both"})
+
+
+def test_disabled_offloading_allows_prefix_cache_disabled_and_explicit_connectors():
+    config = EngineConfig(enable_prefix_caching=False, kv_offloading_backend="native")
+    assert config.kv_offloading_size is None
+    EngineConfig(kv_transfer_config={"kv_connector": "MooncakeStoreConnector"})
 
 
 def test_baseline_config_is_valid():

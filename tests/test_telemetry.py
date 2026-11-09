@@ -218,6 +218,33 @@ def test_parse_metrics_without_serve_metrics():
     assert parse_metrics("# TYPE ray_tasks gauge\nray_tasks 1\n") == ([], [])
 
 
+def test_parse_native_offload_evidence_preserves_replica_and_histograms():
+    samples, _ = parse_metrics('''
+# TYPE ray_vllm_external_prefix_cache_hits_total counter
+ray_vllm_external_prefix_cache_hits_total{ReplicaId="r1"} 8192
+# TYPE ray_vllm_kv_offload_load_bytes_total counter
+ray_vllm_kv_offload_load_bytes_total{ReplicaId="r1"} 1048576
+# TYPE ray_vllm_kv_offload_store_bytes_total counter
+ray_vllm_kv_offload_store_bytes_total{ReplicaId="r1"} 2097152
+# TYPE ray_vllm_request_prefill_kv_computed_tokens histogram
+ray_vllm_request_prefill_kv_computed_tokens_bucket{ReplicaId="r1",le="+Inf"} 2
+ray_vllm_request_prefill_kv_computed_tokens_sum{ReplicaId="r1"} 8208
+ray_vllm_request_prefill_kv_computed_tokens_count{ReplicaId="r1"} 2
+# TYPE ray_vllm_kv_offload_cpu_cache_usage_perc gauge
+ray_vllm_kv_offload_cpu_cache_usage_perc{ReplicaId="r1",type="read"} 0.25
+# TYPE ray_vllm_prompt_tokens_by_source_total counter
+ray_vllm_prompt_tokens_by_source_total{ReplicaId="r1",source="local_compute"} 8208
+# TYPE ray_vllm_request_success_total counter
+ray_vllm_request_success_total{ReplicaId="r1",finished_reason="length"} 2
+''')
+    by_name = {s["name"]: s for s in samples}
+    assert len(samples) == 9
+    assert by_name["ray_vllm_kv_offload_load_bytes_total"]["value"] == 1048576
+    assert by_name["ray_vllm_request_prefill_kv_computed_tokens_sum"]["value"] == 8208
+    assert by_name["ray_vllm_prompt_tokens_by_source_total"]["labels"]["source"] == "local_compute"
+    assert all(s["labels"]["ReplicaId"] == "r1" for s in samples)
+
+
 def test_prometheus_collector_records_node_failure(tmp_path: Path):
     nodes = [{"NodeID": "good", "NodeManagerAddress": "10.0.0.1", "MetricsExportPort": 1,
               "Alive": True},

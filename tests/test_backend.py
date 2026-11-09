@@ -2,6 +2,29 @@ from serve_llm_autoscaling.backend import RayServeBackend
 from serve_llm_autoscaling.config import ExperimentConfig, load_config
 
 
+def test_native_offload_capacity_is_forwarded_per_replica_on_either_gpu():
+    for accelerator in ("H100", "B200"):
+        config = ExperimentConfig.model_validate({
+            "name": "offload", "deployment": {
+                "model_id": "m", "accelerator_type": accelerator,
+                "engine": {"tensor_parallel_size": 2, "enable_prefix_caching": True,
+                           "kv_offloading_backend": "native", "kv_offloading_size": 64},
+                "autoscaling": {"min_replicas": 2, "max_replicas": 2},
+            },
+        })
+        spec = RayServeBackend(config).deployment_spec()
+        assert spec["accelerator_type"] == accelerator
+        # Do not divide/multiply by TP or replica count; vLLM owns the split.
+        assert spec["engine_kwargs"]["kv_offloading_size"] == 64
+        assert spec["engine_kwargs"]["kv_offloading_backend"] == "native"
+
+
+def test_offloading_disabled_by_default_in_deployment():
+    spec = RayServeBackend(load_config("experiments/baseline.yaml")).deployment_spec()
+    assert "kv_offloading_size" not in spec["engine_kwargs"]
+    assert "kv_offloading_backend" not in spec["engine_kwargs"]
+
+
 def test_deployment_spec_matches_baseline():
     config = load_config("experiments/baseline.yaml")
     spec = RayServeBackend(config).deployment_spec()
