@@ -20,7 +20,7 @@
 # Policy: the KV-aware router keeps one gauge, the total uncached prefill
 # tokens outstanding across all replicas (a request's whole prompt counts
 # until its first token). The policy takes the time-weighted mean of that
-# gauge over the last upscale_lookback_s and asks for
+# gauge over the last look_back_period_s and asks for
 #   ceil(mean / target_prefill_tokens_per_replica).
 # No per-replica or per-request view.
 #
@@ -68,15 +68,9 @@ deployment:
       name: token
       kwargs:
         target_prefill_tokens_per_replica: 20000
-        # Window for the time-weighted mean of the router's total outstanding
-        # uncached prefill tokens; must not exceed look_back_period_s. Same
-        # 60s as the earlier mean-policy runs.
-        upscale_lookback_s: 60
         upscale_aggregation: mean
     min_replicas: 1
     initial_replicas: 1
-    # All eight GPUs are available to Serve. Stop any standalone GPU
-    # profiling actor before starting this experiment.
     max_replicas: 8
     # Unused by the token policy; Serve requires a value.
     target_ongoing_requests: 8

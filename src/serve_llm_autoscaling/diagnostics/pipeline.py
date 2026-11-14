@@ -137,7 +137,8 @@ def generate_diagnostics(root: Path, config: ExperimentConfig, *,
                               "trace_files": [], "gallery": "index.html"}
     end = config.benchmark.duration_s
     suffix = f"0_{int(end)}"
-    lookback = config.deployment.autoscaling.policy.kwargs.get("upscale_lookback_s") or 60
+    lookback = (config.deployment.autoscaling.policy.kwargs.get("upscale_lookback_s")
+                or getattr(config.deployment.autoscaling, "look_back_period_s", None) or 60)
     specifications = [
         ("arrival_stats_stack", f"arrival_stats_stack180_{suffix}.png",
          ["--window", "180", "--end", str(end)], "Arrival statistics · 180s windows",

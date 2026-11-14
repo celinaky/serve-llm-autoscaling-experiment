@@ -627,6 +627,32 @@ def test_policy_metric_gauge_is_split_by_its_metric_label():
     assert not warnings
 
 
+def test_router_metric_gauge_rebuilds_token_prefill_replicas():
+    labels = {"application": APP, "deployment": LLM, "metric": "outstanding_effective_prefill_tokens"}
+    records = [
+        _scrape(t, i, [
+            _sample("ray_serve_autoscaling_router_metric", 1000.0 * t, handle="h1", **labels),
+            _sample("ray_serve_autoscaling_router_metric", 4000.0, handle="h2", **labels),
+            _sample("ray_serve_autoscaling_router_metric", 99999.0, handle="h1",
+                    application=APP, deployment=LLM, metric="other"),
+        ])
+        for i, t in enumerate(range(0, 11, 5))
+    ]
+    warnings = []
+    series = metric_series(
+        records, APP, {LLM}, 5, T0, warnings, target_prefill_tokens_per_replica=2000
+    )
+    assert [p["value"] for p in series["token_router_prefill_mean"]["points"]] == [
+        4000.0, 5000.0, 10000.0
+    ]
+    assert [p["value"] for p in series["token_prefill_replicas"]["points"]] == [2.0, 2.5, 5.0]
+    assert "token_prefill_backlog" not in series
+    assert not warnings
+
+    series = metric_series(records, APP, {LLM}, 5, T0, [])
+    assert "token_prefill_replicas" not in series
+
+
 def test_sla_policy_events_are_aligned_and_filtered(tmp_path: Path):
     _jsonl(tmp_path / "telemetry" / "sla_policy_events.jsonl", [
         {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 - 5 * S,

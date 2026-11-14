@@ -9,7 +9,8 @@ def test_injected_scheduler_preserves_autoscaling_and_uploads_package(tmp_path):
     spec = RayServeBackend(config).deployment_spec()
     assert spec["engine_kwargs"]["scheduler_cls"] == "serve_profiler.scheduler.AutoTracingScheduler"
     assert spec["deployment_config"]["autoscaling_config"]["max_replicas"] == 8
-    assert spec["deployment_config"]["autoscaling_config"]["policy"]["policy_kwargs"]["upscale_lookback_s"] == 60
+    assert spec["deployment_config"]["autoscaling_config"]["look_back_period_s"] == 60
+    assert "upscale_lookback_s" not in spec["deployment_config"]["autoscaling_config"]["policy"]["policy_kwargs"]
     runtime = spec["runtime_env"]
     assert runtime["py_modules"][0].endswith("serve-llm-profiler/serve_profiler")
     assert runtime["worker_process_setup_hook"] == "serve_profiler.compat.setup"

@@ -85,6 +85,14 @@ METRIC_SERIES = {
     "token_desired_replicas": (
         "serve_autoscaling_policy_metric", "sum", (), {"metric": "required_replicas"}
     ),
+    # The controller exports each KV router's look-back mean of outstanding
+    # uncached prefill tokens, one series per handle. The token policy scales
+    # on the max across handles; metric_series divides it by the target to
+    # rebuild token_prefill_replicas when the policy metric gauge is absent.
+    "token_router_prefill_mean": (
+        "serve_autoscaling_router_metric", "max", ("handle",),
+        {"metric": "outstanding_effective_prefill_tokens"},
+    ),
     # The arrival-p95 policy publishes the p95 of uncached prefill tokens that
     # were ahead of each request on its selected replica, over its lookback.
     "token_arrival_p95": (
@@ -490,6 +498,8 @@ def aggregate_metric(
             continue
         elif aggregation == "sum":
             value = sum(current.values())
+        elif aggregation == "max":
+            value = max(current.values())
         elif aggregation == "healthy":
             value = sum(1 for v in current.values() if v >= 1)
         else:
@@ -573,6 +583,7 @@ def metric_series(
     t0: int,
     warnings: list[str],
     window_s: float = 30.0,
+    target_prefill_tokens_per_replica: float | None = None,
 ) -> dict[str, dict[str, Any]]:
     ticks: dict[Any, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
@@ -646,6 +657,18 @@ def metric_series(
         if points:
             result[key] = {"metric": f"{numerator} / {denominator}",
                            "aggregation": f"windowed_ratio_{window_s:g}s", "points": points}
+    # Runs without the policy metric gauge: the policy's prefill required
+    # replicas is the controller's max per-handle look-back mean over the target.
+    mean = result.get("token_router_prefill_mean")
+    if "token_prefill_replicas" not in result and mean and target_prefill_tokens_per_replica:
+        result["token_prefill_replicas"] = {
+            "metric": f"{mean['metric']} / target_prefill_tokens_per_replica",
+            "aggregation": "max",
+            "points": [
+                {**p, "value": p["value"] / target_prefill_tokens_per_replica}
+                for p in mean["points"]
+            ],
+        }
     return result
 
 
@@ -720,6 +743,9 @@ def build_plot_data(
     series = metric_series(
         metric_records, application, deployments, analysis.metrics_interval_s, t0, warnings,
         window_s=analysis.tail_window_s,
+        target_prefill_tokens_per_replica=config.deployment.autoscaling.policy.kwargs.get(
+            "target_prefill_tokens_per_replica"
+        ),
     )
     if metrics_path.exists():
         for key in ("ongoing_requests", "router_queue", "desired_replicas"):

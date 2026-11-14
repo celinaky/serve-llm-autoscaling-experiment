@@ -48,6 +48,10 @@ SELECTED_METRICS = (
     # snapshot), prefill_required_replicas (lookback mean) and
     # required_replicas.
     "serve_autoscaling_policy_metric",
+    # Each router-owned autoscaling metric aggregated per handle over the
+    # look-back window, as the controller passes it to the policy. The token
+    # policy scales on the max of outstanding_effective_prefill_tokens.
+    "serve_autoscaling_router_metric",
     # vLLM engine metrics, exported per replica with a ReplicaId label. The
     # SLA policy learns from the first two, so they show what it sees.
     "vllm_time_to_first_token_seconds",

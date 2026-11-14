@@ -266,7 +266,8 @@ def test_b200_workday_ramp_dampen_pair_differs_only_in_policy():
     scaling_default, scaling_token = default.deployment.autoscaling, token.deployment.autoscaling
     assert (scaling_default.upscale_delay_s, scaling_default.downscale_delay_s) == (10, 300)
     assert (scaling_token.upscale_delay_s, scaling_token.downscale_delay_s) == (10, 300)
-    assert scaling_token.policy.kwargs["upscale_lookback_s"] <= scaling_token.model_extra["look_back_period_s"]
+    assert "upscale_lookback_s" not in scaling_token.policy.kwargs
+    assert scaling_token.model_extra["look_back_period_s"] == 30
 
 
 def test_rejects_tail_window_shorter_than_window():

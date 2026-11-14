@@ -3,8 +3,10 @@
 
 Two accountings of the same quantity, total outstanding uncached prefill
 tokens across all replicas:
-  policy: the policy's published lookback mean (prefill_required_replicas x
-          target), which reflects configured router estimate decay. The raw
+  policy: the policy's lookback mean: the max across KV routers of the
+          controller's serve_autoscaling_router_metric, or on older branches
+          the published prefill_required_replicas x target. It reflects
+          configured router estimate decay. The raw
           gauge reconstruction is used only when that published series is absent.
   engine: rebuilt from the vLLM scheduler traces: a request's uncached tokens
           enter when it is queued and each chunk leaves when its batch
@@ -32,7 +34,7 @@ ARROW, DOT = "→", "·"
 
 ap = argparse.ArgumentParser()
 ap.add_argument("run")
-ap.add_argument("--lookback", type=float, default=None, help="mean window; default: the policy's upscale_lookback_s")
+ap.add_argument("--lookback", type=float, default=None, help="mean window; default: the policy's upscale_lookback_s, else Serve's look_back_period_s")
 ap.add_argument("--ymax", type=float, default=None)
 ap.add_argument("--start", type=float, default=0.0)
 ap.add_argument("--end", type=float, default=None)
@@ -48,9 +50,13 @@ t0 = plot_data["time_origin"]["profiling_start_ns"]
 evaluation = json.load(open(f"{R}/analysis/autoscaling_evaluation.json"))
 kwargs = evaluation.get("autoscaling_policy_kwargs") or {}
 target = (kwargs.get("target_prefill_tokens_per_replica") or 20000) / 1000
-lookback = a.lookback or kwargs.get("upscale_lookback_s") or 60
 end = a.end if a.end is not None else evaluation["periods"]["steady"]["end_s"]
 resolved = yaml.safe_load(open(f"{R}/resolved.yaml"))
+# Older policies took their own window; the controller now averages over
+# Serve's look_back_period_s.
+lookback = (a.lookback or kwargs.get("upscale_lookback_s")
+            or ((resolved.get("deployment") or {}).get("autoscaling") or {}).get("look_back_period_s")
+            or 60)
 # Runs write traces to their own subdirectory of the shared root.
 a.traces = (a.traces or ((resolved.get("analysis") or {}).get("scheduler_trace_dir"))
             or "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces")
@@ -84,6 +90,11 @@ for line in open(f"{R}/telemetry/serve_metrics.jsonl"):
             d["lookback_mean_tokens"] = s["value"]
         elif s["name"] == "ray_serve_llm_autoscaling_target_prefill_tokens_per_replica":
             d["target_tokens"] = s["value"]
+        # Controller gauge: each KV router's look-back mean, one series per
+        # handle. The token policy scales on the max across handles.
+        elif (s["name"] == "ray_serve_autoscaling_router_metric"
+              and s["labels"].get("metric") == "outstanding_effective_prefill_tokens"):
+            d["lookback_mean_tokens"] = max(d.get("lookback_mean_tokens", s["value"]), s["value"])
     if "target_tokens" in d:
         target = d["target_tokens"] / 1000
     if "lookback_mean_tokens" in d and "required_replicas" not in d:
@@ -175,6 +186,11 @@ for t, v in raw:
 policy_mean = step_mean(raw_deltas, lookback, ts)[0]
 pub_t = [t for t, _ in pub]
 pub_v = [v for _, v in pub]
+if pub and not raw:
+    # No raw gauge to recompute from (the controller exports only the mean):
+    # the summary uses the published mean, sampled at the scrape times.
+    policy_mean = [pub_v[i] if (i := bisect.bisect_right(pub_t, t) - 1) >= 0 else 0.0
+                   for t in ts]
 
 # Delay timers reconstructed from consecutive sampled recommendations above or
 # below the accepted target. Bound recommendations as Serve does, so asking for
@@ -369,6 +385,6 @@ if pairs:
     ratios = sorted(p / e for p, e in pairs)
     print(f"  policy mean / engine mean where engine mean >= 1K: median {ratios[len(ratios) // 2]:.2f}, p10 {ratios[int(0.1 * len(ratios))]:.2f}, p90 {ratios[int(0.9 * len(ratios))]:.2f} (n={len(ratios)})")
     print(f"  time-average over the load phase: policy {sum(policy_mean) / len(policy_mean):.1f}K, engine {sum(engine_mean) / len(engine_mean):.1f}K")
-    if pub:
+    if pub and raw:
         diffs = [abs(p - q) for p, q in zip(policy_mean, [pub_v[bisect.bisect_right(pub_t, t) - 1] for t in ts]) if True]
         print(f"  published policy mean vs recomputed from the gauge: max abs diff {max(diffs):.1f}K")

@@ -7,7 +7,7 @@
 # Policy: at routing time the KV-aware router records, for every request,
 # the uncached prefill tokens already outstanding on the replica it chose
 # (the request's own tokens excluded). The policy takes the p95 of those
-# samples over the last upscale_lookback_s and asks for
+# samples over the last look_back_period_s and asks for
 #   ceil(current_replicas x p95 / target_prefill_tokens_per_replica).
 # That is the same quantity the evaluation scores from the engine traces
 # (tools/arrival_load_windows.py): a window meets the target when the p95 of
@@ -63,9 +63,6 @@ deployment:
       name: token
       kwargs:
         target_prefill_tokens_per_replica: 20000
-        # Window for the p95 of per-request load at arrival; must not exceed
-        # look_back_period_s.
-        upscale_lookback_s: 120
         # Hold the current count until the window has this many arrivals; the
         # p95 of a dozen requests is their maximum. ~100 arrive per 120s at
         # the hold, ~50 at around 10 sessions.
