@@ -1,0 +1,5 @@
+replicas: 1=pid 3554967 (first request 0s), 2=pid 3575309 (first request 630s), 3=pid 3575300 (first request 660s), 4=pid 3575277 (first request 690s), 5=pid 3582595 (first request 840s), 6=pid 3594635 (first request 1185s), 7=pid 3594647 (first request 1298s), 8=pid 3622637 (first request 1962s), 9=pid 3622645 (first request 2048s), 10=pid 3640765 (first request 2476s), 11=pid 3671672 (first request 3346s), 12=pid 3671627 (first request 3412s), 13=pid 3671599 (first request 3412s), 14=pid 3671638 (first request 3837s), 15=pid 3671647 (first request 3861s), 16=pid 3671682 (first request 3861s)
+lane source: inferred request-span rows (not actual lane IDs)
+Bar ends are last observed request ends, not verified session completion.
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/analysis/session_lanes_0_4650.png
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/analysis/session_lanes.csv

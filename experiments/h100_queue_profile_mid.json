@@ -1,0 +1,181 @@
+{
+ "_doc": [
+  "Middle companion to h100_queue_profile.json (+12-16 sessions, median load 437K) and",
+  "h100_queue_profile_light.json (+3-7, max 139K): pooled, they left 100-300K with 55 requests.",
+  "Base 4, nine bursts of +8..+10 sessions over 10-30s, 20s hold, 20s down, 140s at base.",
+  "Side probes as in the light run."
+ ],
+ "duration_s": 1900,
+ "grace_period_s": 120,
+ "target_concurrency": 14,
+ "seed": 44,
+ "probe": {
+  "rate": 0.2,
+  "min_new": 1000,
+  "max_new": 8000,
+  "prefix": 40000,
+  "seed": 9
+ },
+ "points": [
+  {
+   "time_s": 0,
+   "concurrency": 1
+  },
+  {
+   "time_s": 45,
+   "concurrency": 4
+  },
+  {
+   "time_s": 90,
+   "concurrency": 4
+  },
+  {
+   "time_s": 105,
+   "concurrency": 13
+  },
+  {
+   "time_s": 125,
+   "concurrency": 13
+  },
+  {
+   "time_s": 145,
+   "concurrency": 4
+  },
+  {
+   "time_s": 285,
+   "concurrency": 4
+  },
+  {
+   "time_s": 310,
+   "concurrency": 14
+  },
+  {
+   "time_s": 330,
+   "concurrency": 14
+  },
+  {
+   "time_s": 350,
+   "concurrency": 4
+  },
+  {
+   "time_s": 490,
+   "concurrency": 4
+  },
+  {
+   "time_s": 500,
+   "concurrency": 12
+  },
+  {
+   "time_s": 520,
+   "concurrency": 12
+  },
+  {
+   "time_s": 540,
+   "concurrency": 4
+  },
+  {
+   "time_s": 680,
+   "concurrency": 4
+  },
+  {
+   "time_s": 695,
+   "concurrency": 14
+  },
+  {
+   "time_s": 715,
+   "concurrency": 14
+  },
+  {
+   "time_s": 735,
+   "concurrency": 4
+  },
+  {
+   "time_s": 875,
+   "concurrency": 4
+  },
+  {
+   "time_s": 905,
+   "concurrency": 13
+  },
+  {
+   "time_s": 925,
+   "concurrency": 13
+  },
+  {
+   "time_s": 945,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1085,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1105,
+   "concurrency": 12
+  },
+  {
+   "time_s": 1125,
+   "concurrency": 12
+  },
+  {
+   "time_s": 1145,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1285,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1295,
+   "concurrency": 14
+  },
+  {
+   "time_s": 1315,
+   "concurrency": 14
+  },
+  {
+   "time_s": 1335,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1475,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1495,
+   "concurrency": 13
+  },
+  {
+   "time_s": 1515,
+   "concurrency": 13
+  },
+  {
+   "time_s": 1535,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1675,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1690,
+   "concurrency": 12
+  },
+  {
+   "time_s": 1710,
+   "concurrency": 12
+  },
+  {
+   "time_s": 1730,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1870,
+   "concurrency": 4
+  },
+  {
+   "time_s": 1900,
+   "concurrency": 1
+  }
+ ]
+}

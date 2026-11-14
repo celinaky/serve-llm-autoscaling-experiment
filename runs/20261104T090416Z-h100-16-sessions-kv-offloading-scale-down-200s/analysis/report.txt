@@ -1,0 +1,16 @@
+H100s, 16 session concurrency, KV Offloading with scale down
+Run: /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s
+Status: succeeded
+Observed 2 downscale decision(s) during the 1050s load phase and 1 afterward. 2 of 16 observed sessions had root turns served by multiple replicas. Replica changes can trigger prefix recomputation because native CPU caches are private to an engine. Peak running replicas during load: 3. Targets can exceed the running count while engines initialize.
+19 failed request records; 4 completed before the first downscale. The effective HAProxy configuration has hard-stop-after 120s. Retired proxy worker logs explicitly record forced connection closures after reloads, with timestamps matching multiple groups of incomplete streams. One additional stream ended at the removed replica’s 35s shutdown deadline (09:19:13 UTC). This is evidence of connection/drain effects; do not attribute all failures to KV offloading or scale-down alone. The evidence summary is available with the report data.
+Observed downscales: 3
+Scale events: [{"binding_term": "prefill", "decode_term_replicas": null, "direction": "up", "from_replicas": 1.0, "lag_s": 156.15165725100002, "prefill_term_replicas": 1.821612376631923, "running_matched_at_s": 350.477405094, "sla_reason": null, "sla_recommended_replicas": null, "time_s": 194.325747843, "to_replicas": 2.0}, {"binding_term": "prefill", "decode_term_replicas": null, "direction": "down", "from_replicas": 2.0, "lag_s": 0.9291802789999792, "prefill_term_replicas": 0.3278592809203525, "running_matched_at_s": 675.477410362, "sla_reason": null, "sla_recommended_replicas": null, "time_s": 674.548230083, "to_replicas": 1.0}, {"binding_term": "prefill", "decode_term_replicas": null, "direction": "up", "from_replicas": 1.0, "lag_s": null, "prefill_term_replicas": 6.373227557763548, "running_matched_at_s": null, "sla_reason": null, "sla_recommended_replicas": null, "time_s": 724.371891598, "to_replicas": 7.0}, {"binding_term": "prefill", "decode_term_replicas": null, "direction": "down", "from_replicas": 7.0, "lag_s": 0.03426326600003904, "prefill_term_replicas": 2.6366237678905797, "running_matched_at_s": 944.477417925, "sla_reason": null, "sla_recommended_replicas": null, "time_s": 944.443154659, "to_replicas": 3.0}, {"binding_term": "prefill", "decode_term_replicas": null, "direction": "down", "from_replicas": 3.0, "lag_s": 0.9081810259999656, "prefill_term_replicas": 0.0, "running_matched_at_s": 1285.477419366, "sla_reason": null, "sla_recommended_replicas": null, "time_s": 1284.56923834, "to_replicas": 1.0}]
+TTFT p50: baseline 731.57 ms; scale-down 818.91 ms
+TTFT p95: baseline 5,151.45 ms; scale-down 8,290.34 ms
+TTFT p99: baseline 9,118.21 ms; scale-down 17,787.80 ms
+Failed requests: baseline 8 ; scale-down 19 
+Load GPU-hours: baseline 0.531 GPU-h; scale-down 0.852 GPU-h
+Starting-replica time during load: baseline 206.0 replica-s; scale-down 1,424.0 replica-s
+Mean running replicas during load: baseline 1.62 ; scale-down 1.56 
+Plot errors: []
+Web report source: /home/ray/default/sites/h100-scale-down/dist

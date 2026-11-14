@@ -1,0 +1,47 @@
+[
+  {
+    "aiperf_request_throughput": 0.3641002305833861,
+    "artifact_dir": "runs/20261104T095804Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s/benchmark/agentx-concurrency-ramp",
+    "concurrency_series": [
+      {
+        "sessions": 1,
+        "time_s": 0.0
+      },
+      {
+        "sessions": 16,
+        "time_s": 450.0
+      },
+      {
+        "sessions": 16,
+        "time_s": 1050.0
+      }
+    ],
+    "elapsed_s": 682.1567466580309,
+    "error": null,
+    "failed_requests": 5.0,
+    "level": 16,
+    "mean_e2el_ms": 27295.569885142857,
+    "mean_failed_qps": 0.004761904761904762,
+    "mean_offered_qps": 0.23809523809523808,
+    "mean_started_qps": 0.23809523809523808,
+    "mean_successful_qps": 0.23333333333333334,
+    "mean_tpot_ms": 42.66229515392807,
+    "mean_ttft_ms": 1664.7083553224488,
+    "mode": "agentx_concurrency_ramp",
+    "output_token_throughput": 220.7116152860881,
+    "p50_tpot_ms": 39.09864704385964,
+    "p50_ttft_ms": 815.5218259999999,
+    "p90_tpot_ms": 64.39686693505556,
+    "p90_ttft_ms": 4048.3391033999997,
+    "p99_e2el_ms": 212256.64778568002,
+    "p99_tpot_ms": 132.70481407020208,
+    "p99_ttft_ms": 10488.106938360004,
+    "profiling_interval_s": 1050.0,
+    "prompt_cache_read_pct": 81.87960029576008,
+    "request_count": 245.0,
+    "request_throughput": 0.3641002305833861,
+    "target_concurrency": 16,
+    "total_prompt_cache_read_tokens": 10671808.0,
+    "total_token_throughput": 19590.155807192594
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "run": "runs/20261102T203807Z-b200-workday-curve-prefill-mean",
+  "rate_tokens_per_second_per_engine": 20000.0,
+  "decay": "continuous linear, oldest first, no banking idle capacity; sampled every 1 s",
+  "initial_counts": "engine uncached tokens known retrospectively; original router counts unavailable",
+  "lifetime": "engine queue entry to observed first token (or termination)",
+  "lookback_seconds": 60,
+  "load_end_seconds": 1860.0,
+  "coverage": {
+    "trace_files": [
+      "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/k-5be017850000_pid-151035.0000.jsonl",
+      "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/k-5be017850000_pid-151035.0001.jsonl",
+      "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/k-5be017850000_pid-173074.0000.jsonl",
+      "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/k-5be017850000_pid-180495.0000.jsonl"
+    ],
+    "queued": 1593,
+    "excluded": [],
+    "included": 1593,
+    "preemptions": 0,
+    "terminal_residual_tokens": 0
+  },
+  "metrics": {
+    "no_decay": {
+      "median_ratio_lookback_mean_loaded": 1.6489572598363142,
+      "p10_ratio": 1.4849162353885992,
+      "p90_ratio": 1.8001581952063443,
+      "mean_absolute_error_tokens_lookback_mean_loaded": 7391.997728679766,
+      "bias_tokens_lookback_mean_loaded": 7391.997728679766,
+      "fraction_loaded_mean_below_engine": 0.0,
+      "fraction_loaded_mean_over_10k_below_engine": 0.0
+    },
+    "fifo_decay": {
+      "median_ratio_lookback_mean_loaded": 0.7067616534044205,
+      "p10_ratio": 0.6304318265896445,
+      "p90_ratio": 0.7858529504107475,
+      "mean_absolute_error_tokens_lookback_mean_loaded": 3091.401916787035,
+      "bias_tokens_lookback_mean_loaded": -3091.401916787035,
+      "fraction_loaded_mean_below_engine": 1.0,
+      "fraction_loaded_mean_over_10k_below_engine": 0.0
+    }
+  },
+  "load_phase_raw_mean_tokens": {
+    "no_decay": 13731.605463111913,
+    "fifo_decay": 5980.400541124546,
+    "engine_actual": 8418.07469187539
+  },
+  "metric_filter": "one-second samples, t >= lookback and actual lookback mean > 5000 tokens",
+  "requests_estimated_zero_before_first_token": 1553,
+  "requests_at_least_10k_estimated_zero_before_first_token": 209,
+  "maximum_early_zero_seconds": 2.6322698497772166,
+  "sum_residual_cleared_at_terminal_tokens": 28293.28348541376,
+  "final_estimated_tokens": 0.0,
+  "overlap_zoom": {
+    "engine": "k-5be017850000_pid-151035",
+    "start_s": 661.0,
+    "end_s": 711.0
+  }
+}

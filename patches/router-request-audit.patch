@@ -1,0 +1,260 @@
+diff --git a/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py b/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py
+index 189756ac42..c5a78a7b2f 100644
+--- a/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py
++++ b/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py
+@@ -379,6 +379,15 @@ class SchedulerTraceMixin:
+                 "phase": "prefill" if is_prefill else "decode",
+                 "prompt_tokens": prompt_tokens,
+                 "cached_prefix_tokens": cached_tokens,
++                "local_cached_prefix_tokens": getattr(
++                    prefill_stats, "num_local_cached_tokens", None
++                ),
++                "external_cached_prefix_tokens": getattr(
++                    prefill_stats, "num_external_cached_tokens", None
++                ),
++                "initial_gpu_prefill_tokens": getattr(
++                    prefill_stats, "num_computed_tokens", None
++                ),
+                 "computed_before": before,
+                 "completed_or_cached_before": completed_or_cached_before,
+                 "locally_computed_before": max(
+@@ -498,6 +507,9 @@ class SchedulerTraceMixin:
+                 ),
+                 prompt_tokens=entry["prompt_tokens"],
+                 cached_prefix_tokens=entry["cached_prefix_tokens"],
++                local_cached_prefix_tokens=entry["local_cached_prefix_tokens"],
++                external_cached_prefix_tokens=entry["external_cached_prefix_tokens"],
++                initial_gpu_prefill_tokens=entry["initial_gpu_prefill_tokens"],
+                 scheduled_tokens=entry["scheduled_tokens"],
+             )
+         for request_id in sorted(scheduler_output.preempted_req_ids or ()):
+diff --git a/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py b/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py
+index e9a91b8e52..ab0d44cbfb 100644
+--- a/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py
++++ b/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py
+@@ -2,6 +2,7 @@ import asyncio
+ import hashlib
+ import logging
+ import math
++import os
+ import time
+ import uuid
+ from collections import OrderedDict
+@@ -32,6 +33,7 @@ from ray.serve.experimental.llm_token_autoscaling_policy import (
+ # Reported in the autoscaling snapshot for observability; the token policy
+ # scales on outstanding prefill tokens only and ignores it.
+ ACTIVE_DECODE_REQUESTS = "active_decode_requests"
++ROUTER_REQUEST_TRACE_DIR_ENV = "RAY_SERVE_LLM_ROUTER_REQUEST_TRACE_DIR"
+ 
+ if TYPE_CHECKING:
+     from ray.llm._internal.serve.core.configs.llm_config import LLMConfig
+@@ -331,9 +333,41 @@ class KVTokenTracker:
+         # Applies queued peer updates off the RPC path.
+         self._replica_apply_task: Optional[asyncio.Task] = None
+         self._long_poll_client: Optional[LongPollClient] = None
++        self._request_trace_writer = None
++        trace_dir = os.environ.get(ROUTER_REQUEST_TRACE_DIR_ENV, "").strip()
++        if trace_dir:
++            import atexit
++
++            from ray.llm._internal.serve.engines.vllm.scheduler_trace import (
++                _JsonlTraceWriter,
++            )
++
++            self._request_trace_writer = _JsonlTraceWriter(
++                trace_dir, file_prefix="router"
++            )
++            atexit.register(self._request_trace_writer.close)
++            self._trace_request_event(
++                "router_trace_started",
++                prefill_decay_tokens_per_second=prefill_decay_tokens_per_second,
++            )
+         self._create_selection_service()
+         self._start_replica_tracking()
+ 
++    def _trace_request_event(self, event: str, **fields: Any) -> None:
++        writer = getattr(self, "_request_trace_writer", None)
++        if writer is None:
++            return
++        writer.emit(
++            {
++                "schema_version": 1,
++                "event": event,
++                "wall_time_s": time.time(),
++                "monotonic_s": time.monotonic(),
++                "serve_deployment_id": str(self._serve_deployment_id),
++                **fields,
++            }
++        )
++
+     def get_block_size(self) -> int:
+         """Return the KV-cache block size used for decode-block accounting."""
+         return self._block_size
+@@ -446,7 +480,33 @@ class KVTokenTracker:
+             return
+         sink = getattr(self, "_autoscaling_metrics_sink", None)
+         if sink is not None:
+-            sink(self._get_autoscaling_snapshot())
++            snapshot = self._get_autoscaling_snapshot()
++            sink(snapshot)
++            if getattr(self, "_request_trace_writer", None) is not None:
++                # Read the already-advanced decay state used by this exact
++                # snapshot. Recording must not spend additional decay capacity.
++                pending = []
++                for request_id, state in self._requests.items():
++                    if state.prefill_completed:
++                        continue
++                    remaining = state.effective_prefill_tokens
++                    if self._prefill_decay is not None:
++                        remaining = self._prefill_decay._pending.get(
++                            state.worker_id, {}
++                        ).get(request_id, 0.0)
++                    pending.append(
++                        {
++                            "request_id": request_id,
++                            "worker_id": state.worker_id,
++                            "initial_effective_prefill_tokens": state.effective_prefill_tokens,
++                            "remaining_estimate_tokens": remaining,
++                        }
++                    )
++                self._trace_request_event(
++                    "router_autoscaling_snapshot",
++                    **snapshot,
++                    requests=pending,
++                )
+         self._schedule_prefill_decay_snapshot()
+ 
+     def _schedule_prefill_decay_snapshot(self) -> None:
+@@ -721,6 +781,16 @@ class KVTokenTracker:
+             expected_output_tokens,
+             selection["effective_prefill_tokens"],
+         )
++        self._trace_request_event(
++            "router_selection",
++            request_id=request_id,
++            prompt_tokens=len(token_ids),
++            worker_id=selection["worker_id"],
++            replica_id=self._replica_id_by_worker.get(selection["worker_id"]),
++            dp_rank=selection["dp_rank"],
++            overlap=selection["overlap"],
++            effective_prefill_tokens=selection["effective_prefill_tokens"],
++        )
+         self._publish_autoscaling_snapshot()
+         if self._replica_forwarder is not None:
+             self._replica_forwarder.report(
+@@ -808,6 +878,12 @@ class KVTokenTracker:
+         state = self._requests.get(request_id)
+         if state is None or state.prefill_completed:
+             return
++        self._trace_request_event(
++            "router_prefill_complete",
++            request_id=request_id,
++            worker_id=state.worker_id,
++            initial_effective_prefill_tokens=state.effective_prefill_tokens,
++        )
+         if self._prefill_decay is not None:
+             self._prefill_decay.remove(request_id, state.worker_id)
+         state.prefill_completed = True
+diff --git a/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py b/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py
+index 0fed1f4e87..9f2a1f1693 100644
+--- a/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py
++++ b/python/ray/llm/tests/serve/cpu/deployments/llm/vllm/test_scheduler_trace.py
+@@ -160,7 +160,12 @@ def test_scheduler_trace_records_request_batch_and_first_token(monkeypatch, tmp_
+         num_computed_tokens=4,
+         num_in_flight_tokens=0,
+         num_preemptions=0,
+-        prefill_stats=SimpleNamespace(num_cached_tokens=2),
++        prefill_stats=SimpleNamespace(
++            num_cached_tokens=2,
++            num_local_cached_tokens=1,
++            num_external_cached_tokens=1,
++            num_computed_tokens=11,
++        ),
+     )
+ 
+     scheduler.add_request(request)
+@@ -183,6 +188,9 @@ def test_scheduler_trace_records_request_batch_and_first_token(monkeypatch, tmp_
+             "phase": "prefill",
+             "prompt_tokens": 13,
+             "cached_prefix_tokens": 2,
++            "local_cached_prefix_tokens": 1,
++            "external_cached_prefix_tokens": 1,
++            "initial_gpu_prefill_tokens": 11,
+             "computed_before": 4,
+             "completed_or_cached_before": 4,
+             "locally_computed_before": 2,
+@@ -196,5 +204,8 @@ def test_scheduler_trace_records_request_batch_and_first_token(monkeypatch, tmp_
+ 
+     assert event_by_name["request_first_token"]["batches_waited"] == 0
+     assert event_by_name["request_admitted"]["cached_prefix_tokens"] == 2
++    assert event_by_name["request_admitted"]["local_cached_prefix_tokens"] == 1
++    assert event_by_name["request_admitted"]["external_cached_prefix_tokens"] == 1
++    assert event_by_name["request_admitted"]["initial_gpu_prefill_tokens"] == 11
+     assert event_by_name["batch_completed"]["first_token_request_ids"] == ["request-1"]
+     assert event_by_name["request_finished"]["external_request_id"] == "client-1"
+diff --git a/python/ray/llm/tests/serve/cpu/deployments/routers/kv/test_prefill_decay.py b/python/ray/llm/tests/serve/cpu/deployments/routers/kv/test_prefill_decay.py
+index 6aee273d62..00349e15d1 100644
+--- a/python/ray/llm/tests/serve/cpu/deployments/routers/kv/test_prefill_decay.py
++++ b/python/ray/llm/tests/serve/cpu/deployments/routers/kv/test_prefill_decay.py
+@@ -1,6 +1,7 @@
+ """Deterministic tests of the router's estimated remaining-prefill metric."""
+ 
+ import asyncio
++import json
+ from types import SimpleNamespace
+ from unittest.mock import AsyncMock
+ 
+@@ -34,6 +35,53 @@ class _LocalTracker(KVTokenTracker):
+         pass
+ 
+ 
++@pytest.mark.asyncio
++async def test_request_audit_separates_original_booking_decay_and_completion(
++    monkeypatch, tmp_path
++):
++    clock = SimpleNamespace(now=1000.0)
++    monkeypatch.setattr(
++        kv_token_tracker,
++        "time",
++        SimpleNamespace(monotonic=lambda: clock.now, time=lambda: 1700000000 + clock.now),
++    )
++    monkeypatch.setenv(kv_token_tracker.ROUTER_REQUEST_TRACE_DIR_ENV, str(tmp_path))
++    tracker = _LocalTracker(prefill_decay_tokens_per_second=10)
++    tracker._register_block_size(16, "test-worker")
++    tracker._replica_id_by_worker[1] = "test-worker"
++    tracker._svc.select_and_reserve = AsyncMock(
++        return_value={
++            "worker_id": 1, "dp_rank": 0,
++            "overlap": {"longest_matched": 16, "gpu": 16, "cpu": 16},
++            "effective_prefill_tokens": 48,
++        }
++    )
++    tracker.set_autoscaling_metrics_sink(lambda snapshot: None)
++    try:
++        await tracker.select_worker("client-request", list(range(64)), [1])
++        clock.now += 2
++        tracker._publish_autoscaling_snapshot()
++        await tracker.on_prefill_complete("client-request")
++    finally:
++        if tracker._prefill_decay_timer is not None:
++            tracker._prefill_decay_timer.cancel()
++        tracker._request_trace_writer.close()
++    rows = [json.loads(line) for path in tmp_path.glob("*.jsonl")
++            for line in path.read_text().splitlines()]
++    selection = next(r for r in rows if r["event"] == "router_selection")
++    assert selection["request_id"] == "client-request"
++    assert selection["prompt_tokens"] == 64
++    assert selection["overlap"]["gpu"] == 16
++    assert selection["effective_prefill_tokens"] == 48
++    assert "token_ids" not in selection
++    snapshots = [r for r in rows if r["event"] == "router_autoscaling_snapshot"]
++    assert [r[PREFILL] for r in snapshots] == [0, 48, 28, 0]
++    assert snapshots[-2]["requests"][0]["remaining_estimate_tokens"] == 28
++    assert snapshots[-2]["requests"][0]["initial_effective_prefill_tokens"] == 48
++    assert snapshots[-1]["requests"] == []
++    assert any(r["event"] == "router_prefill_complete" for r in rows)
++
++
+ @pytest.fixture
+ def clock(monkeypatch):
+     clock = SimpleNamespace(now=1000.0)

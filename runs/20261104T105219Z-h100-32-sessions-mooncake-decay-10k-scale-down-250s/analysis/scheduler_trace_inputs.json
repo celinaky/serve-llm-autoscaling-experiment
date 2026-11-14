@@ -1,0 +1,19 @@
+[
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3594635.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3594647.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3622637.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3622645.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3640765.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671599.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671638.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671647.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671672.0000.jsonl",
+  "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671682.0000.jsonl"
+]

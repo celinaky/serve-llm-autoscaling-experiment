@@ -1,0 +1,8 @@
+{
+  "policy": "token",
+  "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+  "policy_kwargs": {
+    "target_prefill_tokens_per_replica": 20000,
+    "upscale_lookback_s": 60
+  }
+}

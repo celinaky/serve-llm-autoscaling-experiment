@@ -1,0 +1,1 @@
+From ~11 min into the load window to its end, a second prober ran: tools/side_probe.py --rate 0.15 --min-new 20000 --max-new 40000 --prefix 0 --seed 11 (cold 20-40K, ~4.5K tok/s), in benchmark/side-probe-cold/, because the first 10 min found 0 load on 58% of arrivals and only 31 arrivals at 50-100K.

@@ -1,0 +1,40 @@
+{
+  "captured_at": "2026-11-04T11:40:24.858129+00:00",
+  "observed_port_owner": {
+    "engine_core_pid": 3575300,
+    "parent_actor_pid": 3573614,
+    "replica_id": "6coyinpa",
+    "serve_state": "RUNNING",
+    "ss_output": "State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\nLISTEN 0      100          0.0.0.0:5560      0.0.0.0:*    users:((\"VLLM::EngineCor\",pid=3575300,fd=116))\n",
+    "process_parent": "    PID    PPID STAT COMMAND\n3575300 3573614 RNl  VLLM::EngineCore\n"
+  },
+  "observed_failures_file": "event_publisher_bind_failures.json",
+  "source_assignment_function": "ray.llm._internal.serve.routing_policies.kv_aware.vllm.kv_events.assign_replica_kv_events_endpoint",
+  "source_rank_function": "serve.get_replica_context().rank.local_rank",
+  "endpoint_rule": "base5557 + node-local replica rank (DP rank handled by vLLM; this test DP1)",
+  "interpretation": "Active replica 6coyinpa originally registered its publisher at 5557 + 3 = 5560 and still owns that socket. The current controller mapping assigns it local_rank 1. New rank 3 replicas attempt port 5560 and fail. Controller source compacts and reconfigures ranks after membership changes; the existing engine publisher remains bound to its original port. No live source or configuration was changed.",
+  "current_rank_mapping_captured_at": "2026-11-04T11:42:26.923332+00:00",
+  "observed_current_rank_mapping": {
+    "h1nx2oex": {
+      "rank": 0,
+      "node_rank": 0,
+      "local_rank": 0
+    },
+    "dvg1kg4z": {
+      "rank": 2,
+      "node_rank": 0,
+      "local_rank": 2
+    },
+    "6coyinpa": {
+      "rank": 1,
+      "node_rank": 0,
+      "local_rank": 1
+    }
+  },
+  "rank_source": "ServeController._get_replica_ranks_mapping read-only RPC",
+  "source_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/vllm/kv_events.py": "8686e9969e3aaceae992e7102635faab770edc5c4424e4b9371c7ed359090c70",
+    "/mnt/local_storage/ray/python/ray/serve/_private/deployment_state.py": "6d7326b5fc80b3bb0b272dcff31c82956016aae360759ab151ce73c44c933a90"
+  },
+  "follow_up": "Use stable per-replica port ownership independent of ranks that may be reassigned. Include event, replay and token-channel ports in the lifecycle audit. Validate a fix in a separate controlled run."
+}

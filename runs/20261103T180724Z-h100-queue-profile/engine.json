@@ -1,0 +1,33 @@
+{
+  "pid": 1676824,
+  "gpu": 0,
+  "port": 8100,
+  "trace_dir": "/mnt/cluster_storage/serve-llm-autoscaling-experiment/standalone-engine-traces/20261103T180437Z",
+  "log": "/mnt/cluster_storage/serve-llm-autoscaling-experiment/standalone-engine-traces/20261103T180437Z/vllm_serve.log",
+  "cmd": [
+    "vllm",
+    "serve",
+    "Qwen/Qwen3.6-27B-FP8",
+    "--port",
+    "8100",
+    "--tensor-parallel-size",
+    "1",
+    "--max-model-len",
+    "262144",
+    "--gpu-memory-utilization",
+    "0.92",
+    "--max-num-seqs",
+    "512",
+    "--max-num-batched-tokens",
+    "16384",
+    "--enable-prefix-caching",
+    "--kv-cache-dtype",
+    "fp8",
+    "--language-model-only",
+    "--enable-prompt-tokens-details",
+    "--async-scheduling",
+    "--scheduler-cls",
+    "ray.llm._internal.serve.engines.vllm.scheduler_trace.TracingAsyncScheduler"
+  ],
+  "started": 1793729077.5309203
+}

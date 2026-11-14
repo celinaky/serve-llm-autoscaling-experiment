@@ -1,0 +1,22 @@
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261112T193950Z-h100-token-freeze-150s-injected-scheduler/analysis/arrival_stats_stack180_0_1050.png
+  uncached prefill tokens on the engine at arrival (K)
+        0-  180s n= 33 p95=  32.12 p90=  17.89 mean=   4.29
+      180-  360s n= 48 p95=  35.54 p90=  11.21 mean=   3.50
+      360-  540s n=100 p95=   4.89 p90=   0.00 mean=   0.50
+      540-  720s n= 91 p95=  14.92 p90=   2.55 mean=   4.29
+      720-  900s n= 47 p95=  58.91 p90=  50.92 mean=  11.45
+      900- 1050s n= 35 p95=  86.41 p90=  79.42 mean=  14.69
+  engine queue time (s)
+        0-  180s n= 33 p95=   3.12 p90=   1.72 mean=   0.50
+      180-  360s n= 48 p95=   2.30 p90=   0.72 mean=   0.31
+      360-  540s n=100 p95=   0.45 p90=   0.15 mean=   0.09
+      540-  720s n= 91 p95=   1.16 p90=   0.06 mean=   0.40
+      720-  900s n= 47 p95=   5.06 p90=   5.06 mean=   1.40
+      900- 1050s n= 35 p95=  11.43 p90=   9.94 mean=   2.39
+  client TTFT (s)
+        0-  180s n= 33 p95=   9.23 p90=   5.88 mean=   2.97
+      180-  360s n= 48 p95=   6.89 p90=   3.79 mean=   1.73
+      360-  540s n=100 p95=   4.38 p90=   2.26 mean=   1.06
+      540-  720s n= 91 p95=   5.81 p90=   2.67 mean=   1.72
+      720-  900s n= 47 p95=  18.70 p90=   8.74 mean=   3.62
+      900- 1050s n= 35 p95=  12.33 p90=  11.93 mean=   4.14

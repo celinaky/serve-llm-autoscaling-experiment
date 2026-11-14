@@ -1,0 +1,185 @@
+{
+  "verified_at": "2026-11-04T23:07:48.351641+00:00",
+  "run_dir": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s",
+  "trace_dir": "/mnt/cluster_storage/mooncake-kv/traces/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s",
+  "first_router_selection": {
+    "dp_rank": 0,
+    "effective_prefill_tokens": 666,
+    "event": "router_selection",
+    "monotonic_s": 1275426.440436043,
+    "overlap": {
+      "cpu": 0,
+      "disk": 0,
+      "dp": {
+        "0": 0
+      },
+      "gpu": 0,
+      "longest_matched": 0
+    },
+    "prompt_tokens": 666,
+    "replica_id": "SERVE_REPLICA::ttft-benchmark#LLMServer:Qwen--Qwen3_6-27B-FP8#7sjoieh2",
+    "request_id": "54d7a647-6ffb-49da-9018-eeae650fd4fa",
+    "schema_version": 1,
+    "serve_deployment_id": "Deployment(name='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark')",
+    "wall_time_s": 1793833666.7051454,
+    "worker_id": 8620702642536515086
+  },
+  "first_engine_admission": {
+    "batch_index": 1,
+    "batches_waited": 0,
+    "cached_prefix_tokens": 0,
+    "event": "request_admitted",
+    "external_cached_prefix_tokens": 0,
+    "external_request_id": "chatcmpl-54d7a647-6ffb-49da-9018-eeae650fd4fa-87c7e339",
+    "initial_gpu_prefill_tokens": 666,
+    "local_cached_prefix_tokens": 0,
+    "monotonic_s": 1275426.455985042,
+    "prompt_tokens": 666,
+    "queue_wait_ms": 0.7855950389057398,
+    "request_id": "chatcmpl-54d7a647-6ffb-49da-9018-eeae650fd4fa-87c7e339",
+    "scheduled_tokens": 666,
+    "schema_version": 1,
+    "wall_time_s": 1793833666.7206945
+  },
+  "gpu_event_sources": [
+    {
+      "schema_version": 1,
+      "record_type": "source_added",
+      "received_timestamp_ns": 1793833660240591145,
+      "application": "ttft-benchmark",
+      "deployment": "LLMServer:Qwen--Qwen3_6-27B-FP8",
+      "replica_id": "7sjoieh2",
+      "replica_full_id": "SERVE_REPLICA::ttft-benchmark#LLMServer:Qwen--Qwen3_6-27B-FP8#7sjoieh2",
+      "actor_id": "39e90aed28fed7b35ea4d4aa66000000",
+      "endpoint": "tcp://10.1.154.0:5557",
+      "block_size": 1568,
+      "max_num_batched_tokens": 16384,
+      "dp_rank": 0,
+      "replay_endpoint": "tcp://10.1.154.0:6557",
+      "error": null
+    }
+  ],
+  "first_gpu_event_batch": {
+    "schema_version": 1,
+    "record_type": "kv_event_batch",
+    "received_timestamp_ns": 1793833668159679209,
+    "application": "ttft-benchmark",
+    "deployment": "LLMServer:Qwen--Qwen3_6-27B-FP8",
+    "replica_id": "7sjoieh2",
+    "replica_full_id": "SERVE_REPLICA::ttft-benchmark#LLMServer:Qwen--Qwen3_6-27B-FP8#7sjoieh2",
+    "actor_id": "39e90aed28fed7b35ea4d4aa66000000",
+    "endpoint": "tcp://10.1.154.0:5557",
+    "block_size": 1568,
+    "max_num_batched_tokens": 16384,
+    "dp_rank": 0,
+    "replay_endpoint": "tcp://10.1.154.0:6557",
+    "sequence": 0,
+    "delivery": "live",
+    "timestamp_ns": 1793833668152866560,
+    "data_parallel_rank": 0,
+    "events": [
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 0,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "mamba",
+        "block_hashes": [],
+        "block_count": 0,
+        "parent_block_hash": null
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 1,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "mamba",
+        "block_hashes": [],
+        "block_count": 0,
+        "parent_block_hash": null
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 2,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "mamba",
+        "block_hashes": [],
+        "block_count": 0,
+        "parent_block_hash": null
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 3,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "full_attention",
+        "block_hashes": [
+          "9225724744199711775",
+          "10369599680939938677",
+          "7026584446399114571",
+          "6486138200540879323",
+          "5119951362030509084",
+          "13735797530909626500",
+          "2527615203356366199",
+          "14132184227786989370",
+          "11752083075073010587",
+          "11665774984632223895"
+        ],
+        "block_count": 10,
+        "parent_block_hash": null
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 0,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "mamba",
+        "block_hashes": [],
+        "block_count": 0,
+        "parent_block_hash": "11665774984632223895"
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 1,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "mamba",
+        "block_hashes": [],
+        "block_count": 0,
+        "parent_block_hash": "11665774984632223895"
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 2,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "mamba",
+        "block_hashes": [],
+        "block_count": 0,
+        "parent_block_hash": "11665774984632223895"
+      },
+      {
+        "type": "BlockStored",
+        "medium": "GPU",
+        "group_idx": 3,
+        "block_size": 1568,
+        "kv_cache_spec_kind": "full_attention",
+        "block_hashes": [
+          "16464629531969168281",
+          "12480448758941787996",
+          "8270989295908046865",
+          "4439537204206536089",
+          "18296331833123891102",
+          "11670612175025623125",
+          "6367911868939616812",
+          "7753054981969938934",
+          "12418202532080223693",
+          "4158888586979176031"
+        ],
+        "block_count": 10,
+        "parent_block_hash": "11665774984632223895"
+      }
+    ]
+  }
+}

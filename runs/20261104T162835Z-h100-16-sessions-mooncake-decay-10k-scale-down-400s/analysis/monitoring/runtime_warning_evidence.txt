@@ -1,0 +1,3 @@
+(ServeReplica:ttft-benchmark:LLMRouter pid=4107220)     await self._svc.free_reservation(request_id)
+(ServeReplica:ttft-benchmark:LLMRouter pid=4107220)     await self._svc.free_reservation(request_id)
+(ServeReplica:ttft-benchmark:LLMRouter pid=4107220)     await self._svc.free_reservation(request_id)

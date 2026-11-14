@@ -1,0 +1,22 @@
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s/analysis/arrival_stats_stack180_0_1050.png
+  uncached prefill tokens on the engine at arrival (K)
+        0-  180s n= 32 p95=   1.19 p90=   0.00 mean=   1.27
+      180-  360s n= 46 p95=  19.01 p90=   3.60 mean=   2.53
+      360-  540s n= 62 p95=  27.68 p90=  25.92 mean=   9.25
+      540-  720s n= 53 p95=  24.56 p90=  20.29 mean=   4.25
+      720-  900s n= 98 p95=  17.40 p90=   9.23 mean=   3.58
+      900- 1050s n= 59 p95=  46.83 p90=  18.68 mean=   4.21
+  engine queue time (s)
+        0-  180s n= 32 p95=   0.32 p90=   0.04 mean=   0.12
+      180-  360s n= 46 p95=   1.75 p90=   0.38 mean=   0.27
+      360-  540s n= 62 p95=  23.06 p90=  19.33 mean=   4.97
+      540-  720s n= 53 p95=   6.59 p90=   2.74 mean=   0.76
+      720-  900s n= 98 p95=  13.14 p90=   7.83 mean=   1.61
+      900- 1050s n= 59 p95=  11.03 p90=   7.96 mean=   1.59
+  client TTFT (s)
+        0-  180s n= 32 p95=   8.96 p90=   5.96 mean=   2.61
+      180-  360s n= 46 p95=   4.72 p90=   4.05 mean=   2.08
+      360-  540s n= 62 p95=  23.82 p90=  20.71 mean=   6.35
+      540-  720s n= 53 p95=   7.24 p90=   5.71 mean=   1.77
+      720-  900s n= 98 p95=  15.49 p90=   9.58 mean=   2.55
+      900- 1050s n= 59 p95=  13.99 p90=  11.49 mean=   2.94

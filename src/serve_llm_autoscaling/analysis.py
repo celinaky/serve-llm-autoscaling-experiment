@@ -811,6 +811,7 @@ def analyze_run(
     window_s: float | None = None,
     tail_window_s: float | None = None,
     plot: bool | None = None,
+    traces_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Regenerate every derived analysis artifact from a run's raw files."""
     config = load_run_config(root)
@@ -855,4 +856,10 @@ def analyze_run(
             plot_timeline(out / "plot_data.json", out / "autoscaling_timeline.png")
         except Exception as exc:  # raw and derived data stay valid without the figure
             result["plot_error"] = f"{type(exc).__name__}: {exc}"
+        if getattr(analysis, "diagnostic_plots", True) and isinstance(config.benchmark.workload, AgentXWorkloadConfig):
+            from .diagnostics.pipeline import generate_diagnostics
+
+            diagnostics = generate_diagnostics(root, config, traces_dir=traces_dir)
+            result["diagnostic_plots"] = diagnostics
+            result["warnings"].extend(diagnostics["warnings"])
     return result

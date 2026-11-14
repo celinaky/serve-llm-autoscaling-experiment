@@ -1,0 +1,23 @@
+{
+  "started_at": "2026-11-04T23:04:52.945424+00:00",
+  "supervisor_pid": 576394,
+  "driver_pid": 577025,
+  "command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "-m",
+    "serve_llm_autoscaling.cli",
+    "run",
+    "/home/ray/default/serve-llm-autoscaling-experiment/experiments/h100_workday_curve_mooncake_no_decay_audit_400s.yaml"
+  ],
+  "experiment": "/home/ray/default/serve-llm-autoscaling-experiment/experiments/h100_workday_curve_mooncake_no_decay_audit_400s.yaml",
+  "driver_log": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-no-decay-16-audit-400s/run.log",
+  "decay_tokens_per_second": 0,
+  "baseline_run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "status": "complete",
+  "cold_pool_gib": 256,
+  "run_dir": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s",
+  "driver_exit_code": 0,
+  "driver_finished_at": "2026-11-04T23:38:56.143374+00:00",
+  "completed_at": "2026-11-04T23:38:57.911403+00:00"
+}

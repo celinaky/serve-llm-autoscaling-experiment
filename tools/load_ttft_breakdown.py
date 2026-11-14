@@ -66,10 +66,15 @@ ap.add_argument("--max-load", type=float, default=600e3, help="--bin-width bins 
 ap.add_argument("--bin-width", type=float, default=20e3, help="load bin width in tokens (load measure only)")
 ap.add_argument("--measure", choices=["load", "sequences", "kv", "policy", "inflight", "decoding"], default="load")
 ap.add_argument("--bands", choices=["split", "original"], default="split")
+ap.add_argument("--faint", nargs="*", default=[], metavar="BAND",
+                help="size bands to draw faintly in the queue-by-size plot, e.g. --faint ≤704")
+ap.add_argument("--no-overflow", action="store_true",
+                help="load measure: leave out requests above --max-load instead of an open top bin (for a zoomed plot)")
 a = ap.parse_args()
 SIZE_BANDS = SPLIT_BANDS if a.bands == "split" else ORIGINAL_BANDS
 out_name = {"load": "load", "sequences": "seqs", "kv": "kv", "policy": "policy", "inflight": "inflight", "decoding": "decoding"}[a.measure] \
     + (f"{int(a.bin_width // 1e3)}k" if a.measure == "load" and a.bin_width != 20e3 else "") \
+    + (f"_to{int(a.max_load // 1e3)}k" if a.measure == "load" and a.no_overflow else "") \
     + "_{}" + ("" if a.bands == "split" else "_4rows")
 
 rows = []
@@ -141,7 +146,7 @@ if a.measure == "load":
     w, wk = a.bin_width, int(a.bin_width // 1e3)
     top = int(a.max_load // w)
     BINS = [(0, 0, "0")] + [(i * w, (i + 1) * w, f"{i * wk}–{(i + 1) * wk}K" if i else f"≤{wk}K")
-                            for i in range(top)] + [(top * w, math.inf, f">{top * wk}K")]
+                            for i in range(top)] + ([] if a.no_overflow else [(top * w, math.inf, f">{top * wk}K")])
 elif a.measure == "sequences":
     FIELD, NOUN, XLABEL = "ongoing_sequences", "ongoing sequences", \
         "ongoing sequences on the engine at arrival (running + waiting)"
@@ -174,6 +179,8 @@ def bin_of(v):
     return next(i for i, (lo, hi, _) in enumerate(BINS) if (lo <= v <= hi if i == 0 else lo < v <= hi))
 
 
+if a.measure == "load" and a.no_overflow:
+    rows = [r for r in rows if r[FIELD] <= BINS[-1][1]]
 for r in rows:
     r["bin"] = bin_of(r[FIELD])
 
@@ -247,8 +254,10 @@ for _, _, s_name in SIZE_BANDS:
     ts = [t for t in table if t["size_band"] == s_name]
     xs = [t["bin_index"] for t in ts]
     ys = [t["mean_queue_ms"] / 1000 for t in ts]
-    ax.plot(xs, ys, color=color, linewidth=2, marker="o", markersize=7, markeredgecolor=SURFACE,
-            markeredgewidth=1.5, label=f"{s_name} own uncached")
+    faint = s_name in a.faint
+    ax.plot(xs, ys, color=color, linewidth=1.2 if faint else 2, marker="o", markersize=4 if faint else 7,
+            markeredgecolor=SURFACE, markeredgewidth=1.5, alpha=0.25 if faint else 1,
+            zorder=1 if faint else 2, label=f"{s_name} own uncached")
 ax.set_xticks(range(len(BINS)), [label for *_, label in BINS], fontsize=8, rotation=60, ha="right")
 ax.set_xlim(-0.4, len(BINS) - 0.6)
 ax.set_xlabel(XLABEL, fontsize=9)

@@ -1,0 +1,113 @@
+{
+  "pid": 3552541,
+  "started_at": "2026-11-04T10:52:19.164089+00:00",
+  "command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "-m",
+    "serve_llm_autoscaling.cli",
+    "run",
+    "experiments/h100_workday_curve_mooncake_decay_long.yaml"
+  ],
+  "log": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-long-250s/run.log",
+  "first_goal_completion": "/home/ray/default/mooncake-kv/state/first-goal-completion.json",
+  "router_source_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py": "437ad29010711f1bc53e09403eeffc7b11dcb9a5e6ce4dcb7f7d5785ada5fbf9",
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py": "76215883957ab76314d04a131a1387e44f008ace94f6a4621ea42372762091f5"
+  },
+  "router_decay_tokens_per_second": 10000,
+  "upscale_delay_s": 40,
+  "downscale_delay_s": 250,
+  "curve": {
+    "ramp_up_s": 930,
+    "hold_s": 2790,
+    "ramp_down_s": 930,
+    "load_s": 4650,
+    "peak_sessions": 32,
+    "slot_interval_s": 30
+  },
+  "services": {
+    "host": "10.1.154.0",
+    "pool_gib": 256,
+    "lease_ttl": "120s",
+    "config_path": "/mnt/cluster_storage/mooncake-kv/requester.json",
+    "health_url": "http://10.1.154.0:9300/health",
+    "metrics_url": "http://10.1.154.0:9300/metrics/summary",
+    "processes": [
+      {
+        "pid": 3551313,
+        "command": [
+          "/home/ray/default/mooncake-kv/.venv/bin/mooncake_master",
+          "--port=50051",
+          "--enable_http_metadata_server=true",
+          "--http_metadata_server_host=10.1.154.0",
+          "--http_metadata_server_port=8080",
+          "--default_kv_lease_ttl=120s",
+          "--logtostderr=true"
+        ],
+        "log": "/home/ray/default/mooncake-kv/state/mooncake_master.log"
+      },
+      {
+        "pid": 3551430,
+        "command": [
+          "/home/ray/default/mooncake-kv/.venv/bin/mooncake_client",
+          "--host=10.1.154.0",
+          "--port=50052",
+          "--global_segment_size=256GB",
+          "--master_server_address=10.1.154.0:50051",
+          "--metadata_server=http://10.1.154.0:8080/metadata",
+          "--protocol=tcp",
+          "--tenant_id=ray-serve",
+          "--enable_http_server=true",
+          "--http_port=9300",
+          "--logtostderr=true"
+        ],
+        "log": "/home/ray/default/mooncake-kv/state/mooncake_client.log"
+      }
+    ]
+  },
+  "run_dir": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s",
+  "report_pid": 3687081,
+  "report_command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "tools/report_mooncake.py",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s",
+    "--site-dir",
+    "/home/ray/default/sites/h100-mooncake-decay-long",
+    "--baseline",
+    "runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+    "--smoke",
+    "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+    "--driver-log",
+    "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-long-250s/run.log",
+    "--title",
+    "H100s, 32 sessions, Mooncake shared KV with 10k/sec decay and scale down",
+    "--wait",
+    "--driver-pid",
+    "3552541"
+  ],
+  "site_dir": "/home/ray/default/sites/h100-mooncake-decay-long",
+  "site_project_id": "appgprj_6aeb0e85183c8191a70f518de7902c0f",
+  "site_expected_url": "https://h100-mooncake-32-sessions-decay-10k.anyscale-ent-1806.chatgpt.site",
+  "report_updated_for": "Post-removal request proof, session turnover, eviction defaults and observed KV publisher port collision",
+  "status": "complete",
+  "publication": {
+    "id": "appgdep_6aeb2832a4688191b6865c6d65a85ae9",
+    "project_id": "appgprj_6aeb0e85183c8191a70f518de7902c0f",
+    "title": "H100s, 32 sessions, Mooncake shared KV with 10k/sec decay and scale down",
+    "version_id": "appgprj_6aeb0e85183c8191a70f518de7902c0f~appgver_90196aa7f7f881919f8ecba59dd53a5f",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://h100-mooncake-32-sessions-decay-10k.anyscale-ent-1806.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6aeb0e85183c8191a70f518de7902c0f",
+    "failure_message": null,
+    "env_set_revision": 0,
+    "updated_at": "2026-11-04T12:42:36.467291+00:00",
+    "source_commit": "7d4124379e19c7efbb49065407959d06403cdf80",
+    "archive": "/tmp/h100-mooncake-decay-long.tar.gz"
+  },
+  "completion_audit": "/home/ray/default/mooncake-kv/state/long-goal-completion.json"
+}

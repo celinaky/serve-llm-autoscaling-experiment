@@ -1,0 +1,40 @@
+{
+  "host": "10.1.154.0",
+  "pool_gib": 256,
+  "lease_ttl": "120s",
+  "config_path": "/mnt/cluster_storage/mooncake-kv/requester.json",
+  "health_url": "http://10.1.154.0:9300/health",
+  "metrics_url": "http://10.1.154.0:9300/metrics/summary",
+  "processes": [
+    {
+      "pid": 3551313,
+      "command": [
+        "/home/ray/default/mooncake-kv/.venv/bin/mooncake_master",
+        "--port=50051",
+        "--enable_http_metadata_server=true",
+        "--http_metadata_server_host=10.1.154.0",
+        "--http_metadata_server_port=8080",
+        "--default_kv_lease_ttl=120s",
+        "--logtostderr=true"
+      ],
+      "log": "/home/ray/default/mooncake-kv/state/mooncake_master.log"
+    },
+    {
+      "pid": 3551430,
+      "command": [
+        "/home/ray/default/mooncake-kv/.venv/bin/mooncake_client",
+        "--host=10.1.154.0",
+        "--port=50052",
+        "--global_segment_size=256GB",
+        "--master_server_address=10.1.154.0:50051",
+        "--metadata_server=http://10.1.154.0:8080/metadata",
+        "--protocol=tcp",
+        "--tenant_id=ray-serve",
+        "--enable_http_server=true",
+        "--http_port=9300",
+        "--logtostderr=true"
+      ],
+      "log": "/home/ray/default/mooncake-kv/state/mooncake_client.log"
+    }
+  ]
+}

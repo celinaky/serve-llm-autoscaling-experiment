@@ -1,0 +1,30 @@
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/analysis/cache_credit_context/original_reference.png
+  policy mean / engine mean where engine mean >= 1K: median 1.69, p10 0.84, p90 10.55 (n=260)
+  time-average over the load phase: policy 24.9K, engine 8.6K
+  published policy mean vs recomputed from the gauge: max abs diff 51.7K
+{
+  "run": "20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s",
+  "original_top_curve_implementation_reused": true,
+  "source_trace_directory": "/mnt/cluster_storage/mooncake-kv/traces/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s",
+  "external_requests": 17,
+  "external_uncredited_requests": 10,
+  "external_already_credited_requests": 7,
+  "local_extra_reuse_requests": 32,
+  "get_bytes_from_logs": 45677019136,
+  "get_bytes_from_exported_counters": 45677019136.0,
+  "get_bytes_match": true,
+  "original_replica": "7sjoieh2",
+  "gpu_full_attention_group": 3,
+  "gpu_prefix_hash_removals": 1345,
+  "request_audit_snapshots": 1257,
+  "no_decay_verified": true,
+  "site_modified": false,
+  "load_window_mean_K": {
+    "audited_router_minus_engine": 14.502673191813395,
+    "uncredited_external_component": 6.856671828687986,
+    "additional_local_reuse_component": 3.105924244572851,
+    "other_signed_accounting_difference": 4.540077118552556
+  },
+  "note": "Colored gap components are initial excess tokens for requests still present in actual router snapshots. They do not assume every Mooncake GET lacked credit."
+}
+/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/analysis/cache_credit_context/router_mooncake_cache_credit_context.png

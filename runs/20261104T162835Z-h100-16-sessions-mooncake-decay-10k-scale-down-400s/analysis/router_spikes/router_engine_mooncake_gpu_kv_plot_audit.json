@@ -1,0 +1,72 @@
+{
+  "run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "plot_window_s": [
+    0,
+    1050
+  ],
+  "bin_s": 10,
+  "get_count": 51,
+  "get_bytes_from_deduplicated_logs": 130248867840,
+  "get_bytes_exported_counter": 130248867840.0,
+  "get_log_bytes_match_exported_counter": true,
+  "log_display_to_utc_offsets": [
+    8
+  ],
+  "router_per_request_miss_tokens_recorded": false,
+  "site_modified": false,
+  "note": "Read-only saved-artifact analysis. No request was sent and no Site was edited.",
+  "gpu_kv": {
+    "source": "batch_scheduled.kv_cache_usage",
+    "capacity_source": "findings-h100/mooncake-decay-16-400s/run.log",
+    "metric_definition": "1 - free_blocks / (total_blocks - null_block); reclaimable cached blocks count as free",
+    "idle_gaps_over_s": 1,
+    "extrapolate_missing_samples": false,
+    "replicas": [
+      {
+        "replica_id": "2a1fmw2i",
+        "engine_pid": "4108718",
+        "capacity_gib_rounded": 40.2,
+        "reported_token_slots": 1265522,
+        "batch_samples": 19848,
+        "peak_usage_pct": 99.880810488677,
+        "peak_time_s": 473.9866690635681
+      },
+      {
+        "replica_id": "dddatd2o",
+        "engine_pid": "4127784",
+        "capacity_gib_rounded": 40.2,
+        "reported_token_slots": 1265522,
+        "batch_samples": 18588,
+        "peak_usage_pct": 22.16924910607867,
+        "peak_time_s": 971.9116015434265
+      },
+      {
+        "replica_id": "08f2x4j5",
+        "engine_pid": "4127796",
+        "capacity_gib_rounded": 40.2,
+        "reported_token_slots": 1265522,
+        "batch_samples": 6444,
+        "peak_usage_pct": 13.3492252681764,
+        "peak_time_s": 985.8369908332825
+      },
+      {
+        "replica_id": "0dl7m9o5",
+        "engine_pid": "4138118",
+        "capacity_gib_rounded": 40.2,
+        "reported_token_slots": 1265522,
+        "batch_samples": 0,
+        "peak_usage_pct": null,
+        "peak_time_s": null
+      },
+      {
+        "replica_id": "4hzloari",
+        "engine_pid": "4138132",
+        "capacity_gib_rounded": 40.2,
+        "reported_token_slots": 1265522,
+        "batch_samples": 25,
+        "peak_usage_pct": 1.0727056019070313,
+        "peak_time_s": 989.991021156311
+      }
+    ]
+  }
+}

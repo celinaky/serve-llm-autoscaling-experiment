@@ -1,0 +1,22 @@
+[NOTICE]   (4133649) : haproxy version is 2.8.25-5cf5d0683
+[NOTICE]   (4133649) : path to executable is /home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy
+[WARNING]  (4133649) : config : log format ignored for frontend 'prometheus' since it has no log address.
+[WARNING]  (4133649) : config : missing timeouts for backend 'http-ttft-benchmark'.
+   | While not properly invalid, you will certainly encounter various problems
+   | with such a configuration. To fix this, please ensure that all following
+   | timeouts are set to a non-zero value: 'client', 'connect', 'server'.
+[WARNING]  (4133649) : config : missing timeouts for backend 'http-ttft-benchmark-via-ingress-request-router'.
+   | While not properly invalid, you will certainly encounter various problems
+   | with such a configuration. To fix this, please ensure that all following
+   | timeouts are set to a non-zero value: 'client', 'connect', 'server'.
+[WARNING]  (4133649) : Health check for server http-ttft-benchmark/SERVE_REPLICA_ttft-benchmark-LLMServer_Qwen--Qwen3_6-27B-FP8-08f2x4j5 succeeded, reason: Layer7 check passed, code: 200, check duration: 0ms, status: 2/2 UP.
+[WARNING]  (4133649) : Health check for server http-ttft-benchmark/SERVE_REPLICA_ttft-benchmark-LLMServer_Qwen--Qwen3_6-27B-FP8-dddatd2o succeeded, reason: Layer7 check passed, code: 200, check duration: 0ms, status: 2/2 UP.
+[WARNING]  (4133649) : Proxy prometheus stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (4133649) : Proxy http_frontend stopped (cumulated conns: FE: 20, BE: 0).
+[WARNING]  (4133649) : Proxy stats stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (4133649) : Proxy default_backend stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (4133649) : Proxy http-ttft-benchmark stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (4133649) : Proxy http-ttft-benchmark-via-ingress-request-router stopped (cumulated conns: FE: 0, BE: 858).
+[WARNING]  (4133649) : soft-stop running for too long, performing a hard-stop.
+[WARNING]  (4133649) : Proxy http_frontend hard-stopped (7 remaining conns will be closed).
+[WARNING]  (4133649) : Some tasks resisted to hard-stop, exiting now.

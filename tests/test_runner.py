@@ -372,3 +372,30 @@ def test_agentx_fixed_experiment_collects_telemetry_and_analyzes(
     assert manifest["status"] == "succeeded"
     assert set(manifest["telemetry"]) == {"serve_status.jsonl", "serve_metrics.jsonl"}
     assert (root / "benchmark" / "lifecycle.json").exists()
+
+
+def test_failed_generator_still_analyzes_partial_saved_requests(monkeypatch, tmp_path):
+    from serve_llm_autoscaling import runner
+
+    _fake_cluster(monkeypatch, tmp_path)
+    config = load_config('experiments/smoke_rate_series.yaml')
+    config.runtime.results_dir = tmp_path / 'runs'
+    analyzed = []
+
+    def fail(self):
+        records = self.benchmark_root / 'request-rate-series/profile_export.jsonl'
+        records.parent.mkdir(parents=True, exist_ok=True)
+        records.write_text('{}\n')
+        raise RuntimeError('generator interrupted')
+
+    monkeypatch.setattr(runner.AIPerfRunner, 'run_series', fail)
+    monkeypatch.setattr(runner, 'run_analysis',
+                        lambda root: analyzed.append(root) or {'warnings': ['partial data']})
+    with pytest.raises(RuntimeError, match='generator interrupted'):
+        runner.run_experiment(config, Path('experiments/smoke_rate_series.yaml'))
+    root, = config.runtime.results_dir.iterdir()
+    manifest = json.loads((root / 'manifest.json').read_text())
+    assert analyzed == [root]
+    assert manifest['status'] == 'failed' and manifest['failure_stage'] == 'benchmark'
+    assert manifest['analysis']['warnings'] == ['partial data']
+    assert 'generator interrupted' in manifest['error']

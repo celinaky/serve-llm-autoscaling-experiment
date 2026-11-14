@@ -1,0 +1,36 @@
+{
+  "prepared_at": "2026-11-04T23:02:26.866961+00:00",
+  "baseline_run": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "experiment": "/home/ray/default/serve-llm-autoscaling-experiment/experiments/h100_workday_curve_mooncake_no_decay_audit_400s.yaml",
+  "semantic_config_changes": [
+    {
+      "field": "deployment.engine.shared_kv_cache.cache_prefix",
+      "before": "Qwen-Qwen3.6-27B-FP8@e89b16ebf1988b3d6befa7de50abc2d76f26eb09/tp1/kv-fp8/workday16-sd400-decay10k-20261104T162717Z",
+      "after": "Qwen-Qwen3.6-27B-FP8@e89b16ebf1988b3d6befa7de50abc2d76f26eb09/tp1/kv-fp8/workday16-sd400-no-decay-request-audit"
+    },
+    {
+      "field": "deployment.routing.request_router_kwargs.prefill_decay_tokens_per_second",
+      "before": 10000,
+      "after": 0
+    },
+    {
+      "field": "name",
+      "before": "h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+      "after": "h100-16-sessions-mooncake-no-decay-audit-scale-down-400s"
+    }
+  ],
+  "workload_unchanged": true,
+  "instrumentation": {
+    "record_gpu_kv_events": true,
+    "record_router_estimates": true,
+    "engine_local_external_cache_split": true
+  },
+  "source_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py": "7ee7ddeeb7b697057b7446cdf43028659f9cbe25c196d965c2566a785b12b4a6",
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/engines/vllm/scheduler_trace.py": "a534470fbbc185aa459b7b5f1755115a9164151a669de69de6d78718ee6c90a0",
+    "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_transfer/kv_connector/v1/mooncake/store/worker.py": "a8fdf8179b8518510d6be7be12c0ba066aed7d6aa0e11a371d02880ce772a4f0"
+  },
+  "mooncake_cpu_label_unchanged": true,
+  "cold_pool_gib": 256,
+  "lease_ttl": "120s"
+}

@@ -1,0 +1,16 @@
+{
+  "points": [
+    {
+      "time_s": 0.0,
+      "concurrency": 1
+    },
+    {
+      "time_s": 450.0,
+      "concurrency": 16
+    },
+    {
+      "time_s": 1050.0,
+      "concurrency": 16
+    }
+  ]
+}

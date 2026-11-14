@@ -1,0 +1,24 @@
+{
+  "effective_config": [
+    "hard-stop-after 120s"
+  ],
+  "hard_stop_logs": [
+    {
+      "file": "admin.sock.3486946.4.stderr.log",
+      "modified_at": "2026-11-04T10:27:51.029365+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3492179) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3492179) : Proxy http_frontend hard-stopped (9 remaining conns will be closed).",
+        "[WARNING]  (3492179) : Some tasks resisted to hard-stop, exiting now."
+      ]
+    },
+    {
+      "file": "admin.sock.3486946.5.stderr.log",
+      "modified_at": "2026-11-04T10:37:23.623384+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3503945) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3503945) : Proxy http_frontend hard-stopped (3 remaining conns will be closed)."
+      ]
+    }
+  ]
+}

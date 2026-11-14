@@ -1,0 +1,9 @@
+(ServeController pid=3553226) INFO 2026-11-04 03:22:24,111 controller 3553226 -- Downscaling Deployment(name='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') from 7 to 4 replicas. Current ongoing requests: 19.84, current running replicas: 7.
+(ServeController pid=3553226) INFO 2026-11-04 03:22:24,221 controller 3553226 -- Removing 3 replicas from Deployment(name='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark').
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3593276) INFO 2026-11-04 03:22:54,226 ttft-benchmark_LLMServer:Qwen--Qwen3_6-27B-FP8 8gx3yy3x -- Waiting for an additional 2.0s to shut down: 1 ongoing requests, 0.0s minimum draining period remaining.
+(ServeController pid=3553226) INFO 2026-11-04 03:22:54,469 controller 3553226 -- Replica(id='otvfkck6', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.
+(ServeController pid=3553226) INFO 2026-11-04 03:22:54,471 controller 3553226 -- Replica(id='zgtev259', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3581232) (EngineCore pid=3582595) INFO 11-04 03:22:54 [core.py:1409] [shutdown] EngineCore: trigger received signal=SIGTERM
+(ServeController pid=3553226) INFO 2026-11-04 03:22:59,265 controller 3553226 -- Replica(id='8gx3yy3x', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') did not shut down after grace period, force-killing it.
+(ServeController pid=3553226) INFO 2026-11-04 03:22:59,371 controller 3553226 -- Replica(id='8gx3yy3x', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3593278) (EngineCore pid=3594647) INFO 11-04 03:22:54 [core.py:1409] [shutdown] EngineCore: trigger received signal=SIGTERM

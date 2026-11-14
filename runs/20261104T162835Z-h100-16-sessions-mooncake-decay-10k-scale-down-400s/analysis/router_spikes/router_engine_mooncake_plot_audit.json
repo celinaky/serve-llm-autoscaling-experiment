@@ -1,0 +1,18 @@
+{
+  "run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "plot_window_s": [
+    0,
+    1050
+  ],
+  "bin_s": 10,
+  "get_count": 51,
+  "get_bytes_from_deduplicated_logs": 130248867840,
+  "get_bytes_exported_counter": 130248867840.0,
+  "get_log_bytes_match_exported_counter": true,
+  "log_display_to_utc_offsets": [
+    8
+  ],
+  "router_per_request_miss_tokens_recorded": false,
+  "site_modified": false,
+  "note": "Read-only saved-artifact analysis. No request was sent and no Site was edited."
+}

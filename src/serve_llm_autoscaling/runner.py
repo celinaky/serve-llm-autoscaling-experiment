@@ -247,11 +247,20 @@ def run_experiment(
     keep_deployment: bool | None = None,
 ) -> Path:
     artifacts = RunArtifacts.create(config, config_path)
-    backend = RayServeBackend(config, replace=replace)
     deployed = False
     stage = "environment_check"
     keep = config.runtime.keep_deployment if keep_deployment is None else keep_deployment
     try:
+        from .diagnostics.pipeline import prepare_tracing
+
+        config = prepare_tracing(config, artifacts.root)
+        backend = RayServeBackend(config, replace=replace)
+        if config.analysis.scheduler_trace_dir is not None:
+            write_config(config, artifacts.root / "resolved.yaml")
+            artifacts.manifest["scheduler_traces"] = {
+                "directory": str(config.analysis.scheduler_trace_dir),
+            }
+            artifacts.flush_manifest()
         env = environment_check(connect=True, aiperf_source=config.runtime.aiperf_source)
         artifacts.manifest["environment"] = env
         artifacts.flush_manifest()
@@ -269,6 +278,15 @@ def run_experiment(
         write_json(autoscaling_path, autoscaling)
         artifacts.manifest["autoscaling"] = autoscaling
         artifacts.flush_manifest()
+
+        stage = "shared_kv_preflight"
+        from .shared_kv import check_shared_kv_support
+
+        shared_kv = check_shared_kv_support(config)
+        if shared_kv is not None:
+            artifacts.manifest["shared_kv_cache"] = shared_kv
+            write_json(artifacts.root / "deployment" / "shared_kv_cache.json", shared_kv)
+            artifacts.flush_manifest()
 
         stage = "deploy"
         artifacts.record_event("deploy_started")
@@ -319,6 +337,12 @@ def run_experiment(
         artifacts.finish("succeeded")
         return artifacts.root
     except Exception as exc:
+        # A failed generator can still leave useful requests and traces. Keep
+        # its original failure while producing whatever diagnostics are valid.
+        if (stage == "benchmark" and "analysis" not in artifacts.manifest
+                and config.benchmark.mode in CONTINUOUS_MODES
+                and any(artifacts.root.glob("benchmark/*/profile_export.jsonl"))):
+            artifacts.manifest["analysis"] = run_analysis(artifacts.root)
         artifacts.finish("failed", failure_stage=stage, error=f"{type(exc).__name__}: {exc}")
         raise
     finally:

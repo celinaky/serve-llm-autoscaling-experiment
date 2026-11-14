@@ -1,0 +1,17 @@
+lane,lane_source,trace_id,root_correlation_id,first_request_s,last_request_end_s,observed_span_s,root_turns,replica,engine,root_replica_count,root_replicas
+1,recorded initial lane IDs,afc602,34ba414b-eb65-408b-9215-4768258512ad,0.015,433.1,433.085,10,1,k-c35e22130000_pid-2346135,1,1
+2,recorded initial lane IDs,7ca99d,170d6a85-12c3-4de4-b525-a09bba6b98ed,15.027,291.678,276.651,5,1,k-c35e22130000_pid-2346135,1,1
+3,recorded initial lane IDs,ea262f,b00eb9b9-8c36-4a8a-ae7a-ffc9c2834e96,45.072,1061.837,1016.765,11,1,k-c35e22130000_pid-2346135,1,1
+4,recorded initial lane IDs,dcea9a,5e83a728-90fd-4f5a-a96d-a60c7c0b34b8,75.013,1055.664,980.651,6,1,k-c35e22130000_pid-2346135,1,1
+5,recorded initial lane IDs,d85c0e,54754649-c805-498e-b0a8-7cce89dec4c0,105.059,1099.642,994.583,10,1,k-c35e22130000_pid-2346135,1,1
+6,recorded initial lane IDs,4a2beb,fd8bd1a0-5eb1-4c99-bfd4-2b22160efe8d,135.1,1062.223,927.123,6,1,k-c35e22130000_pid-2346135,1,1
+7,recorded initial lane IDs,d13287,ac7e5de8-33b7-4c26-ab92-041edf85598a,165.047,1083.098,918.052,24,1,k-c35e22130000_pid-2346135,1,1
+8,recorded initial lane IDs,645c48,41f94218-94ad-4b45-8a03-6892847cd9d2,195.09,972.214,777.124,4,1,k-c35e22130000_pid-2346135,1,1
+9,recorded initial lane IDs,b64b5d,99d93500-dbc7-4eee-89c3-581e4b2cb187,225.033,1017.107,792.074,19,1,k-c35e22130000_pid-2346135,1,1
+10,recorded initial lane IDs,4701d9,d4873b4b-ae66-462f-8a89-c30857867cde,255.086,940.704,685.618,13,1,k-c35e22130000_pid-2346135,1,1
+11,recorded initial lane IDs,38e03f,ebf0d878-4aa2-458b-93dd-decfe6fd8b68,285.026,920.548,635.523,1,1,k-c35e22130000_pid-2346135,1,1
+12,recorded initial lane IDs,af78a5,ec2a0012-c9fe-45bb-8747-c12cfabec833,315.07,1074.046,758.977,12,1,k-c35e22130000_pid-2346135,1,1
+13,recorded initial lane IDs,9a8512,e2a5a2e4-cdd7-4cd9-bfae-c0d3fa4affb1,345.015,472.027,127.012,3,1,k-c35e22130000_pid-2346135,1,1
+14,recorded initial lane IDs,9dc929,574045b3-c697-41c6-90ac-bba813028f1b,375.049,1051.955,676.906,8,1,k-c35e22130000_pid-2346135,1,1
+15,recorded initial lane IDs,2efb65,758dce22-9d1c-499c-8ec4-5616f711b5d0,405.084,885.286,480.202,6,2,k-c35e22130000_pid-2368463,1,2
+16,recorded initial lane IDs,083832,7580a08d-76e9-4523-8507-465bd7a98491,435.024,1058.418,623.394,15,2,k-c35e22130000_pid-2368463,1,2

@@ -1,0 +1,3389 @@
+{
+  "captured_at": "2026-11-04T12:18:45.590806+00:00",
+  "profile_request_count": 2174,
+  "matched_request_count": 2173,
+  "ambiguous_request_count": 0,
+  "all_conversation_replica_transitions": [
+    {
+      "previous_request_id": "ee47fc10-b16a-4477-8dc3-34bd4cda6e9f",
+      "previous_turn_index": 0,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575309",
+      "from_replica_id": "dvg1kg4z",
+      "to_engine": "k-c35e22130000_pid-3575300",
+      "to_replica_id": "6coyinpa",
+      "producer_stopped_at_utc": "2026-11-04T11:46:07.328000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "240da5b8-bc3e-44b7-9c59-1f0c5974b4c7",
+      "trace_id": "4da5e4",
+      "source_trace_id": "0db32e2f852a2ea24ed616b31975a84da5e4",
+      "conversation_id": "0db32e2f852a2ea24ed616b31975a84da5e4",
+      "root_correlation_id": "a7e13e26-3cb9-4746-8a13-bd4199c0622d",
+      "agent_depth": 0,
+      "turn_index": 1,
+      "start_ns": 1793790425555481008,
+      "end_ns": 1793790446314034446,
+      "engine": "k-c35e22130000_pid-3575300",
+      "replica_id": "6coyinpa",
+      "replica_ordinal": 3,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575300"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 98027,
+      "client_ttft_ms": 10600.79943,
+      "cache_read_tokens": 0,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575300",
+          "replica_id": "6coyinpa",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+          "batch_index": 3267,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 0,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-240da5b8-bc3e-44b7-9c59-1f0c5974b4c7-ab3464cd",
+          "monotonic_s": 1232185.500836174,
+          "prompt_tokens": 98027,
+          "queue_wait_ms": 3.0220879707485437,
+          "request_id": "chatcmpl-240da5b8-bc3e-44b7-9c59-1f0c5974b4c7-ab3464cd",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793790425.7655458
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575300",
+        "replica_id": "6coyinpa",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+        "batch_index": 3274,
+        "batches_waited": 0,
+        "engine_ttft_ms": 10356.685546925291,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-240da5b8-bc3e-44b7-9c59-1f0c5974b4c7-ab3464cd",
+        "monotonic_s": 1232195.854943941,
+        "prefill_span_ms": 10353.663458954543,
+        "queue_wait_ms": 3.0220879707485437,
+        "request_id": "chatcmpl-240da5b8-bc3e-44b7-9c59-1f0c5974b4c7-ab3464cd",
+        "schema_version": 1,
+        "wall_time_s": 1793790436.1196537
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 98027,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 3267,
+          "scheduled_tokens": 15680,
+          "computed_before": 0,
+          "remaining_prefill_after": 82347
+        },
+        {
+          "batch_index": 3268,
+          "scheduled_tokens": 15680,
+          "computed_before": 15680,
+          "remaining_prefill_after": 66667
+        },
+        {
+          "batch_index": 3269,
+          "scheduled_tokens": 15680,
+          "computed_before": 31360,
+          "remaining_prefill_after": 50987
+        },
+        {
+          "batch_index": 3270,
+          "scheduled_tokens": 15680,
+          "computed_before": 47040,
+          "remaining_prefill_after": 35307
+        },
+        {
+          "batch_index": 3271,
+          "scheduled_tokens": 15680,
+          "computed_before": 62720,
+          "remaining_prefill_after": 19627
+        },
+        {
+          "batch_index": 3272,
+          "scheduled_tokens": 15680,
+          "computed_before": 78400,
+          "remaining_prefill_after": 3947
+        },
+        {
+          "batch_index": 3273,
+          "scheduled_tokens": 3136,
+          "computed_before": 94080,
+          "remaining_prefill_after": 811
+        },
+        {
+          "batch_index": 3274,
+          "scheduled_tokens": 811,
+          "computed_before": 97216,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "c889252f-0519-4e2b-8147-132ce12d9278",
+      "previous_turn_index": 0,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3582595",
+      "from_replica_id": "otvfkck6",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:22:54.469000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2",
+      "trace_id": "910d89",
+      "source_trace_id": "0f909e7d63c0d5e1f060d727ada25d910d89",
+      "conversation_id": "0f909e7d63c0d5e1f060d727ada25d910d89::fa:000",
+      "root_correlation_id": "d4b361aa-4900-4d51-9f9f-ebf365dfd933",
+      "agent_depth": 1,
+      "turn_index": 1,
+      "start_ns": 1793790555296757665,
+      "end_ns": 1793790618177890336,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 31447,
+      "client_ttft_ms": 53647.794441,
+      "cache_read_tokens": 28224,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0000.jsonl",
+          "batch_index": 17682,
+          "batches_waited": 942,
+          "cached_prefix_tokens": 28224,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2-8905fe97",
+          "monotonic_s": 1232367.931564136,
+          "prompt_tokens": 31447,
+          "queue_wait_ms": 52757.48269399628,
+          "request_id": "chatcmpl-8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2-8905fe97",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793790608.1962736
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0000.jsonl",
+        "batch_index": 17684,
+        "batches_waited": 942,
+        "engine_ttft_ms": 53489.260107977316,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2-8905fe97",
+        "monotonic_s": 1232368.663456494,
+        "prefill_span_ms": 731.7774139810354,
+        "queue_wait_ms": 52757.48269399628,
+        "request_id": "chatcmpl-8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2-8905fe97",
+        "schema_version": 1,
+        "wall_time_s": 1793790608.928166
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:10:06 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2-8905fe97 batch_keys=21 memory_keys=21 disk_keys=0 unknown_keys=0 success_keys=21 failed_keys=0 bytes_by_tier={'memory': 1078984704, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 3223,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 17682,
+          "scheduled_tokens": 3136,
+          "computed_before": 28224,
+          "remaining_prefill_after": 87
+        },
+        {
+          "batch_index": 17684,
+          "scheduled_tokens": 87,
+          "computed_before": 31360,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "5a8e8d95-caa0-4eb6-a79d-c594b8e5bee1",
+      "previous_turn_index": 7,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3582595",
+      "from_replica_id": "otvfkck6",
+      "to_engine": "k-c35e22130000_pid-3575300",
+      "to_replica_id": "6coyinpa",
+      "producer_stopped_at_utc": "2026-11-04T11:22:54.469000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "bd69fd63-7740-41fd-8947-a6bfa0555ebe",
+      "trace_id": "fc0ab7",
+      "source_trace_id": "0ede42538334da8586bc60008762abfc0ab7",
+      "conversation_id": "0ede42538334da8586bc60008762abfc0ab7::sa:subagent_001_d3e48d97",
+      "root_correlation_id": "ba448f7a-3839-46ce-9f49-575668b0f55d",
+      "agent_depth": 1,
+      "turn_index": 8,
+      "start_ns": 1793790587803471217,
+      "end_ns": 1793790592514380395,
+      "engine": "k-c35e22130000_pid-3575300",
+      "replica_id": "6coyinpa",
+      "replica_ordinal": 3,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575300"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 50680,
+      "client_ttft_ms": 2998.0759789999997,
+      "cache_read_tokens": 45472,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575300",
+          "replica_id": "6coyinpa",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+          "batch_index": 11314,
+          "batches_waited": 89,
+          "cached_prefix_tokens": 45472,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-bd69fd63-7740-41fd-8947-a6bfa0555ebe-8d3f08a8",
+          "monotonic_s": 1232349.816606326,
+          "prompt_tokens": 50680,
+          "queue_wait_ms": 2096.446609823033,
+          "request_id": "chatcmpl-bd69fd63-7740-41fd-8947-a6bfa0555ebe-8d3f08a8",
+          "scheduled_tokens": 4704,
+          "schema_version": 1,
+          "wall_time_s": 1793790590.0813158
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575300",
+        "replica_id": "6coyinpa",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+        "batch_index": 11315,
+        "batches_waited": 89,
+        "engine_ttft_ms": 2795.334276976064,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-bd69fd63-7740-41fd-8947-a6bfa0555ebe-8d3f08a8",
+        "monotonic_s": 1232350.515606868,
+        "prefill_span_ms": 698.8876671530306,
+        "queue_wait_ms": 2096.446609823033,
+        "request_id": "chatcmpl-bd69fd63-7740-41fd-8947-a6bfa0555ebe-8d3f08a8",
+        "schema_version": 1,
+        "wall_time_s": 1793790590.7803164
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576085) (Worker pid=3576085) INFO 11-04 03:09:50 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-bd69fd63-7740-41fd-8947-a6bfa0555ebe-8d3f08a8 batch_keys=32 memory_keys=32 disk_keys=0 unknown_keys=0 success_keys=32 failed_keys=0 bytes_by_tier={'memory': 1644167168, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 5208,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 11314,
+          "scheduled_tokens": 4704,
+          "computed_before": 45472,
+          "remaining_prefill_after": 504
+        },
+        {
+          "batch_index": 11315,
+          "scheduled_tokens": 504,
+          "computed_before": 50176,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "215f5119-2252-456f-837c-a799d20b62e5",
+      "previous_turn_index": 0,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3554967",
+      "from_replica_id": "h1nx2oex",
+      "to_engine": "k-c35e22130000_pid-3582595",
+      "to_replica_id": "otvfkck6",
+      "producer_stopped_at_utc": null,
+      "started_after_producer_stopped": false,
+      "request_id": "dbc8eea1-d308-471f-8586-8b2de8d247f2",
+      "trace_id": "92929d",
+      "source_trace_id": "1007f04d2c64580308858bb42f292992929d",
+      "conversation_id": "1007f04d2c64580308858bb42f292992929d",
+      "root_correlation_id": "b04dfd09-a83b-4c55-97f6-5f6fd6489026",
+      "agent_depth": 0,
+      "turn_index": 1,
+      "start_ns": 1793790591116922796,
+      "end_ns": 1793790602324557405,
+      "engine": "k-c35e22130000_pid-3582595",
+      "replica_id": "otvfkck6",
+      "replica_ordinal": 5,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3582595"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 59826,
+      "client_ttft_ms": 5977.13918,
+      "cache_read_tokens": 0,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3582595",
+          "replica_id": "otvfkck6",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+          "batch_index": 1620,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 0,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-dbc8eea1-d308-471f-8586-8b2de8d247f2-8e74bb7c",
+          "monotonic_s": 1232350.960765746,
+          "prompt_tokens": 59826,
+          "queue_wait_ms": 2.1110509987920523,
+          "request_id": "chatcmpl-dbc8eea1-d308-471f-8586-8b2de8d247f2-8e74bb7c",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793790591.2254753
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3582595",
+        "replica_id": "otvfkck6",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+        "batch_index": 1624,
+        "batches_waited": 0,
+        "engine_ttft_ms": 5822.098995093256,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-dbc8eea1-d308-471f-8586-8b2de8d247f2-8e74bb7c",
+        "monotonic_s": 1232356.78145126,
+        "prefill_span_ms": 5819.987944094464,
+        "queue_wait_ms": 2.1110509987920523,
+        "request_id": "chatcmpl-dbc8eea1-d308-471f-8586-8b2de8d247f2-8e74bb7c",
+        "schema_version": 1,
+        "wall_time_s": 1793790597.046161
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 59826,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 1620,
+          "scheduled_tokens": 15680,
+          "computed_before": 0,
+          "remaining_prefill_after": 44146
+        },
+        {
+          "batch_index": 1621,
+          "scheduled_tokens": 15680,
+          "computed_before": 15680,
+          "remaining_prefill_after": 28466
+        },
+        {
+          "batch_index": 1622,
+          "scheduled_tokens": 15680,
+          "computed_before": 31360,
+          "remaining_prefill_after": 12786
+        },
+        {
+          "batch_index": 1623,
+          "scheduled_tokens": 12544,
+          "computed_before": 47040,
+          "remaining_prefill_after": 242
+        },
+        {
+          "batch_index": 1624,
+          "scheduled_tokens": 242,
+          "computed_before": 59584,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "bd69fd63-7740-41fd-8947-a6bfa0555ebe",
+      "previous_turn_index": 8,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3582595",
+      "to_replica_id": "otvfkck6",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "c014a375-dcf4-4269-b20e-da8e2c68b7e5",
+      "trace_id": "fc0ab7",
+      "source_trace_id": "0ede42538334da8586bc60008762abfc0ab7",
+      "conversation_id": "0ede42538334da8586bc60008762abfc0ab7::sa:subagent_001_d3e48d97",
+      "root_correlation_id": "ba448f7a-3839-46ce-9f49-575668b0f55d",
+      "agent_depth": 1,
+      "turn_index": 9,
+      "start_ns": 1793790593448454928,
+      "end_ns": 1793790606352606225,
+      "engine": "k-c35e22130000_pid-3582595",
+      "replica_id": "otvfkck6",
+      "replica_ordinal": 5,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3582595"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 51711,
+      "client_ttft_ms": 6866.55332,
+      "cache_read_tokens": 50176,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3582595",
+          "replica_id": "otvfkck6",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+          "batch_index": 1755,
+          "batches_waited": 132,
+          "cached_prefix_tokens": 50176,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-c014a375-dcf4-4269-b20e-da8e2c68b7e5-947d7a8c",
+          "monotonic_s": 1232359.618748244,
+          "prompt_tokens": 51711,
+          "queue_wait_ms": 6332.308905897662,
+          "request_id": "chatcmpl-c014a375-dcf4-4269-b20e-da8e2c68b7e5-947d7a8c",
+          "scheduled_tokens": 1535,
+          "schema_version": 1,
+          "wall_time_s": 1793790599.883458
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3582595",
+        "replica_id": "otvfkck6",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+        "batch_index": 1755,
+        "batches_waited": 132,
+        "engine_ttft_ms": 6745.857869973406,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-c014a375-dcf4-4269-b20e-da8e2c68b7e5-947d7a8c",
+        "monotonic_s": 1232360.032416123,
+        "prefill_span_ms": 413.54896407574415,
+        "queue_wait_ms": 6332.308905897662,
+        "request_id": "chatcmpl-c014a375-dcf4-4269-b20e-da8e2c68b7e5-947d7a8c",
+        "schema_version": 1,
+        "wall_time_s": 1793790600.2971256
+      },
+      "get_log_lines": [
+        "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3581232) (RayWorkerProc pid=3583029) (Worker pid=3583029) INFO 11-04 03:09:59 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-c014a375-dcf4-4269-b20e-da8e2c68b7e5-947d7a8c batch_keys=6 memory_keys=6 disk_keys=0 unknown_keys=0 success_keys=6 failed_keys=0 bytes_by_tier={'memory': 308281344, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1535,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 1755,
+          "scheduled_tokens": 1535,
+          "computed_before": 50176,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "8679a3ed-e77f-44a0-aa0a-0bff7c0a62c2",
+      "previous_turn_index": 1,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3554967",
+      "from_replica_id": "h1nx2oex",
+      "to_engine": "k-c35e22130000_pid-3582595",
+      "to_replica_id": "otvfkck6",
+      "producer_stopped_at_utc": null,
+      "started_after_producer_stopped": false,
+      "request_id": "ced09847-a1e3-45a1-a34d-0332a6689193",
+      "trace_id": "910d89",
+      "source_trace_id": "0f909e7d63c0d5e1f060d727ada25d910d89",
+      "conversation_id": "0f909e7d63c0d5e1f060d727ada25d910d89::fa:000",
+      "root_correlation_id": "d4b361aa-4900-4d51-9f9f-ebf365dfd933",
+      "agent_depth": 1,
+      "turn_index": 2,
+      "start_ns": 1793790618773890711,
+      "end_ns": 1793790651547064844,
+      "engine": "k-c35e22130000_pid-3582595",
+      "replica_id": "otvfkck6",
+      "replica_ordinal": 5,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3582595"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 35929,
+      "client_ttft_ms": 1120.376197,
+      "cache_read_tokens": 28224,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3582595",
+          "replica_id": "otvfkck6",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+          "batch_index": 2328,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 28224,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-ced09847-a1e3-45a1-a34d-0332a6689193-999242a9",
+          "monotonic_s": 1232378.583605576,
+          "prompt_tokens": 35929,
+          "queue_wait_ms": 2.4417119566351175,
+          "request_id": "chatcmpl-ced09847-a1e3-45a1-a34d-0332a6689193-999242a9",
+          "scheduled_tokens": 6272,
+          "schema_version": 1,
+          "wall_time_s": 1793790618.8483152
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3582595",
+        "replica_id": "otvfkck6",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3582595.0000.jsonl",
+        "batch_index": 2329,
+        "batches_waited": 0,
+        "engine_ttft_ms": 1031.3753858208656,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-ced09847-a1e3-45a1-a34d-0332a6689193-999242a9",
+        "monotonic_s": 1232379.612975198,
+        "prefill_span_ms": 1028.9336738642305,
+        "queue_wait_ms": 2.4417119566351175,
+        "request_id": "chatcmpl-ced09847-a1e3-45a1-a34d-0332a6689193-999242a9",
+        "schema_version": 1,
+        "wall_time_s": 1793790619.8776848
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 7705,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 2328,
+          "scheduled_tokens": 6272,
+          "computed_before": 28224,
+          "remaining_prefill_after": 1433
+        },
+        {
+          "batch_index": 2329,
+          "scheduled_tokens": 1433,
+          "computed_before": 34496,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "6466cc7d-92b4-4521-986e-652cdd28f10a",
+      "previous_turn_index": 0,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3575277",
+      "to_replica_id": "spra5fvr",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "735163b8-34b3-48da-9bd4-f0e53c7ff245",
+      "trace_id": "0794aa",
+      "source_trace_id": "0b7f3ca692f15ae2651a310d9411d70794aa",
+      "conversation_id": "0b7f3ca692f15ae2651a310d9411d70794aa::fa:000",
+      "root_correlation_id": "5b7845a6-58d4-4e33-8f94-4450560eea19",
+      "agent_depth": 1,
+      "turn_index": 1,
+      "start_ns": 1793791012383105527,
+      "end_ns": 1793791027551604841,
+      "engine": "k-c35e22130000_pid-3575277",
+      "replica_id": "spra5fvr",
+      "replica_ordinal": 4,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575277"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 5855,
+      "client_ttft_ms": 318.30395799999997,
+      "cache_read_tokens": 4704,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575277",
+          "replica_id": "spra5fvr",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+          "batch_index": 25025,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 4704,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-735163b8-34b3-48da-9bd4-f0e53c7ff245-918c8edf",
+          "monotonic_s": 1232772.326785156,
+          "prompt_tokens": 5855,
+          "queue_wait_ms": 185.5363450013101,
+          "request_id": "chatcmpl-735163b8-34b3-48da-9bd4-f0e53c7ff245-918c8edf",
+          "scheduled_tokens": 1151,
+          "schema_version": 1,
+          "wall_time_s": 1793791012.5914946
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575277",
+        "replica_id": "spra5fvr",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+        "batch_index": 25025,
+        "batches_waited": 0,
+        "engine_ttft_ms": 290.2727830223739,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-735163b8-34b3-48da-9bd4-f0e53c7ff245-918c8edf",
+        "monotonic_s": 1232772.431599278,
+        "prefill_span_ms": 104.7364380210638,
+        "queue_wait_ms": 185.5363450013101,
+        "request_id": "chatcmpl-735163b8-34b3-48da-9bd4-f0e53c7ff245-918c8edf",
+        "schema_version": 1,
+        "wall_time_s": 1793791012.696309
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3575696) (Worker pid=3575696) INFO 11-04 03:16:52 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-735163b8-34b3-48da-9bd4-f0e53c7ff245-918c8edf batch_keys=6 memory_keys=6 disk_keys=0 unknown_keys=0 success_keys=6 failed_keys=0 bytes_by_tier={'memory': 308281344, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1151,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 25025,
+          "scheduled_tokens": 1151,
+          "computed_before": 4704,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "55d951b2-be18-40e4-9e24-1530da2653b0",
+      "previous_turn_index": 3,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3594647",
+      "from_replica_id": "zgtev259",
+      "to_engine": "k-c35e22130000_pid-3575277",
+      "to_replica_id": "spra5fvr",
+      "producer_stopped_at_utc": "2026-11-04T11:22:54.471000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "9cf240a7-0de8-41ee-9fd9-84d0a90b8176",
+      "trace_id": "e4c059",
+      "source_trace_id": "0bc9c4f798d321286bf39f2543c0c4e4c059",
+      "conversation_id": "0bc9c4f798d321286bf39f2543c0c4e4c059::sa:subagent_001_3539a803",
+      "root_correlation_id": "9b096c5a-5dc0-48fe-b43d-16b62bbffe5a",
+      "agent_depth": 1,
+      "turn_index": 4,
+      "start_ns": 1793791344511960714,
+      "end_ns": 1793791357854149035,
+      "engine": "k-c35e22130000_pid-3575277",
+      "replica_id": "spra5fvr",
+      "replica_ordinal": 4,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575277"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 47198,
+      "client_ttft_ms": 4395.271197,
+      "cache_read_tokens": 28224,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575277",
+          "replica_id": "spra5fvr",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+          "batch_index": 37565,
+          "batches_waited": 109,
+          "cached_prefix_tokens": 28224,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-9cf240a7-0de8-41ee-9fd9-84d0a90b8176-a58addf8",
+          "monotonic_s": 1233106.70185897,
+          "prompt_tokens": 47198,
+          "queue_wait_ms": 2358.568432042375,
+          "request_id": "chatcmpl-9cf240a7-0de8-41ee-9fd9-84d0a90b8176-a58addf8",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793791346.9665685
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575277",
+        "replica_id": "spra5fvr",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+        "batch_index": 37567,
+        "batches_waited": 109,
+        "engine_ttft_ms": 4282.543841050938,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-9cf240a7-0de8-41ee-9fd9-84d0a90b8176-a58addf8",
+        "monotonic_s": 1233108.625918224,
+        "prefill_span_ms": 1923.9754090085626,
+        "queue_wait_ms": 2358.568432042375,
+        "request_id": "chatcmpl-9cf240a7-0de8-41ee-9fd9-84d0a90b8176-a58addf8",
+        "schema_version": 1,
+        "wall_time_s": 1793791348.8906279
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 18974,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 37565,
+          "scheduled_tokens": 15680,
+          "computed_before": 28224,
+          "remaining_prefill_after": 3294
+        },
+        {
+          "batch_index": 37566,
+          "scheduled_tokens": 3136,
+          "computed_before": 43904,
+          "remaining_prefill_after": 158
+        },
+        {
+          "batch_index": 37567,
+          "scheduled_tokens": 158,
+          "computed_before": 47040,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "04bda47b-c8ca-4c50-85ed-d17d1ee727d5",
+      "previous_turn_index": 1,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3594647",
+      "from_replica_id": "zgtev259",
+      "to_engine": "k-c35e22130000_pid-3575277",
+      "to_replica_id": "spra5fvr",
+      "producer_stopped_at_utc": "2026-11-04T11:22:54.471000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "a589d610-9010-48c3-862a-c9339285177f",
+      "trace_id": "e4c059",
+      "source_trace_id": "0bc9c4f798d321286bf39f2543c0c4e4c059",
+      "conversation_id": "0bc9c4f798d321286bf39f2543c0c4e4c059::sa:subagent_002_443844e7",
+      "root_correlation_id": "9b096c5a-5dc0-48fe-b43d-16b62bbffe5a",
+      "agent_depth": 1,
+      "turn_index": 2,
+      "start_ns": 1793791349099008615,
+      "end_ns": 1793791362758169470,
+      "engine": "k-c35e22130000_pid-3575277",
+      "replica_id": "spra5fvr",
+      "replica_ordinal": 4,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575277"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 33371,
+      "client_ttft_ms": 6134.085319,
+      "cache_read_tokens": 29792,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575277",
+          "replica_id": "spra5fvr",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+          "batch_index": 37725,
+          "batches_waited": 144,
+          "cached_prefix_tokens": 29792,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-a589d610-9010-48c3-862a-c9339285177f-943e60cb",
+          "monotonic_s": 1233112.39209446,
+          "prompt_tokens": 33371,
+          "queue_wait_ms": 3467.2163280192763,
+          "request_id": "chatcmpl-a589d610-9010-48c3-862a-c9339285177f-943e60cb",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793791352.6568038
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575277",
+        "replica_id": "spra5fvr",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+        "batch_index": 37726,
+        "batches_waited": 144,
+        "engine_ttft_ms": 6030.687463004142,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-a589d610-9010-48c3-862a-c9339285177f-943e60cb",
+        "monotonic_s": 1233114.9556904,
+        "prefill_span_ms": 2563.471134984866,
+        "queue_wait_ms": 3467.2163280192763,
+        "request_id": "chatcmpl-a589d610-9010-48c3-862a-c9339285177f-943e60cb",
+        "schema_version": 1,
+        "wall_time_s": 1793791355.2204
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3575696) (Worker pid=3575696) INFO 11-04 03:22:32 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-a589d610-9010-48c3-862a-c9339285177f-943e60cb batch_keys=22 memory_keys=22 disk_keys=0 unknown_keys=0 success_keys=22 failed_keys=0 bytes_by_tier={'memory': 1130364928, 'disk': 0, 'unknown': 0} [repeated 2x across cluster]"
+      ],
+      "actual_prefill_before_first_token": 3579,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 37725,
+          "scheduled_tokens": 3136,
+          "computed_before": 29792,
+          "remaining_prefill_after": 443
+        },
+        {
+          "batch_index": 37726,
+          "scheduled_tokens": 443,
+          "computed_before": 32928,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "f9b19c25-3c80-4197-a8ab-f5c198a499e6",
+      "previous_turn_index": 10,
+      "previous_profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "from_engine": "k-c35e22130000_pid-3594635",
+      "from_replica_id": "8gx3yy3x",
+      "to_engine": "k-c35e22130000_pid-3575300",
+      "to_replica_id": "6coyinpa",
+      "producer_stopped_at_utc": "2026-11-04T11:22:59.371000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "25ad2f01-279c-47ac-82c2-c05988a7c57a",
+      "trace_id": "92929d",
+      "source_trace_id": "1007f04d2c64580308858bb42f292992929d",
+      "conversation_id": "1007f04d2c64580308858bb42f292992929d::sa:subagent_001_770523ab",
+      "root_correlation_id": "b04dfd09-a83b-4c55-97f6-5f6fd6489026",
+      "agent_depth": 1,
+      "turn_index": 11,
+      "start_ns": 1793791380432248142,
+      "end_ns": 1793791444801228781,
+      "engine": "k-c35e22130000_pid-3575300",
+      "replica_id": "6coyinpa",
+      "replica_ordinal": 3,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575300"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 76382,
+      "client_ttft_ms": 4156.200186,
+      "cache_read_tokens": 73696,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575300",
+          "replica_id": "6coyinpa",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+          "batch_index": 48118,
+          "batches_waited": 124,
+          "cached_prefix_tokens": 73696,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-25ad2f01-279c-47ac-82c2-c05988a7c57a-88ac19a9",
+          "monotonic_s": 1233143.652342952,
+          "prompt_tokens": 76382,
+          "queue_wait_ms": 3340.607297839597,
+          "request_id": "chatcmpl-25ad2f01-279c-47ac-82c2-c05988a7c57a-88ac19a9",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793791383.9170525
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575300",
+        "replica_id": "6coyinpa",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+        "batch_index": 48119,
+        "batches_waited": 124,
+        "engine_ttft_ms": 3985.6857180129737,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-25ad2f01-279c-47ac-82c2-c05988a7c57a-88ac19a9",
+        "monotonic_s": 1233144.297642751,
+        "prefill_span_ms": 645.0784201733768,
+        "queue_wait_ms": 3340.607297839597,
+        "request_id": "chatcmpl-25ad2f01-279c-47ac-82c2-c05988a7c57a-88ac19a9",
+        "schema_version": 1,
+        "wall_time_s": 1793791384.5623527
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576085) (Worker pid=3576085) INFO 11-04 03:23:03 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-25ad2f01-279c-47ac-82c2-c05988a7c57a-88ac19a9 batch_keys=50 memory_keys=50 disk_keys=0 unknown_keys=0 success_keys=50 failed_keys=0 bytes_by_tier={'memory': 2569011200, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 2686,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 48118,
+          "scheduled_tokens": 1568,
+          "computed_before": 73696,
+          "remaining_prefill_after": 1118
+        },
+        {
+          "batch_index": 48119,
+          "scheduled_tokens": 1118,
+          "computed_before": 75264,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "146dfff6-97a6-478d-a2a9-f356a492d1ab",
+      "previous_turn_index": 18,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3594635",
+      "from_replica_id": "8gx3yy3x",
+      "to_engine": "k-c35e22130000_pid-3575277",
+      "to_replica_id": "spra5fvr",
+      "producer_stopped_at_utc": "2026-11-04T11:22:59.371000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "24bac3a8-8586-4a65-8ca3-6c27ecc2babb",
+      "trace_id": "f00d69",
+      "source_trace_id": "12cfecf98c158ab54fb65980602421f00d69",
+      "conversation_id": "12cfecf98c158ab54fb65980602421f00d69",
+      "root_correlation_id": "596e9eab-62fe-48af-aa36-a964fc9bb974",
+      "agent_depth": 0,
+      "turn_index": 19,
+      "start_ns": 1793791429866695052,
+      "end_ns": 1793791441761351736,
+      "engine": "k-c35e22130000_pid-3575277",
+      "replica_id": "spra5fvr",
+      "replica_ordinal": 4,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575277"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 110551,
+      "client_ttft_ms": 9563.684922,
+      "cache_read_tokens": 109760,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575277",
+          "replica_id": "spra5fvr",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+          "batch_index": 40400,
+          "batches_waited": 306,
+          "cached_prefix_tokens": 109760,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-24bac3a8-8586-4a65-8ca3-6c27ecc2babb-b0cd02b4",
+          "monotonic_s": 1233198.884602895,
+          "prompt_tokens": 110551,
+          "queue_wait_ms": 8968.015505932271,
+          "request_id": "chatcmpl-24bac3a8-8586-4a65-8ca3-6c27ecc2babb-b0cd02b4",
+          "scheduled_tokens": 791,
+          "schema_version": 1,
+          "wall_time_s": 1793791439.1493123
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575277",
+        "replica_id": "spra5fvr",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575277.0000.jsonl",
+        "batch_index": 40400,
+        "batches_waited": 306,
+        "engine_ttft_ms": 9212.195394095033,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-24bac3a8-8586-4a65-8ca3-6c27ecc2babb-b0cd02b4",
+        "monotonic_s": 1233199.129013823,
+        "prefill_span_ms": 244.17988816276193,
+        "queue_wait_ms": 8968.015505932271,
+        "request_id": "chatcmpl-24bac3a8-8586-4a65-8ca3-6c27ecc2babb-b0cd02b4",
+        "schema_version": 1,
+        "wall_time_s": 1793791439.3937237
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3575696) (Worker pid=3575696) INFO 11-04 03:23:59 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-24bac3a8-8586-4a65-8ca3-6c27ecc2babb-b0cd02b4 batch_keys=73 memory_keys=73 disk_keys=0 unknown_keys=0 success_keys=73 failed_keys=0 bytes_by_tier={'memory': 3750756352, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 791,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 40400,
+          "scheduled_tokens": 791,
+          "computed_before": 109760,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "0168d926-2faf-4dc4-b148-960aa926a359",
+      "previous_turn_index": 59,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3582595",
+      "from_replica_id": "otvfkck6",
+      "to_engine": "k-c35e22130000_pid-3575300",
+      "to_replica_id": "6coyinpa",
+      "producer_stopped_at_utc": "2026-11-04T11:22:54.469000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "5aa6e49d-0c35-4f5f-95d6-6e91902f7059",
+      "trace_id": "92929d",
+      "source_trace_id": "1007f04d2c64580308858bb42f292992929d",
+      "conversation_id": "1007f04d2c64580308858bb42f292992929d",
+      "root_correlation_id": "b04dfd09-a83b-4c55-97f6-5f6fd6489026",
+      "agent_depth": 0,
+      "turn_index": 60,
+      "start_ns": 1793791648523252336,
+      "end_ns": 1793791686480438584,
+      "engine": "k-c35e22130000_pid-3575300",
+      "replica_id": "6coyinpa",
+      "replica_ordinal": 3,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575300"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 120234,
+      "client_ttft_ms": 9658.124887,
+      "cache_read_tokens": 114464,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575300",
+          "replica_id": "6coyinpa",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+          "batch_index": 58723,
+          "batches_waited": 235,
+          "cached_prefix_tokens": 114464,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-5aa6e49d-0c35-4f5f-95d6-6e91902f7059-84a0d4d1",
+          "monotonic_s": 1233416.56781195,
+          "prompt_tokens": 120234,
+          "queue_wait_ms": 7733.141297008842,
+          "request_id": "chatcmpl-5aa6e49d-0c35-4f5f-95d6-6e91902f7059-84a0d4d1",
+          "scheduled_tokens": 4704,
+          "schema_version": 1,
+          "wall_time_s": 1793791656.8325214
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575300",
+        "replica_id": "6coyinpa",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+        "batch_index": 58724,
+        "batches_waited": 235,
+        "engine_ttft_ms": 9041.121934074908,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-5aa6e49d-0c35-4f5f-95d6-6e91902f7059-84a0d4d1",
+        "monotonic_s": 1233417.876030507,
+        "prefill_span_ms": 1307.9806370660663,
+        "queue_wait_ms": 7733.141297008842,
+        "request_id": "chatcmpl-5aa6e49d-0c35-4f5f-95d6-6e91902f7059-84a0d4d1",
+        "schema_version": 1,
+        "wall_time_s": 1793791658.1407402
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576085) (Worker pid=3576085) INFO 11-04 03:27:36 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-5aa6e49d-0c35-4f5f-95d6-6e91902f7059-84a0d4d1 batch_keys=76 memory_keys=76 disk_keys=0 unknown_keys=0 success_keys=76 failed_keys=0 bytes_by_tier={'memory': 3904897024, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 5770,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 58723,
+          "scheduled_tokens": 4704,
+          "computed_before": 114464,
+          "remaining_prefill_after": 1066
+        },
+        {
+          "batch_index": 58724,
+          "scheduled_tokens": 1066,
+          "computed_before": 119168,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "cf852a7d-a81e-40cd-9624-780cd7c8aed1",
+      "previous_turn_index": 0,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575277",
+      "from_replica_id": "spra5fvr",
+      "to_engine": "k-c35e22130000_pid-3622645",
+      "to_replica_id": "i09rya9i",
+      "producer_stopped_at_utc": "2026-11-04T11:33:25.143000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "23bd5b14-3b09-445c-a3b8-fd89d40fe66e",
+      "trace_id": "abd02d",
+      "source_trace_id": "117ebe75819d050f308a0a81647893abd02d",
+      "conversation_id": "117ebe75819d050f308a0a81647893abd02d::sa:subagent_004_6a00b9ff",
+      "root_correlation_id": "09433de7-23f6-473c-b799-7103f6e54015",
+      "agent_depth": 1,
+      "turn_index": 1,
+      "start_ns": 1793791753551856561,
+      "end_ns": 1793791757433427149,
+      "engine": "k-c35e22130000_pid-3622645",
+      "replica_id": "i09rya9i",
+      "replica_ordinal": 9,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3622645"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 36951,
+      "client_ttft_ms": 950.682103,
+      "cache_read_tokens": 32928,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3622645",
+          "replica_id": "i09rya9i",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3622645.0000.jsonl",
+          "batch_index": 1,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 32928,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-23bd5b14-3b09-445c-a3b8-fd89d40fe66e-8c35fafb",
+          "monotonic_s": 1233513.757488511,
+          "prompt_tokens": 36951,
+          "queue_wait_ms": 381.84298295527697,
+          "request_id": "chatcmpl-23bd5b14-3b09-445c-a3b8-fd89d40fe66e-8c35fafb",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793791754.022198
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3622645",
+        "replica_id": "i09rya9i",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3622645.0000.jsonl",
+        "batch_index": 2,
+        "batches_waited": 0,
+        "engine_ttft_ms": 846.8980449251831,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-23bd5b14-3b09-445c-a3b8-fd89d40fe66e-8c35fafb",
+        "monotonic_s": 1233514.222800094,
+        "prefill_span_ms": 465.0550619699061,
+        "queue_wait_ms": 381.84298295527697,
+        "request_id": "chatcmpl-23bd5b14-3b09-445c-a3b8-fd89d40fe66e-8c35fafb",
+        "schema_version": 1,
+        "wall_time_s": 1793791754.4875097
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3623091) (Worker pid=3623091) INFO 11-04 03:29:14 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-23bd5b14-3b09-445c-a3b8-fd89d40fe66e-8c35fafb batch_keys=24 memory_keys=24 disk_keys=0 unknown_keys=0 success_keys=24 failed_keys=0 bytes_by_tier={'memory': 1233125376, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 4023,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 1,
+          "scheduled_tokens": 3136,
+          "computed_before": 32928,
+          "remaining_prefill_after": 887
+        },
+        {
+          "batch_index": 2,
+          "scheduled_tokens": 887,
+          "computed_before": 36064,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "4c7a3db9-4ba2-40fa-a952-60aeb0092f40",
+      "previous_turn_index": 18,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3622645",
+      "from_replica_id": "i09rya9i",
+      "to_engine": "k-c35e22130000_pid-3575309",
+      "to_replica_id": "dvg1kg4z",
+      "producer_stopped_at_utc": "2026-11-04T11:33:20.250000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "3f56c13e-7a7c-4321-b2d3-599863f3735e",
+      "trace_id": "abd02d",
+      "source_trace_id": "117ebe75819d050f308a0a81647893abd02d",
+      "conversation_id": "117ebe75819d050f308a0a81647893abd02d::sa:subagent_005_0ae5b9c5",
+      "root_correlation_id": "09433de7-23f6-473c-b799-7103f6e54015",
+      "agent_depth": 1,
+      "turn_index": 19,
+      "start_ns": 1793791971982786537,
+      "end_ns": 1793791989123908162,
+      "engine": "k-c35e22130000_pid-3575309",
+      "replica_id": "dvg1kg4z",
+      "replica_ordinal": 2,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575309"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 103043,
+      "client_ttft_ms": 6552.889223,
+      "cache_read_tokens": 101920,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575309",
+          "replica_id": "dvg1kg4z",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+          "batch_index": 63466,
+          "batches_waited": 203,
+          "cached_prefix_tokens": 101920,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-3f56c13e-7a7c-4321-b2d3-599863f3735e-a874f6a4",
+          "monotonic_s": 1233737.866407176,
+          "prompt_tokens": 103043,
+          "queue_wait_ms": 5921.216558897868,
+          "request_id": "chatcmpl-3f56c13e-7a7c-4321-b2d3-599863f3735e-a874f6a4",
+          "scheduled_tokens": 1123,
+          "schema_version": 1,
+          "wall_time_s": 1793791978.1311169
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575309",
+        "replica_id": "dvg1kg4z",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+        "batch_index": 63466,
+        "batches_waited": 203,
+        "engine_ttft_ms": 6289.765791967511,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-3f56c13e-7a7c-4321-b2d3-599863f3735e-a874f6a4",
+        "monotonic_s": 1233738.235259501,
+        "prefill_span_ms": 368.5492330696434,
+        "queue_wait_ms": 5921.216558897868,
+        "request_id": "chatcmpl-3f56c13e-7a7c-4321-b2d3-599863f3735e-a874f6a4",
+        "schema_version": 1,
+        "wall_time_s": 1793791978.499969
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576216) (Worker pid=3576216) INFO 11-04 03:32:58 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-3f56c13e-7a7c-4321-b2d3-599863f3735e-a874f6a4 batch_keys=68 memory_keys=68 disk_keys=0 unknown_keys=0 success_keys=68 failed_keys=0 bytes_by_tier={'memory': 3493855232, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1123,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 63466,
+          "scheduled_tokens": 1123,
+          "computed_before": 101920,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "5fd41c09-0c13-4584-a495-b637a47c15c8",
+      "previous_turn_index": 20,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3622637",
+      "from_replica_id": "p56lsqh3",
+      "to_engine": "k-c35e22130000_pid-3575300",
+      "to_replica_id": "6coyinpa",
+      "producer_stopped_at_utc": "2026-11-04T11:33:20.248000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "0277e4ac-d4ab-4280-8a01-34a4d2e37cd4",
+      "trace_id": "abd02d",
+      "source_trace_id": "117ebe75819d050f308a0a81647893abd02d",
+      "conversation_id": "117ebe75819d050f308a0a81647893abd02d::sa:subagent_009_3e00fd36",
+      "root_correlation_id": "09433de7-23f6-473c-b799-7103f6e54015",
+      "agent_depth": 1,
+      "turn_index": 21,
+      "start_ns": 1793791972199081676,
+      "end_ns": 1793791986970942686,
+      "engine": "k-c35e22130000_pid-3575300",
+      "replica_id": "6coyinpa",
+      "replica_ordinal": 3,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575300"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 76852,
+      "client_ttft_ms": 5913.653362,
+      "cache_read_tokens": 75264,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575300",
+          "replica_id": "6coyinpa",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+          "batch_index": 68589,
+          "batches_waited": 103,
+          "cached_prefix_tokens": 75264,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-0277e4ac-d4ab-4280-8a01-34a4d2e37cd4-969d265e",
+          "monotonic_s": 1233737.281587685,
+          "prompt_tokens": 76852,
+          "queue_wait_ms": 4482.844909885898,
+          "request_id": "chatcmpl-0277e4ac-d4ab-4280-8a01-34a4d2e37cd4-969d265e",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793791977.546297
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575300",
+        "replica_id": "6coyinpa",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+        "batch_index": 68590,
+        "batches_waited": 103,
+        "engine_ttft_ms": 5020.456730853766,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-0277e4ac-d4ab-4280-8a01-34a4d2e37cd4-969d265e",
+        "monotonic_s": 1233737.819432566,
+        "prefill_span_ms": 537.611820967868,
+        "queue_wait_ms": 4482.844909885898,
+        "request_id": "chatcmpl-0277e4ac-d4ab-4280-8a01-34a4d2e37cd4-969d265e",
+        "schema_version": 1,
+        "wall_time_s": 1793791978.084142
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576085) (Worker pid=3576085) INFO 11-04 03:32:57 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-0277e4ac-d4ab-4280-8a01-34a4d2e37cd4-969d265e batch_keys=51 memory_keys=51 disk_keys=0 unknown_keys=0 success_keys=51 failed_keys=0 bytes_by_tier={'memory': 2620391424, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1588,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 68589,
+          "scheduled_tokens": 1568,
+          "computed_before": 75264,
+          "remaining_prefill_after": 20
+        },
+        {
+          "batch_index": 68590,
+          "scheduled_tokens": 20,
+          "computed_before": 76832,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "12413d45-64ff-4016-9f90-3215a896be09",
+      "previous_turn_index": 12,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575277",
+      "from_replica_id": "spra5fvr",
+      "to_engine": "k-c35e22130000_pid-3575309",
+      "to_replica_id": "dvg1kg4z",
+      "producer_stopped_at_utc": "2026-11-04T11:33:25.143000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "d31b5080-c3c1-46b1-8b8d-a4fbf2a92368",
+      "trace_id": "043805",
+      "source_trace_id": "12e6fd87f4d3d1f93f96bd7bb6a520043805",
+      "conversation_id": "12e6fd87f4d3d1f93f96bd7bb6a520043805",
+      "root_correlation_id": "510bd6a2-e955-4737-8b08-413d442f5e52",
+      "agent_depth": 0,
+      "turn_index": 13,
+      "start_ns": 1793791982489436757,
+      "end_ns": 1793792005708931603,
+      "engine": "k-c35e22130000_pid-3575309",
+      "replica_id": "dvg1kg4z",
+      "replica_ordinal": 2,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575309"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 159960,
+      "client_ttft_ms": 13412.894005,
+      "cache_read_tokens": 144256,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575309",
+          "replica_id": "dvg1kg4z",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+          "batch_index": 63968,
+          "batches_waited": 328,
+          "cached_prefix_tokens": 144256,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-d31b5080-c3c1-46b1-8b8d-a4fbf2a92368-a4680282",
+          "monotonic_s": 1233752.372033839,
+          "prompt_tokens": 159960,
+          "queue_wait_ms": 9823.452355805784,
+          "request_id": "chatcmpl-d31b5080-c3c1-46b1-8b8d-a4fbf2a92368-a4680282",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793791992.6367433
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575309",
+        "replica_id": "dvg1kg4z",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+        "batch_index": 63969,
+        "batches_waited": 328,
+        "engine_ttft_ms": 13034.779267851263,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-d31b5080-c3c1-46b1-8b8d-a4fbf2a92368-a4680282",
+        "monotonic_s": 1233755.583617553,
+        "prefill_span_ms": 3211.326912045479,
+        "queue_wait_ms": 9823.452355805784,
+        "request_id": "chatcmpl-d31b5080-c3c1-46b1-8b8d-a4fbf2a92368-a4680282",
+        "schema_version": 1,
+        "wall_time_s": 1793791995.8483272
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576216) (Worker pid=3576216) INFO 11-04 03:33:12 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-d31b5080-c3c1-46b1-8b8d-a4fbf2a92368-a4680282 batch_keys=95 memory_keys=95 disk_keys=0 unknown_keys=0 success_keys=95 failed_keys=0 bytes_by_tier={'memory': 4881121280, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 15704,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 63968,
+          "scheduled_tokens": 15680,
+          "computed_before": 144256,
+          "remaining_prefill_after": 24
+        },
+        {
+          "batch_index": 63969,
+          "scheduled_tokens": 24,
+          "computed_before": 159936,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "4dbd751a-dab3-4ac0-bb56-5ee13b4d6f21",
+      "previous_turn_index": 7,
+      "previous_profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "from_engine": "k-c35e22130000_pid-3575277",
+      "from_replica_id": "spra5fvr",
+      "to_engine": "k-c35e22130000_pid-3575300",
+      "to_replica_id": "6coyinpa",
+      "producer_stopped_at_utc": "2026-11-04T11:33:25.143000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "7218526d-31ca-4f0f-96f9-805279a71e78",
+      "trace_id": "ab62b4",
+      "source_trace_id": "13b532ee3aaa0a52b05c3bcc472355ab62b4",
+      "conversation_id": "13b532ee3aaa0a52b05c3bcc472355ab62b4",
+      "root_correlation_id": "0f6c2537-36ee-45ad-86d4-dbde1eb2f446",
+      "agent_depth": 0,
+      "turn_index": 8,
+      "start_ns": 1793792007572066813,
+      "end_ns": 1793792023420201371,
+      "engine": "k-c35e22130000_pid-3575300",
+      "replica_id": "6coyinpa",
+      "replica_ordinal": 3,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575300"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 157132,
+      "client_ttft_ms": 12241.625005,
+      "cache_read_tokens": 153664,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575300",
+          "replica_id": "6coyinpa",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+          "batch_index": 70044,
+          "batches_waited": 375,
+          "cached_prefix_tokens": 153664,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-7218526d-31ca-4f0f-96f9-805279a71e78-b8a60b6b",
+          "monotonic_s": 1233778.631531561,
+          "prompt_tokens": 157132,
+          "queue_wait_ms": 11009.124543052167,
+          "request_id": "chatcmpl-7218526d-31ca-4f0f-96f9-805279a71e78-b8a60b6b",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793792018.8962412
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575300",
+        "replica_id": "6coyinpa",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575300.0000.jsonl",
+        "batch_index": 70045,
+        "batches_waited": 375,
+        "engine_ttft_ms": 11875.803991919383,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-7218526d-31ca-4f0f-96f9-805279a71e78-b8a60b6b",
+        "monotonic_s": 1233779.498490893,
+        "prefill_span_ms": 866.6794488672167,
+        "queue_wait_ms": 11009.124543052167,
+        "request_id": "chatcmpl-7218526d-31ca-4f0f-96f9-805279a71e78-b8a60b6b",
+        "schema_version": 1,
+        "wall_time_s": 1793792019.7632005
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576085) (Worker pid=3576085) INFO 11-04 03:33:38 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-7218526d-31ca-4f0f-96f9-805279a71e78-b8a60b6b batch_keys=101 memory_keys=101 disk_keys=0 unknown_keys=0 success_keys=101 failed_keys=0 bytes_by_tier={'memory': 5189402624, 'disk': 0, 'unknown': 0}",
+        "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3573614) (RayWorkerProc pid=3576085) (Worker pid=3576085) INFO 11-04 03:33:38 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-7218526d-31ca-4f0f-96f9-805279a71e78-b8a60b6b batch_keys=101 memory_keys=101 disk_keys=0 unknown_keys=0 success_keys=101 failed_keys=0 bytes_by_tier={'memory': 5189402624, 'disk': 0, 'unknown': 0} [repeated 6x across cluster]"
+      ],
+      "actual_prefill_before_first_token": 3468,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 70044,
+          "scheduled_tokens": 3136,
+          "computed_before": 153664,
+          "remaining_prefill_after": 332
+        },
+        {
+          "batch_index": 70045,
+          "scheduled_tokens": 332,
+          "computed_before": 156800,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "ca5367fc-8d5d-4ccd-9535-538f1bd9295b",
+      "previous_turn_index": 4,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575277",
+      "from_replica_id": "spra5fvr",
+      "to_engine": "k-c35e22130000_pid-3575309",
+      "to_replica_id": "dvg1kg4z",
+      "producer_stopped_at_utc": "2026-11-04T11:33:25.143000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "ef87998f-8f44-4e0c-8d53-939ed949e2f9",
+      "trace_id": "7fd4ad",
+      "source_trace_id": "0dedb07b5e4362b028db9d8ab90fff7fd4ad",
+      "conversation_id": "0dedb07b5e4362b028db9d8ab90fff7fd4ad",
+      "root_correlation_id": "b53fbb12-ef56-4738-92c1-3015c923fa69",
+      "agent_depth": 0,
+      "turn_index": 5,
+      "start_ns": 1793792057988049312,
+      "end_ns": 1793792209203692483,
+      "engine": "k-c35e22130000_pid-3575309",
+      "replica_id": "dvg1kg4z",
+      "replica_ordinal": 2,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575309"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 109803,
+      "client_ttft_ms": 12661.177042,
+      "cache_read_tokens": 0,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575309",
+          "replica_id": "dvg1kg4z",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+          "batch_index": 66074,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 0,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-ef87998f-8f44-4e0c-8d53-939ed949e2f9-9f965160",
+          "monotonic_s": 1233818.206246083,
+          "prompt_tokens": 109803,
+          "queue_wait_ms": 3.2406358513981104,
+          "request_id": "chatcmpl-ef87998f-8f44-4e0c-8d53-939ed949e2f9-9f965160",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793792058.4709556
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575309",
+        "replica_id": "dvg1kg4z",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+        "batch_index": 66081,
+        "batches_waited": 0,
+        "engine_ttft_ms": 12144.491810817271,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-ef87998f-8f44-4e0c-8d53-939ed949e2f9-9f965160",
+        "monotonic_s": 1233830.347726307,
+        "prefill_span_ms": 12141.251174965873,
+        "queue_wait_ms": 3.2406358513981104,
+        "request_id": "chatcmpl-ef87998f-8f44-4e0c-8d53-939ed949e2f9-9f965160",
+        "schema_version": 1,
+        "wall_time_s": 1793792070.612436
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 109803,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 66074,
+          "scheduled_tokens": 15680,
+          "computed_before": 0,
+          "remaining_prefill_after": 94123
+        },
+        {
+          "batch_index": 66075,
+          "scheduled_tokens": 15680,
+          "computed_before": 15680,
+          "remaining_prefill_after": 78443
+        },
+        {
+          "batch_index": 66076,
+          "scheduled_tokens": 15680,
+          "computed_before": 31360,
+          "remaining_prefill_after": 62763
+        },
+        {
+          "batch_index": 66077,
+          "scheduled_tokens": 15680,
+          "computed_before": 47040,
+          "remaining_prefill_after": 47083
+        },
+        {
+          "batch_index": 66078,
+          "scheduled_tokens": 15680,
+          "computed_before": 62720,
+          "remaining_prefill_after": 31403
+        },
+        {
+          "batch_index": 66079,
+          "scheduled_tokens": 15680,
+          "computed_before": 78400,
+          "remaining_prefill_after": 15723
+        },
+        {
+          "batch_index": 66080,
+          "scheduled_tokens": 15680,
+          "computed_before": 94080,
+          "remaining_prefill_after": 43
+        },
+        {
+          "batch_index": 66081,
+          "scheduled_tokens": 43,
+          "computed_before": 109760,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "288b3367-05a1-48df-88c6-2153286f52bf",
+      "previous_turn_index": 9,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3640765",
+      "from_replica_id": "ca5alsll",
+      "to_engine": "k-c35e22130000_pid-3575309",
+      "to_replica_id": "dvg1kg4z",
+      "producer_stopped_at_utc": "2026-11-04T11:41:36.325000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "8def35c7-ee0b-4933-89d2-fd476f27934c",
+      "trace_id": "af78a5",
+      "source_trace_id": "069d7bf5f1efb4e76e3c84510367e6af78a5",
+      "conversation_id": "069d7bf5f1efb4e76e3c84510367e6af78a5::sa:subagent_006_f3c26377",
+      "root_correlation_id": "6efc3f2a-1117-4c26-abcc-4071c9719a71",
+      "agent_depth": 1,
+      "turn_index": 10,
+      "start_ns": 1793792473190722038,
+      "end_ns": 1793792555642982231,
+      "engine": "k-c35e22130000_pid-3575309",
+      "replica_id": "dvg1kg4z",
+      "replica_ordinal": 2,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575309"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 84040,
+      "client_ttft_ms": 5619.785379999999,
+      "cache_read_tokens": 78400,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575309",
+          "replica_id": "dvg1kg4z",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+          "batch_index": 83895,
+          "batches_waited": 161,
+          "cached_prefix_tokens": 78400,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-8def35c7-ee0b-4933-89d2-fd476f27934c-875413ad",
+          "monotonic_s": 1234237.16405039,
+          "prompt_tokens": 84040,
+          "queue_wait_ms": 4038.5228348895907,
+          "request_id": "chatcmpl-8def35c7-ee0b-4933-89d2-fd476f27934c-875413ad",
+          "scheduled_tokens": 4704,
+          "schema_version": 1,
+          "wall_time_s": 1793792477.4287598
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575309",
+        "replica_id": "dvg1kg4z",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+        "batch_index": 83896,
+        "batches_waited": 161,
+        "engine_ttft_ms": 5390.792361926287,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-8def35c7-ee0b-4933-89d2-fd476f27934c-875413ad",
+        "monotonic_s": 1234238.516508775,
+        "prefill_span_ms": 1352.2695270366967,
+        "queue_wait_ms": 4038.5228348895907,
+        "request_id": "chatcmpl-8def35c7-ee0b-4933-89d2-fd476f27934c-875413ad",
+        "schema_version": 1,
+        "wall_time_s": 1793792478.7812183
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576216) (Worker pid=3576216) INFO 11-04 03:41:17 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-8def35c7-ee0b-4933-89d2-fd476f27934c-875413ad batch_keys=53 memory_keys=53 disk_keys=0 unknown_keys=0 success_keys=53 failed_keys=0 bytes_by_tier={'memory': 2723151872, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 5640,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 83895,
+          "scheduled_tokens": 4704,
+          "computed_before": 78400,
+          "remaining_prefill_after": 936
+        },
+        {
+          "batch_index": 83896,
+          "scheduled_tokens": 936,
+          "computed_before": 83104,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "4979900e-5f06-4cc5-b250-a61f00177927",
+      "previous_turn_index": 15,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3640765",
+      "from_replica_id": "ca5alsll",
+      "to_engine": "k-c35e22130000_pid-3575309",
+      "to_replica_id": "dvg1kg4z",
+      "producer_stopped_at_utc": "2026-11-04T11:41:36.325000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "5aa40661-a229-42f8-b111-14ec5648f4ac",
+      "trace_id": "af78a5",
+      "source_trace_id": "069d7bf5f1efb4e76e3c84510367e6af78a5",
+      "conversation_id": "069d7bf5f1efb4e76e3c84510367e6af78a5::sa:subagent_005_f197f2bb",
+      "root_correlation_id": "6efc3f2a-1117-4c26-abcc-4071c9719a71",
+      "agent_depth": 1,
+      "turn_index": 16,
+      "start_ns": 1793792513207659640,
+      "end_ns": 1793792546158266912,
+      "engine": "k-c35e22130000_pid-3575309",
+      "replica_id": "dvg1kg4z",
+      "replica_ordinal": 2,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3575309"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 114097,
+      "client_ttft_ms": 8360.247252,
+      "cache_read_tokens": 112896,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3575309",
+          "replica_id": "dvg1kg4z",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+          "batch_index": 85777,
+          "batches_waited": 305,
+          "cached_prefix_tokens": 112896,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-5aa40661-a229-42f8-b111-14ec5648f4ac-afca1c49",
+          "monotonic_s": 1234281.00025799,
+          "prompt_tokens": 114097,
+          "queue_wait_ms": 7806.1391790397465,
+          "request_id": "chatcmpl-5aa40661-a229-42f8-b111-14ec5648f4ac-afca1c49",
+          "scheduled_tokens": 1201,
+          "schema_version": 1,
+          "wall_time_s": 1793792521.2649674
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3575309",
+        "replica_id": "dvg1kg4z",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3575309.0000.jsonl",
+        "batch_index": 85777,
+        "batches_waited": 305,
+        "engine_ttft_ms": 8071.089923148975,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-5aa40661-a229-42f8-b111-14ec5648f4ac-afca1c49",
+        "monotonic_s": 1234281.265318309,
+        "prefill_span_ms": 264.95074410922825,
+        "queue_wait_ms": 7806.1391790397465,
+        "request_id": "chatcmpl-5aa40661-a229-42f8-b111-14ec5648f4ac-afca1c49",
+        "schema_version": 1,
+        "wall_time_s": 1793792521.5300279
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3576216) (Worker pid=3576216) INFO 11-04 03:42:01 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-5aa40661-a229-42f8-b111-14ec5648f4ac-afca1c49 batch_keys=75 memory_keys=75 disk_keys=0 unknown_keys=0 success_keys=75 failed_keys=0 bytes_by_tier={'memory': 3853516800, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1201,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 85777,
+          "scheduled_tokens": 1201,
+          "computed_before": 112896,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "8c28e75a-ebec-4d45-b8a6-b6fa00d51ee3",
+      "previous_turn_index": 5,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575309",
+      "from_replica_id": "dvg1kg4z",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:07.328000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "a42f981b-3b5b-4526-be20-0e546d534fde",
+      "trace_id": "cd4a2f",
+      "source_trace_id": "13e0b7038bafff59abfdc31aad12dbcd4a2f",
+      "conversation_id": "13e0b7038bafff59abfdc31aad12dbcd4a2f",
+      "root_correlation_id": "dea00a1d-690d-4e00-8859-8d10a7191920",
+      "agent_depth": 0,
+      "turn_index": 6,
+      "start_ns": 1793792743569750353,
+      "end_ns": 1793792782771301736,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 66400,
+      "client_ttft_ms": 5424.609858,
+      "cache_read_tokens": 65856,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 68228,
+          "batches_waited": 198,
+          "cached_prefix_tokens": 65856,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-a42f981b-3b5b-4526-be20-0e546d534fde-b0c7bfc1",
+          "monotonic_s": 1234508.431370816,
+          "prompt_tokens": 66400,
+          "queue_wait_ms": 4996.169334976003,
+          "request_id": "chatcmpl-a42f981b-3b5b-4526-be20-0e546d534fde-b0c7bfc1",
+          "scheduled_tokens": 544,
+          "schema_version": 1,
+          "wall_time_s": 1793792748.6960804
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 68228,
+        "batches_waited": 198,
+        "engine_ttft_ms": 5268.305751029402,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-a42f981b-3b5b-4526-be20-0e546d534fde-b0c7bfc1",
+        "monotonic_s": 1234508.70369316,
+        "prefill_span_ms": 272.13641605339944,
+        "queue_wait_ms": 4996.169334976003,
+        "request_id": "chatcmpl-a42f981b-3b5b-4526-be20-0e546d534fde-b0c7bfc1",
+        "schema_version": 1,
+        "wall_time_s": 1793792748.968403
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:45:48 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-a42f981b-3b5b-4526-be20-0e546d534fde-b0c7bfc1 batch_keys=45 memory_keys=45 disk_keys=0 unknown_keys=0 success_keys=45 failed_keys=0 bytes_by_tier={'memory': 2312110080, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 544,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 68228,
+          "scheduled_tokens": 544,
+          "computed_before": 65856,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "7a216828-ed4d-46f8-b04b-db72edbb4e76",
+      "previous_turn_index": 33,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "c986a8f4-0564-4a0f-baf9-d0dff2372bbd",
+      "trace_id": "ab62b4",
+      "source_trace_id": "13b532ee3aaa0a52b05c3bcc472355ab62b4",
+      "conversation_id": "13b532ee3aaa0a52b05c3bcc472355ab62b4",
+      "root_correlation_id": "0f6c2537-36ee-45ad-86d4-dbde1eb2f446",
+      "agent_depth": 0,
+      "turn_index": 34,
+      "start_ns": 1793792747163347027,
+      "end_ns": 1793792776004991351,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 193002,
+      "client_ttft_ms": 14368.38444,
+      "cache_read_tokens": 191296,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 68634,
+          "batches_waited": 452,
+          "cached_prefix_tokens": 191296,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-c986a8f4-0564-4a0f-baf9-d0dff2372bbd-bd05d155",
+          "monotonic_s": 1234520.083775859,
+          "prompt_tokens": 193002,
+          "queue_wait_ms": 12822.607669979334,
+          "request_id": "chatcmpl-c986a8f4-0564-4a0f-baf9-d0dff2372bbd-bd05d155",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793792760.3484855
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 68635,
+        "batches_waited": 452,
+        "engine_ttft_ms": 13941.548468079418,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-c986a8f4-0564-4a0f-baf9-d0dff2372bbd-bd05d155",
+        "monotonic_s": 1234521.202874994,
+        "prefill_span_ms": 1118.940798100084,
+        "queue_wait_ms": 12822.607669979334,
+        "request_id": "chatcmpl-c986a8f4-0564-4a0f-baf9-d0dff2372bbd-bd05d155",
+        "schema_version": 1,
+        "wall_time_s": 1793792761.4675846
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:45:59 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-c986a8f4-0564-4a0f-baf9-d0dff2372bbd-bd05d155 batch_keys=125 memory_keys=125 disk_keys=0 unknown_keys=0 success_keys=125 failed_keys=0 bytes_by_tier={'memory': 6422528000, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1706,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 68634,
+          "scheduled_tokens": 1568,
+          "computed_before": 191296,
+          "remaining_prefill_after": 138
+        },
+        {
+          "batch_index": 68635,
+          "scheduled_tokens": 138,
+          "computed_before": 192864,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "63b61fea-db62-49e8-8676-2ac803b23235",
+      "previous_turn_index": 18,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "475d8da0-1e1f-49f3-8a7d-20df24a55bf6",
+      "trace_id": "d1ce7f",
+      "source_trace_id": "11310dce936f02050cadaeae295bcdd1ce7f",
+      "conversation_id": "11310dce936f02050cadaeae295bcdd1ce7f",
+      "root_correlation_id": "6982cb8a-0848-4436-8fd1-fbb61ffba3a0",
+      "agent_depth": 0,
+      "turn_index": 19,
+      "start_ns": 1793792749591743829,
+      "end_ns": 1793792774557117320,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 169815,
+      "client_ttft_ms": 22324.383643999998,
+      "cache_read_tokens": 166208,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 68928,
+          "batches_waited": 664,
+          "cached_prefix_tokens": 166208,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-475d8da0-1e1f-49f3-8a7d-20df24a55bf6-83cd18df",
+          "monotonic_s": 1234530.48210688,
+          "prompt_tokens": 169815,
+          "queue_wait_ms": 20849.26648507826,
+          "request_id": "chatcmpl-475d8da0-1e1f-49f3-8a7d-20df24a55bf6-83cd18df",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793792770.7468162
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 68929,
+        "batches_waited": 664,
+        "engine_ttft_ms": 21961.507441010326,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-475d8da0-1e1f-49f3-8a7d-20df24a55bf6-83cd18df",
+        "monotonic_s": 1234531.594508252,
+        "prefill_span_ms": 1112.2409559320658,
+        "queue_wait_ms": 20849.26648507826,
+        "request_id": "chatcmpl-475d8da0-1e1f-49f3-8a7d-20df24a55bf6-83cd18df",
+        "schema_version": 1,
+        "wall_time_s": 1793792771.859218
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 3607,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 68928,
+          "scheduled_tokens": 3136,
+          "computed_before": 166208,
+          "remaining_prefill_after": 471
+        },
+        {
+          "batch_index": 68929,
+          "scheduled_tokens": 471,
+          "computed_before": 169344,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "4f8809f3-e1f9-4cc1-a6f7-32e9229adf94",
+      "previous_turn_index": 14,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "650cda2e-f6a4-4072-8155-fcacfc53af6b",
+      "trace_id": "fc0ab7",
+      "source_trace_id": "0ede42538334da8586bc60008762abfc0ab7",
+      "conversation_id": "0ede42538334da8586bc60008762abfc0ab7",
+      "root_correlation_id": "ba448f7a-3839-46ce-9f49-575668b0f55d",
+      "agent_depth": 0,
+      "turn_index": 15,
+      "start_ns": 1793792756574795313,
+      "end_ns": 1793792849362228201,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 127441,
+      "client_ttft_ms": 21448.245053,
+      "cache_read_tokens": 125440,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 69102,
+          "batches_waited": 587,
+          "cached_prefix_tokens": 125440,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-650cda2e-f6a4-4072-8155-fcacfc53af6b-84abfbb8",
+          "monotonic_s": 1234536.996839824,
+          "prompt_tokens": 127441,
+          "queue_wait_ms": 20447.88712100126,
+          "request_id": "chatcmpl-650cda2e-f6a4-4072-8155-fcacfc53af6b-84abfbb8",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793792777.2615492
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 69103,
+        "batches_waited": 587,
+        "engine_ttft_ms": 21166.388534009457,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-650cda2e-f6a4-4072-8155-fcacfc53af6b-84abfbb8",
+        "monotonic_s": 1234537.715462832,
+        "prefill_span_ms": 718.5014130081981,
+        "queue_wait_ms": 20447.88712100126,
+        "request_id": "chatcmpl-650cda2e-f6a4-4072-8155-fcacfc53af6b-84abfbb8",
+        "schema_version": 1,
+        "wall_time_s": 1793792777.9801724
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:46:17 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-650cda2e-f6a4-4072-8155-fcacfc53af6b-84abfbb8 batch_keys=83 memory_keys=83 disk_keys=0 unknown_keys=0 success_keys=83 failed_keys=0 bytes_by_tier={'memory': 4264558592, 'disk': 0, 'unknown': 0} [repeated 2x across cluster]"
+      ],
+      "actual_prefill_before_first_token": 2001,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 69102,
+          "scheduled_tokens": 1568,
+          "computed_before": 125440,
+          "remaining_prefill_after": 433
+        },
+        {
+          "batch_index": 69103,
+          "scheduled_tokens": 433,
+          "computed_before": 127008,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "d9e37388-022f-49c5-a102-25aa967311e3",
+      "previous_turn_index": 29,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "77ef97fa-080a-4b8c-9ea8-02053600b63f",
+      "trace_id": "4da5e4",
+      "source_trace_id": "0db32e2f852a2ea24ed616b31975a84da5e4",
+      "conversation_id": "0db32e2f852a2ea24ed616b31975a84da5e4",
+      "root_correlation_id": "a7e13e26-3cb9-4746-8a13-bd4199c0622d",
+      "agent_depth": 0,
+      "turn_index": 30,
+      "start_ns": 1793792766840844218,
+      "end_ns": 1793792814666408767,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 215567,
+      "client_ttft_ms": 23560.094375,
+      "cache_read_tokens": 213248,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 69515,
+          "batches_waited": 694,
+          "cached_prefix_tokens": 213248,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-77ef97fa-080a-4b8c-9ea8-02053600b63f-9a434e21",
+          "monotonic_s": 1234548.868536833,
+          "prompt_tokens": 215567,
+          "queue_wait_ms": 21873.20664199069,
+          "request_id": "chatcmpl-77ef97fa-080a-4b8c-9ea8-02053600b63f-9a434e21",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793792789.1332462
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 69516,
+        "batches_waited": 694,
+        "engine_ttft_ms": 23071.106117917225,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-77ef97fa-080a-4b8c-9ea8-02053600b63f-9a434e21",
+        "monotonic_s": 1234550.067050175,
+        "prefill_span_ms": 1197.8994759265333,
+        "queue_wait_ms": 21873.20664199069,
+        "request_id": "chatcmpl-77ef97fa-080a-4b8c-9ea8-02053600b63f-9a434e21",
+        "schema_version": 1,
+        "wall_time_s": 1793792790.3317597
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:46:29 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-77ef97fa-080a-4b8c-9ea8-02053600b63f-9a434e21 batch_keys=139 memory_keys=139 disk_keys=0 unknown_keys=0 success_keys=139 failed_keys=0 bytes_by_tier={'memory': 7141851136, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 2319,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 69515,
+          "scheduled_tokens": 1568,
+          "computed_before": 213248,
+          "remaining_prefill_after": 751
+        },
+        {
+          "batch_index": 69516,
+          "scheduled_tokens": 751,
+          "computed_before": 214816,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "6e069f1d-c8d2-4194-adfc-7da9f08df0ff",
+      "previous_turn_index": 15,
+      "previous_profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "from_engine": "k-c35e22130000_pid-3575309",
+      "from_replica_id": "dvg1kg4z",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:07.328000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "e56fe701-30d0-40af-b984-07e8c1b2b3ec",
+      "trace_id": "7fd4ad",
+      "source_trace_id": "0dedb07b5e4362b028db9d8ab90fff7fd4ad",
+      "conversation_id": "0dedb07b5e4362b028db9d8ab90fff7fd4ad",
+      "root_correlation_id": "b53fbb12-ef56-4738-92c1-3015c923fa69",
+      "agent_depth": 0,
+      "turn_index": 16,
+      "start_ns": 1793792769309596437,
+      "end_ns": 1793792845669363562,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 143865,
+      "client_ttft_ms": 44474.462901,
+      "cache_read_tokens": 139552,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 70001,
+          "batches_waited": 1109,
+          "cached_prefix_tokens": 139552,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-e56fe701-30d0-40af-b984-07e8c1b2b3ec-a5c1f999",
+          "monotonic_s": 1234572.269229974,
+          "prompt_tokens": 143865,
+          "queue_wait_ms": 42952.22177891992,
+          "request_id": "chatcmpl-e56fe701-30d0-40af-b984-07e8c1b2b3ec-a5c1f999",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793792812.5339394
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 70002,
+        "batches_waited": 1109,
+        "engine_ttft_ms": 44149.47598497383,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-e56fe701-30d0-40af-b984-07e8c1b2b3ec-a5c1f999",
+        "monotonic_s": 1234573.467156738,
+        "prefill_span_ms": 1197.2542060539126,
+        "queue_wait_ms": 42952.22177891992,
+        "request_id": "chatcmpl-e56fe701-30d0-40af-b984-07e8c1b2b3ec-a5c1f999",
+        "schema_version": 1,
+        "wall_time_s": 1793792813.7318664
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:46:52 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-e56fe701-30d0-40af-b984-07e8c1b2b3ec-a5c1f999 batch_keys=92 memory_keys=92 disk_keys=0 unknown_keys=0 success_keys=92 failed_keys=0 bytes_by_tier={'memory': 4726980608, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 4313,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 70001,
+          "scheduled_tokens": 3136,
+          "computed_before": 139552,
+          "remaining_prefill_after": 1177
+        },
+        {
+          "batch_index": 70002,
+          "scheduled_tokens": 1177,
+          "computed_before": 142688,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "785af3dc-edce-4b94-8ab8-920bd945be34",
+      "previous_turn_index": 13,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575309",
+      "from_replica_id": "dvg1kg4z",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:07.328000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "5b3a64ea-75b3-4ce3-aab4-070c4f773916",
+      "trace_id": "8ef805",
+      "source_trace_id": "14129d470e508b236be22188aa78548ef805",
+      "conversation_id": "14129d470e508b236be22188aa78548ef805",
+      "root_correlation_id": "51e26398-1e54-4cd6-9397-4ee5b44a88fa",
+      "agent_depth": 0,
+      "turn_index": 14,
+      "start_ns": 1793792828747932571,
+      "end_ns": 1793792900305331072,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 76644,
+      "client_ttft_ms": 49016.85913,
+      "cache_read_tokens": 73696,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 71635,
+          "batches_waited": 1267,
+          "cached_prefix_tokens": 73696,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-5b3a64ea-75b3-4ce3-aab4-070c4f773916-9e95a740",
+          "monotonic_s": 1234636.727316352,
+          "prompt_tokens": 76644,
+          "queue_wait_ms": 48070.78812783584,
+          "request_id": "chatcmpl-5b3a64ea-75b3-4ce3-aab4-070c4f773916-9e95a740",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793792876.9920259
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 71636,
+        "batches_waited": 1267,
+        "engine_ttft_ms": 48815.180335892364,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-5b3a64ea-75b3-4ce3-aab4-070c4f773916-9e95a740",
+        "monotonic_s": 1234637.471840366,
+        "prefill_span_ms": 744.3922080565244,
+        "queue_wait_ms": 48070.78812783584,
+        "request_id": "chatcmpl-5b3a64ea-75b3-4ce3-aab4-070c4f773916-9e95a740",
+        "schema_version": 1,
+        "wall_time_s": 1793792877.73655
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:47:56 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-5b3a64ea-75b3-4ce3-aab4-070c4f773916-9e95a740 batch_keys=50 memory_keys=50 disk_keys=0 unknown_keys=0 success_keys=50 failed_keys=0 bytes_by_tier={'memory': 2569011200, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 2948,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 71635,
+          "scheduled_tokens": 1568,
+          "computed_before": 73696,
+          "remaining_prefill_after": 1380
+        },
+        {
+          "batch_index": 71636,
+          "scheduled_tokens": 1380,
+          "computed_before": 75264,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "87c6474f-3b13-4906-8b22-1a19dd37ad2d",
+      "previous_turn_index": 24,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575309",
+      "from_replica_id": "dvg1kg4z",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T11:46:07.328000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "b715e15b-7737-4ec9-939f-6e26a0fe3960",
+      "trace_id": "96d49d",
+      "source_trace_id": "0bed163ac9566086e14ffd85c7481096d49d",
+      "conversation_id": "0bed163ac9566086e14ffd85c7481096d49d",
+      "root_correlation_id": "7e60abe5-3136-457d-81e0-a5b6b081e8ec",
+      "agent_depth": 0,
+      "turn_index": 25,
+      "start_ns": 1793792876404587271,
+      "end_ns": 1793793062617244131,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 96827,
+      "client_ttft_ms": null,
+      "cache_read_tokens": null,
+      "profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 74639,
+          "batches_waited": 3018,
+          "cached_prefix_tokens": 95648,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-b715e15b-7737-4ec9-939f-6e26a0fe3960-a3312c0f",
+          "monotonic_s": 1234761.576665621,
+          "prompt_tokens": 96827,
+          "queue_wait_ms": 125247.52272386104,
+          "request_id": "chatcmpl-b715e15b-7737-4ec9-939f-6e26a0fe3960-a3312c0f",
+          "scheduled_tokens": 1179,
+          "schema_version": 1,
+          "wall_time_s": 1793793001.8413754
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 74639,
+        "batches_waited": 3018,
+        "engine_ttft_ms": 125668.07072493248,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-b715e15b-7737-4ec9-939f-6e26a0fe3960-a3312c0f",
+        "monotonic_s": 1234761.997509834,
+        "prefill_span_ms": 420.5480010714382,
+        "queue_wait_ms": 125247.52272386104,
+        "request_id": "chatcmpl-b715e15b-7737-4ec9-939f-6e26a0fe3960-a3312c0f",
+        "schema_version": 1,
+        "wall_time_s": 1793793002.2622192
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 03:50:01 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-b715e15b-7737-4ec9-939f-6e26a0fe3960-a3312c0f batch_keys=64 memory_keys=64 disk_keys=0 unknown_keys=0 success_keys=64 failed_keys=0 bytes_by_tier={'memory': 3288334336, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1179,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 74639,
+          "scheduled_tokens": 1179,
+          "computed_before": 95648,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "05f33593-a362-4358-a008-d3913e1212a0",
+      "previous_turn_index": 2,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3554967",
+      "from_replica_id": "h1nx2oex",
+      "to_engine": "k-c35e22130000_pid-3671672",
+      "to_replica_id": "cl50y9kz",
+      "producer_stopped_at_utc": null,
+      "started_after_producer_stopped": false,
+      "request_id": "10949576-51ad-40a4-8298-fbce6ae4362b",
+      "trace_id": "9a8512",
+      "source_trace_id": "077ea9e6554f45bbad9c24a8462bae9a8512",
+      "conversation_id": "077ea9e6554f45bbad9c24a8462bae9a8512",
+      "root_correlation_id": "4470597f-daac-4126-baa9-b929835306a8",
+      "agent_depth": 0,
+      "turn_index": 3,
+      "start_ns": 1793793051572982425,
+      "end_ns": 1793793107052393118,
+      "engine": "k-c35e22130000_pid-3671672",
+      "replica_id": "cl50y9kz",
+      "replica_ordinal": 11,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671672"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 51991,
+      "client_ttft_ms": 4321.341804,
+      "cache_read_tokens": 0,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671672",
+          "replica_id": "cl50y9kz",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671672.0000.jsonl",
+          "batch_index": 1,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 0,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-10949576-51ad-40a4-8298-fbce6ae4362b-942e2778",
+          "monotonic_s": 1234811.424076402,
+          "prompt_tokens": 51991,
+          "queue_wait_ms": 4.407653817906976,
+          "request_id": "chatcmpl-10949576-51ad-40a4-8298-fbce6ae4362b-942e2778",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793793051.688786
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671672",
+        "replica_id": "cl50y9kz",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671672.0000.jsonl",
+        "batch_index": 5,
+        "batches_waited": 0,
+        "engine_ttft_ms": 4186.037726933137,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-10949576-51ad-40a4-8298-fbce6ae4362b-942e2778",
+        "monotonic_s": 1234815.606099082,
+        "prefill_span_ms": 4181.63007311523,
+        "queue_wait_ms": 4.407653817906976,
+        "request_id": "chatcmpl-10949576-51ad-40a4-8298-fbce6ae4362b-942e2778",
+        "schema_version": 1,
+        "wall_time_s": 1793793055.8708093
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 51991,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 1,
+          "scheduled_tokens": 15680,
+          "computed_before": 0,
+          "remaining_prefill_after": 36311
+        },
+        {
+          "batch_index": 2,
+          "scheduled_tokens": 15680,
+          "computed_before": 15680,
+          "remaining_prefill_after": 20631
+        },
+        {
+          "batch_index": 3,
+          "scheduled_tokens": 15680,
+          "computed_before": 31360,
+          "remaining_prefill_after": 4951
+        },
+        {
+          "batch_index": 4,
+          "scheduled_tokens": 4704,
+          "computed_before": 47040,
+          "remaining_prefill_after": 247
+        },
+        {
+          "batch_index": 5,
+          "scheduled_tokens": 247,
+          "computed_before": 51744,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "bc1f1f7c-39d1-449a-951f-4d2f071bf675",
+      "previous_turn_index": 74,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3575300",
+      "from_replica_id": "6coyinpa",
+      "to_engine": "k-c35e22130000_pid-3671638",
+      "to_replica_id": "zad5jafi",
+      "producer_stopped_at_utc": "2026-11-04T11:46:02.331000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "629ea1ad-2073-46a8-9712-1178c5def638",
+      "trace_id": "92929d",
+      "source_trace_id": "1007f04d2c64580308858bb42f292992929d",
+      "conversation_id": "1007f04d2c64580308858bb42f292992929d",
+      "root_correlation_id": "b04dfd09-a83b-4c55-97f6-5f6fd6489026",
+      "agent_depth": 0,
+      "turn_index": 75,
+      "start_ns": 1793793542473724042,
+      "end_ns": 1793793562242650360,
+      "engine": "k-c35e22130000_pid-3671638",
+      "replica_id": "zad5jafi",
+      "replica_ordinal": 14,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671638"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 133492,
+      "client_ttft_ms": 2114.744022,
+      "cache_read_tokens": 131712,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671638",
+          "replica_id": "zad5jafi",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671638.0000.jsonl",
+          "batch_index": 1,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 131712,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-629ea1ad-2073-46a8-9712-1178c5def638-8aa4f6ed",
+          "monotonic_s": 1235303.816391206,
+          "prompt_tokens": 133492,
+          "queue_wait_ms": 1322.9574679862708,
+          "request_id": "chatcmpl-629ea1ad-2073-46a8-9712-1178c5def638-8aa4f6ed",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793793544.0811007
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671638",
+        "replica_id": "zad5jafi",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671638.0000.jsonl",
+        "batch_index": 2,
+        "batches_waited": 0,
+        "engine_ttft_ms": 1782.0879858918488,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-629ea1ad-2073-46a8-9712-1178c5def638-8aa4f6ed",
+        "monotonic_s": 1235304.276229594,
+        "prefill_span_ms": 459.130517905578,
+        "queue_wait_ms": 1322.9574679862708,
+        "request_id": "chatcmpl-629ea1ad-2073-46a8-9712-1178c5def638-8aa4f6ed",
+        "schema_version": 1,
+        "wall_time_s": 1793793544.540939
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3672582) (Worker pid=3672582) INFO 11-04 03:59:04 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-629ea1ad-2073-46a8-9712-1178c5def638-8aa4f6ed batch_keys=87 memory_keys=87 disk_keys=0 unknown_keys=0 success_keys=87 failed_keys=0 bytes_by_tier={'memory': 4470079488, 'disk': 0, 'unknown': 0}",
+        "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3669299) (RayWorkerProc pid=3672582) (Worker pid=3672582) INFO 11-04 03:59:04 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-629ea1ad-2073-46a8-9712-1178c5def638-8aa4f6ed batch_keys=87 memory_keys=87 disk_keys=0 unknown_keys=0 success_keys=87 failed_keys=0 bytes_by_tier={'memory': 4470079488, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1780,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 1,
+          "scheduled_tokens": 1568,
+          "computed_before": 131712,
+          "remaining_prefill_after": 212
+        },
+        {
+          "batch_index": 2,
+          "scheduled_tokens": 212,
+          "computed_before": 133280,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "25ea10a9-daf7-4966-ad30-cb5d0146c12b",
+      "previous_turn_index": 4,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3671647",
+      "from_replica_id": "rn3eyxbd",
+      "to_engine": "k-c35e22130000_pid-3671627",
+      "to_replica_id": "z1hu8e3c",
+      "producer_stopped_at_utc": "2026-11-04T12:00:34.689000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "246b0c07-a193-4e6b-8ad7-80fcd2e5f79a",
+      "trace_id": "4a2beb",
+      "source_trace_id": "03e110ac6921c2fe9ac7772a9654314a2beb",
+      "conversation_id": "03e110ac6921c2fe9ac7772a9654314a2beb::sa:subagent_005_c0c87fc2",
+      "root_correlation_id": "8884c88e-fbe4-430e-bfe4-64ef260a5871",
+      "agent_depth": 1,
+      "turn_index": 5,
+      "start_ns": 1793793608610238077,
+      "end_ns": 1793793626302718046,
+      "engine": "k-c35e22130000_pid-3671627",
+      "replica_id": "z1hu8e3c",
+      "replica_ordinal": 12,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671627"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 33283,
+      "client_ttft_ms": 735.751716,
+      "cache_read_tokens": 31360,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671627",
+          "replica_id": "z1hu8e3c",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+          "batch_index": 10798,
+          "batches_waited": 24,
+          "cached_prefix_tokens": 31360,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-246b0c07-a193-4e6b-8ad7-80fcd2e5f79a-89cc6573",
+          "monotonic_s": 1235368.824320904,
+          "prompt_tokens": 33283,
+          "queue_wait_ms": 411.42575815320015,
+          "request_id": "chatcmpl-246b0c07-a193-4e6b-8ad7-80fcd2e5f79a-89cc6573",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793793609.0890305
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671627",
+        "replica_id": "z1hu8e3c",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+        "batch_index": 10799,
+        "batches_waited": 24,
+        "engine_ttft_ms": 651.4019020833075,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-246b0c07-a193-4e6b-8ad7-80fcd2e5f79a-89cc6573",
+        "monotonic_s": 1235369.064469396,
+        "prefill_span_ms": 239.97614393010736,
+        "queue_wait_ms": 411.42575815320015,
+        "request_id": "chatcmpl-246b0c07-a193-4e6b-8ad7-80fcd2e5f79a-89cc6573",
+        "schema_version": 1,
+        "wall_time_s": 1793793609.3291793
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3672272) (Worker pid=3672272) INFO 11-04 04:00:09 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-246b0c07-a193-4e6b-8ad7-80fcd2e5f79a-89cc6573 batch_keys=4 memory_keys=4 disk_keys=0 unknown_keys=0 success_keys=4 failed_keys=0 bytes_by_tier={'memory': 205520896, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 1923,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 10798,
+          "scheduled_tokens": 1568,
+          "computed_before": 31360,
+          "remaining_prefill_after": 355
+        },
+        {
+          "batch_index": 10799,
+          "scheduled_tokens": 355,
+          "computed_before": 32928,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "05ccea64-8d52-4aad-9f01-d20489b477b3",
+      "previous_turn_index": 17,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3671672",
+      "from_replica_id": "cl50y9kz",
+      "to_engine": "k-c35e22130000_pid-3671627",
+      "to_replica_id": "z1hu8e3c",
+      "producer_stopped_at_utc": "2026-11-04T12:00:34.582000+00:00",
+      "started_after_producer_stopped": false,
+      "request_id": "cdee6fa8-b7fa-452d-9721-aa25c53394b0",
+      "trace_id": "9a8512",
+      "source_trace_id": "077ea9e6554f45bbad9c24a8462bae9a8512",
+      "conversation_id": "077ea9e6554f45bbad9c24a8462bae9a8512",
+      "root_correlation_id": "4470597f-daac-4126-baa9-b929835306a8",
+      "agent_depth": 0,
+      "turn_index": 18,
+      "start_ns": 1793793609232240547,
+      "end_ns": 1793793639692794938,
+      "engine": "k-c35e22130000_pid-3671627",
+      "replica_id": "z1hu8e3c",
+      "replica_ordinal": 12,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671627"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 90102,
+      "client_ttft_ms": null,
+      "cache_read_tokens": null,
+      "profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671627",
+          "replica_id": "z1hu8e3c",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+          "batch_index": 11015,
+          "batches_waited": 210,
+          "cached_prefix_tokens": 86240,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-cdee6fa8-b7fa-452d-9721-aa25c53394b0-99e93467",
+          "monotonic_s": 1235373.77796717,
+          "prompt_tokens": 90102,
+          "queue_wait_ms": 4635.633722878993,
+          "request_id": "chatcmpl-cdee6fa8-b7fa-452d-9721-aa25c53394b0-99e93467",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793793614.0426767
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671627",
+        "replica_id": "z1hu8e3c",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+        "batch_index": 11016,
+        "batches_waited": 210,
+        "engine_ttft_ms": 5572.00769498013,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-cdee6fa8-b7fa-452d-9721-aa25c53394b0-99e93467",
+        "monotonic_s": 1235374.714982119,
+        "prefill_span_ms": 936.373972101137,
+        "queue_wait_ms": 4635.633722878993,
+        "request_id": "chatcmpl-cdee6fa8-b7fa-452d-9721-aa25c53394b0-99e93467",
+        "schema_version": 1,
+        "wall_time_s": 1793793614.9796915
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3672272) (Worker pid=3672272) INFO 11-04 04:00:14 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-cdee6fa8-b7fa-452d-9721-aa25c53394b0-99e93467 batch_keys=58 memory_keys=58 disk_keys=0 unknown_keys=0 success_keys=58 failed_keys=0 bytes_by_tier={'memory': 2980052992, 'disk': 0, 'unknown': 0} [repeated 2x across cluster]"
+      ],
+      "actual_prefill_before_first_token": 3862,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 11015,
+          "scheduled_tokens": 3136,
+          "computed_before": 86240,
+          "remaining_prefill_after": 726
+        },
+        {
+          "batch_index": 11016,
+          "scheduled_tokens": 726,
+          "computed_before": 89376,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "b981f063-32db-4ee2-b383-3886c3750a27",
+      "previous_turn_index": 1,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3671682",
+      "from_replica_id": null,
+      "to_engine": "k-c35e22130000_pid-3671627",
+      "to_replica_id": "z1hu8e3c",
+      "producer_stopped_at_utc": null,
+      "started_after_producer_stopped": false,
+      "request_id": "96f40278-8e5d-48b9-ab47-da15bc3e8ef3",
+      "trace_id": "4a2beb",
+      "source_trace_id": "03e110ac6921c2fe9ac7772a9654314a2beb",
+      "conversation_id": "03e110ac6921c2fe9ac7772a9654314a2beb::sa:subagent_006_ddf1bcea",
+      "root_correlation_id": "8884c88e-fbe4-430e-bfe4-64ef260a5871",
+      "agent_depth": 1,
+      "turn_index": 2,
+      "start_ns": 1793793612964425726,
+      "end_ns": 1793793619869357890,
+      "engine": "k-c35e22130000_pid-3671627",
+      "replica_id": "z1hu8e3c",
+      "replica_ordinal": 12,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671627"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 34083,
+      "client_ttft_ms": 755.447242,
+      "cache_read_tokens": 29792,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671627",
+          "replica_id": "z1hu8e3c",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+          "batch_index": 10995,
+          "batches_waited": 0,
+          "cached_prefix_tokens": 29792,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-96f40278-8e5d-48b9-ab47-da15bc3e8ef3-87032b29",
+          "monotonic_s": 1235372.784025107,
+          "prompt_tokens": 34083,
+          "queue_wait_ms": 2.522845985367894,
+          "request_id": "chatcmpl-96f40278-8e5d-48b9-ab47-da15bc3e8ef3-87032b29",
+          "scheduled_tokens": 3136,
+          "schema_version": 1,
+          "wall_time_s": 1793793613.0487344
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671627",
+        "replica_id": "z1hu8e3c",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+        "batch_index": 10996,
+        "batches_waited": 0,
+        "engine_ttft_ms": 657.7873190399259,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-96f40278-8e5d-48b9-ab47-da15bc3e8ef3-87032b29",
+        "monotonic_s": 1235373.439408875,
+        "prefill_span_ms": 655.264473054558,
+        "queue_wait_ms": 2.522845985367894,
+        "request_id": "chatcmpl-96f40278-8e5d-48b9-ab47-da15bc3e8ef3-87032b29",
+        "schema_version": 1,
+        "wall_time_s": 1793793613.7041183
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 4291,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 10995,
+          "scheduled_tokens": 3136,
+          "computed_before": 29792,
+          "remaining_prefill_after": 1155
+        },
+        {
+          "batch_index": 10996,
+          "scheduled_tokens": 1155,
+          "computed_before": 32928,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "64818dae-e57a-4a03-98fa-f6d464a0cb99",
+      "previous_turn_index": 81,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3671638",
+      "from_replica_id": "zad5jafi",
+      "to_engine": "k-c35e22130000_pid-3671627",
+      "to_replica_id": "z1hu8e3c",
+      "producer_stopped_at_utc": "2026-11-04T12:00:34.690000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "2d568f99-68ae-45c8-bd82-c03306b8a879",
+      "trace_id": "92929d",
+      "source_trace_id": "1007f04d2c64580308858bb42f292992929d",
+      "conversation_id": "1007f04d2c64580308858bb42f292992929d",
+      "root_correlation_id": "b04dfd09-a83b-4c55-97f6-5f6fd6489026",
+      "agent_depth": 0,
+      "turn_index": 82,
+      "start_ns": 1793793665946572117,
+      "end_ns": 1793793724596846105,
+      "engine": "k-c35e22130000_pid-3671627",
+      "replica_id": "z1hu8e3c",
+      "replica_ordinal": 12,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671627"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 136433,
+      "client_ttft_ms": null,
+      "cache_read_tokens": null,
+      "profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [],
+      "first_token_event": null,
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 0,
+      "prefill_chunks_before_first_token": []
+    },
+    {
+      "previous_request_id": "bc822774-2e51-4c96-b0cd-d7dd3b26960d",
+      "previous_turn_index": 2,
+      "previous_profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "from_engine": "k-c35e22130000_pid-3671599",
+      "from_replica_id": "l0n3nmef",
+      "to_engine": "k-c35e22130000_pid-3671627",
+      "to_replica_id": "z1hu8e3c",
+      "producer_stopped_at_utc": "2026-11-04T12:00:39.619000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "27758da8-c9a1-41f3-a1ea-8000b52951e9",
+      "trace_id": "d85c0e",
+      "source_trace_id": "02bc0afb13f7a2d9efa86c28511261d85c0e",
+      "conversation_id": "02bc0afb13f7a2d9efa86c28511261d85c0e::fa:000",
+      "root_correlation_id": "308862e7-f4b3-4701-9265-718387e54781",
+      "agent_depth": 1,
+      "turn_index": 3,
+      "start_ns": 1793793714081714492,
+      "end_ns": 1793793864183255935,
+      "engine": "k-c35e22130000_pid-3671627",
+      "replica_id": "z1hu8e3c",
+      "replica_ordinal": 12,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671627"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 112761,
+      "client_ttft_ms": 144579.80547999998,
+      "cache_read_tokens": 109760,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671627",
+          "replica_id": "z1hu8e3c",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+          "batch_index": 12283,
+          "batches_waited": 76,
+          "cached_prefix_tokens": 109760,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-27758da8-c9a1-41f3-a1ea-8000b52951e9-936ace06",
+          "monotonic_s": 1235617.480147998,
+          "prompt_tokens": 112761,
+          "queue_wait_ms": 10550.261375959963,
+          "request_id": "chatcmpl-27758da8-c9a1-41f3-a1ea-8000b52951e9-936ace06",
+          "scheduled_tokens": 1568,
+          "schema_version": 1,
+          "wall_time_s": 1793793857.7448575
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671627",
+        "replica_id": "z1hu8e3c",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+        "batch_index": 12284,
+        "batches_waited": 76,
+        "engine_ttft_ms": 11426.914880052209,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-27758da8-c9a1-41f3-a1ea-8000b52951e9-936ace06",
+        "monotonic_s": 1235618.357165247,
+        "prefill_span_ms": 876.6535040922463,
+        "queue_wait_ms": 10550.261375959963,
+        "request_id": "chatcmpl-27758da8-c9a1-41f3-a1ea-8000b52951e9-936ace06",
+        "schema_version": 1,
+        "wall_time_s": 1793793858.621875
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3672272) (Worker pid=3672272) INFO 11-04 04:04:17 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-27758da8-c9a1-41f3-a1ea-8000b52951e9-936ace06 batch_keys=73 memory_keys=73 disk_keys=0 unknown_keys=0 success_keys=73 failed_keys=0 bytes_by_tier={'memory': 3750756352, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 3001,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 12283,
+          "scheduled_tokens": 1568,
+          "computed_before": 109760,
+          "remaining_prefill_after": 1433
+        },
+        {
+          "batch_index": 12284,
+          "scheduled_tokens": 1433,
+          "computed_before": 111328,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "cad65048-5620-452f-a322-3bd93430ca7d",
+      "previous_turn_index": 4,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3554967",
+      "from_replica_id": "h1nx2oex",
+      "to_engine": "k-c35e22130000_pid-3671627",
+      "to_replica_id": "z1hu8e3c",
+      "producer_stopped_at_utc": null,
+      "started_after_producer_stopped": false,
+      "request_id": "71f11aae-5575-4c17-bc52-575c95ffd676",
+      "trace_id": "7ca99d",
+      "source_trace_id": "006c98de37d819e95b0840e25426bb7ca99d",
+      "conversation_id": "006c98de37d819e95b0840e25426bb7ca99d",
+      "root_correlation_id": "5f633837-86c7-400b-a443-61782567037e",
+      "agent_depth": 0,
+      "turn_index": 5,
+      "start_ns": 1793793732826356711,
+      "end_ns": 1793793862211706724,
+      "engine": "k-c35e22130000_pid-3671627",
+      "replica_id": "z1hu8e3c",
+      "replica_ordinal": 12,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3671627"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 65675,
+      "client_ttft_ms": 123216.75273499999,
+      "cache_read_tokens": 0,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3671627",
+          "replica_id": "z1hu8e3c",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+          "batch_index": 12209,
+          "batches_waited": 2,
+          "cached_prefix_tokens": 0,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-71f11aae-5575-4c17-bc52-575c95ffd676-920db1dc",
+          "monotonic_s": 1235608.328439567,
+          "prompt_tokens": 65675,
+          "queue_wait_ms": 1396.5347500052303,
+          "request_id": "chatcmpl-71f11aae-5575-4c17-bc52-575c95ffd676-920db1dc",
+          "scheduled_tokens": 4704,
+          "schema_version": 1,
+          "wall_time_s": 1793793848.593149
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3671627",
+        "replica_id": "z1hu8e3c",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3671627.0000.jsonl",
+        "batch_index": 12214,
+        "batches_waited": 2,
+        "engine_ttft_ms": 8819.027977064252,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-71f11aae-5575-4c17-bc52-575c95ffd676-920db1dc",
+        "monotonic_s": 1235615.751164924,
+        "prefill_span_ms": 7422.493227059022,
+        "queue_wait_ms": 1396.5347500052303,
+        "request_id": "chatcmpl-71f11aae-5575-4c17-bc52-575c95ffd676-920db1dc",
+        "schema_version": 1,
+        "wall_time_s": 1793793856.0158746
+      },
+      "get_log_lines": [],
+      "actual_prefill_before_first_token": 65675,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 12209,
+          "scheduled_tokens": 4704,
+          "computed_before": 0,
+          "remaining_prefill_after": 60971
+        },
+        {
+          "batch_index": 12210,
+          "scheduled_tokens": 12544,
+          "computed_before": 4704,
+          "remaining_prefill_after": 48427
+        },
+        {
+          "batch_index": 12211,
+          "scheduled_tokens": 15680,
+          "computed_before": 17248,
+          "remaining_prefill_after": 32747
+        },
+        {
+          "batch_index": 12212,
+          "scheduled_tokens": 15680,
+          "computed_before": 32928,
+          "remaining_prefill_after": 17067
+        },
+        {
+          "batch_index": 12213,
+          "scheduled_tokens": 15680,
+          "computed_before": 48608,
+          "remaining_prefill_after": 1387
+        },
+        {
+          "batch_index": 12214,
+          "scheduled_tokens": 1387,
+          "computed_before": 64288,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "2f09ffa1-7aa5-4afe-b7d5-07c630e05971",
+      "previous_turn_index": 11,
+      "previous_profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "from_engine": "k-c35e22130000_pid-3671627",
+      "from_replica_id": "z1hu8e3c",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T12:09:07.079000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "42b262d6-acd7-4520-9448-0e62f2d61d9a",
+      "trace_id": "4a2beb",
+      "source_trace_id": "03e110ac6921c2fe9ac7772a9654314a2beb",
+      "conversation_id": "03e110ac6921c2fe9ac7772a9654314a2beb::sa:subagent_005_c0c87fc2",
+      "root_correlation_id": "8884c88e-fbe4-430e-bfe4-64ef260a5871",
+      "agent_depth": 1,
+      "turn_index": 12,
+      "start_ns": 1793794150079707074,
+      "end_ns": 1793794232112640877,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 66041,
+      "client_ttft_ms": null,
+      "cache_read_tokens": null,
+      "profile_error": {
+        "type": "ClientPayloadError",
+        "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+        "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+        "cause_chain": [
+          "ClientPayloadError",
+          "TransferEncodingError"
+        ]
+      },
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 103354,
+          "batches_waited": 160,
+          "cached_prefix_tokens": 61152,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-42b262d6-acd7-4520-9448-0e62f2d61d9a-85acddd8",
+          "monotonic_s": 1235915.350514878,
+          "prompt_tokens": 66041,
+          "queue_wait_ms": 5219.2207931075245,
+          "request_id": "chatcmpl-42b262d6-acd7-4520-9448-0e62f2d61d9a-85acddd8",
+          "scheduled_tokens": 4704,
+          "schema_version": 1,
+          "wall_time_s": 1793794155.6152244
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 103355,
+        "batches_waited": 160,
+        "engine_ttft_ms": 6087.264638161287,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-42b262d6-acd7-4520-9448-0e62f2d61d9a-85acddd8",
+        "monotonic_s": 1235916.218774062,
+        "prefill_span_ms": 868.0438450537622,
+        "queue_wait_ms": 5219.2207931075245,
+        "request_id": "chatcmpl-42b262d6-acd7-4520-9448-0e62f2d61d9a-85acddd8",
+        "schema_version": 1,
+        "wall_time_s": 1793794156.4834836
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 04:09:15 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-42b262d6-acd7-4520-9448-0e62f2d61d9a-85acddd8 batch_keys=42 memory_keys=42 disk_keys=0 unknown_keys=0 success_keys=42 failed_keys=0 bytes_by_tier={'memory': 2157969408, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 4889,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 103354,
+          "scheduled_tokens": 4704,
+          "computed_before": 61152,
+          "remaining_prefill_after": 185
+        },
+        {
+          "batch_index": 103355,
+          "scheduled_tokens": 185,
+          "computed_before": 65856,
+          "remaining_prefill_after": 0
+        }
+      ]
+    },
+    {
+      "previous_request_id": "cbf6f91c-2bcc-4161-960d-7983503a28bd",
+      "previous_turn_index": 4,
+      "previous_profile_error": null,
+      "from_engine": "k-c35e22130000_pid-3671627",
+      "from_replica_id": "z1hu8e3c",
+      "to_engine": "k-c35e22130000_pid-3554967",
+      "to_replica_id": "h1nx2oex",
+      "producer_stopped_at_utc": "2026-11-04T12:09:07.079000+00:00",
+      "started_after_producer_stopped": true,
+      "request_id": "fb6a7e9c-4a1e-4eaa-bfd9-5b9aa5b2c219",
+      "trace_id": "d85c0e",
+      "source_trace_id": "02bc0afb13f7a2d9efa86c28511261d85c0e",
+      "conversation_id": "02bc0afb13f7a2d9efa86c28511261d85c0e::fa:000",
+      "root_correlation_id": "308862e7-f4b3-4701-9265-718387e54781",
+      "agent_depth": 1,
+      "turn_index": 5,
+      "start_ns": 1793794167094038877,
+      "end_ns": 1793794343701759429,
+      "engine": "k-c35e22130000_pid-3554967",
+      "replica_id": "h1nx2oex",
+      "replica_ordinal": 1,
+      "all_queued_engines": [
+        "k-c35e22130000_pid-3554967"
+      ],
+      "routing_ambiguous": false,
+      "input_tokens": 137081,
+      "client_ttft_ms": 13481.826427,
+      "cache_read_tokens": 112896,
+      "profile_error": null,
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "admissions": [
+        {
+          "engine": "k-c35e22130000_pid-3554967",
+          "replica_id": "h1nx2oex",
+          "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+          "batch_index": 104001,
+          "batches_waited": 278,
+          "cached_prefix_tokens": 112896,
+          "event": "request_admitted",
+          "external_request_id": "chatcmpl-fb6a7e9c-4a1e-4eaa-bfd9-5b9aa5b2c219-b494fe2c",
+          "monotonic_s": 1235935.837424543,
+          "prompt_tokens": 137081,
+          "queue_wait_ms": 8714.672849979252,
+          "request_id": "chatcmpl-fb6a7e9c-4a1e-4eaa-bfd9-5b9aa5b2c219-b494fe2c",
+          "scheduled_tokens": 15680,
+          "schema_version": 1,
+          "wall_time_s": 1793794176.102134
+        }
+      ],
+      "first_token_event": {
+        "engine": "k-c35e22130000_pid-3554967",
+        "replica_id": "h1nx2oex",
+        "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/k-c35e22130000_pid-3554967.0001.jsonl",
+        "batch_index": 104003,
+        "batches_waited": 278,
+        "engine_ttft_ms": 13140.627168118954,
+        "event": "request_first_token",
+        "external_request_id": "chatcmpl-fb6a7e9c-4a1e-4eaa-bfd9-5b9aa5b2c219-b494fe2c",
+        "monotonic_s": 1235940.263532568,
+        "prefill_span_ms": 4425.954318139702,
+        "queue_wait_ms": 8714.672849979252,
+        "request_id": "chatcmpl-fb6a7e9c-4a1e-4eaa-bfd9-5b9aa5b2c219-b494fe2c",
+        "schema_version": 1,
+        "wall_time_s": 1793794180.528242
+      },
+      "get_log_lines": [
+        "(RayWorkerProc pid=3555315) (Worker pid=3555315) INFO 11-04 04:09:36 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-fb6a7e9c-4a1e-4eaa-bfd9-5b9aa5b2c219-b494fe2c batch_keys=75 memory_keys=75 disk_keys=0 unknown_keys=0 success_keys=75 failed_keys=0 bytes_by_tier={'memory': 3853516800, 'disk': 0, 'unknown': 0}"
+      ],
+      "actual_prefill_before_first_token": 24185,
+      "prefill_chunks_before_first_token": [
+        {
+          "batch_index": 104001,
+          "scheduled_tokens": 15680,
+          "computed_before": 112896,
+          "remaining_prefill_after": 8505
+        },
+        {
+          "batch_index": 104002,
+          "scheduled_tokens": 7840,
+          "computed_before": 128576,
+          "remaining_prefill_after": 665
+        },
+        {
+          "batch_index": 104003,
+          "scheduled_tokens": 665,
+          "computed_before": 136416,
+          "remaining_prefill_after": 0
+        }
+      ]
+    }
+  ],
+  "completed_receiving_transition_count": 34,
+  "failed_receiving_transition_count": 4,
+  "note": "Conversationkey=(root_correlation_id,conversation_id),sofreshrootsreplayingsamesourcetracearenotmerged.Includesfailedreceivingturns."
+}

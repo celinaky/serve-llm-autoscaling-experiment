@@ -290,6 +290,12 @@ def format_run_summary(root: Path) -> str:
         timeline = root / "analysis" / "autoscaling_timeline.png"
         if timeline.exists():
             lines.append(f"Timeline:  {timeline}")
+        diagnostics = analysis.get("diagnostic_plots") or {}
+        if diagnostics:
+            lines.append(f"Diagnostic plots: {diagnostics.get('status', 'unknown')}")
+            gallery = root / "analysis" / "index.html"
+            if gallery.exists():
+                lines.append(f"Plot gallery: {gallery}")
     return "\n".join(lines) + "\n"
 
 

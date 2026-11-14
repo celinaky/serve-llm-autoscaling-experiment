@@ -465,46 +465,190 @@ stage `topology`. The requested routing, the environment switches, the
 resolved router class and the verified deployments are written to
 `deployment/routing.json` and summarized under `routing` in `manifest.json`.
 
-## H100 prefill autoscaling validation
+## Native CPU KV cache offloading
 
-Use `experiments/h100_workday_curve_prefill_mean.yaml` to replay the H100
-16-session AgentX workload with the prefill-token autoscaling policy:
+Enable vLLM's native CPU cache in any experiment with:
 
-```bash
-autoscale-harness validate experiments/h100_workday_curve_prefill_mean.yaml
-autoscale-harness run experiments/h100_workday_curve_prefill_mean.yaml
+```yaml
+deployment:
+  routing:
+    policy: kv_aware
+  engine:
+    enable_prefix_caching: true
+    kv_offloading_backend: native
+    kv_offloading_size: 64  # GiB of host RAM per replica, across all TP ranks
 ```
 
-The seeded workload ramps from one to 16 sessions over 450 seconds, then
-holds until 1050 seconds. It uses a 20,000-token target, a 60-second mean,
-a 40-second upscale delay, and a 1800-second downscale delay. The delay
-exceeds the load, 120-second drain, and 180-second observation combined.
-Serve can use all eight H100 GPUs; stop standalone GPU profilers first.
+Omit `kv_offloading_size` (or set it to `null`) to disable offloading. Existing
+experiments remain unchanged. Native offloading requires explicit
+`enable_prefix_caching: true`; a positive finite size is required when set.
+Do not combine the size shortcut with `kv_transfer_config` (including Mooncake
+or MultiConnector): vLLM overwrites the connector selection. The harness rejects
+that combination. Offloading works with other routing policies too; `kv_aware`
+additionally tracks native CPU-resident blocks and discounts their routing
+credit to account for reload cost. Ray configures the native connector/event
+path for that router; no new package or standalone service is required.
 
-The experiment enables native CPU KV offloading with 64 GiB per replica
-(up to 512 GiB at eight replicas). The harness validates the offload capacity,
-requires prefix caching for the native backend, and rejects an explicit
-`kv_transfer_config` combined with the offloading size shortcut. Omit the
-size to disable offloading. Offload settings are forwarded per replica;
-vLLM owns their split across tensor-parallel ranks.
+`experiments/h100_native_cpu_offload.yaml` is a fixed two-replica AgentX trial
+using the current H100 model/settings and 64 GiB per replica. Validate without
+deploying or touching GPUs:
 
-Telemetry retains local-compute token counts, external cache hits, and
-offload store/load bytes, latency, allocation failures, and CPU-cache usage
-when the runtime exports them. Successful stores alone do not establish
-useful cache reloads.
+```bash
+autoscale-harness validate experiments/h100_native_cpu_offload.yaml
+```
 
-After changing the workspace image, use a compatible Ray build containing
-the complete policy stack and check the policy constructor accepts the
-experiment's kwargs. This experiment uses the standard scaling and latency
-reports and does not require the prototype's custom request-audit patch,
-Mooncake services, or automatic scheduler diagnostics.
+Run it only once the experiment's GPUs are available. The harness replaces
+existing Serve applications only with `--replace`; that option shuts Serve
+down. The sample deliberately uses the existing benchmark app/route and must
+not be launched alongside the active experiment. Keep the no-offload baseline's
+model, routing, concurrency, seed and engine settings identical; remove just
+the two `kv_offloading_*` keys for that comparison.
+
+The same engine settings apply to H100 and B200 with a compatible Ray/vLLM
+stack; change `accelerator_type` to the target GPU and tune the CPU budget per
+node. 64 GiB is a starting budget, not a measured optimum: two replicas consume
+up to 128 GiB of CPU cache, eight up to 512 GiB, plus other process/object-store
+memory and transfer buffers. Budget for the maximum simultaneously live
+replicas, including replacement overlap. No automatic sizing from GPU token
+slots is performed, especially for hybrid attention/Mamba models. B200 runtime
+compatibility and the model's actual offload/reload behavior require testing.
+
+Telemetry retains external prefix hits/queries, native store/load bytes,
+transfer size/time, lookup delays, allocation failures, CPU-cache usage, and
+computed-prefill histograms when exported by the installed vLLM/Ray build.
+Inspect `telemetry/serve_metrics.jsonl`; counter deltas and histogram sums can
+be compared per replica. For exact computed-token counts, prefer
+`prompt_tokens_by_source_total{source="local_compute"}` deltas: the installed
+Ray exporter may omit the computed-prefill histogram for a replica, and its
+histogram sums may be approximate. `request_success_total` counts completed
+requests. A useful offload test needs GPU cache eviction followed
+by reuse on the same engine: successful stores without subsequent loads do not
+demonstrate a benefit. Compare TTFT, actual prefill computed, external hits,
+and miss overhead. CPU cache is private to the engine and is lost on engine
+restart/scale-down; cross-replica/restart persistence remains the Mooncake test.
+
+See [Ray's offloading guide](https://docs.ray.io/en/master/serve/llm/user-guides/kv-cache-offloading.html)
+for native backend and KV-aware routing behavior.
+
+## Mooncake shared KV cache
+
+Use `deployment.engine.shared_kv_cache` to replace the private native CPU
+cache with an external Mooncake DRAM pool:
+
+```yaml
+deployment:
+  engine:
+    enable_prefix_caching: true
+    shared_kv_cache:
+      enabled: true
+      config_path: /mnt/cluster_storage/mooncake-kv/requester.json
+      cache_prefix: MODEL_AND_EXACT_REVISION/tp1/kv-fp8/experiment-name
+      package: mooncake-transfer-engine-cuda13==0.3.14
+      load_async: true
+      save_decode_cache: true
+      load_failure_policy: recompute
+      health_url: http://HEAD_INTERNAL_IP:9300/health
+      master_metrics_url: http://HEAD_INTERNAL_IP:9003/metrics
+      client_metrics_url: http://HEAD_INTERNAL_IP:9300/metrics
+```
+
+Set `enabled: false` or omit the stanza to disable the shared tier. The
+stanza is a harness option, not a vLLM engine argument: the harness translates
+it to `MooncakeStoreConnector`, `kv_role: kv_both`, the namespace/options, and
+the replica runtime environment. Remove `kv_offloading_backend`,
+`kv_offloading_size`, and any explicit `kv_transfer_config` when enabling it;
+those combinations are rejected instead of silently overwriting a connector.
+Disabling shared caching alone leaves GPU prefix caching enabled. Choose the
+native experiment YAML to switch back to private CPU offloading.
+
+The requester JSON must specify `mode: standalone-store` and
+`global_segment_size: 0`. Its path must be readable at the same absolute path
+by every replica and vLLM worker. On Anyscale use shared storage for this small
+configuration file; the live cache remains Mooncake-owned DRAM. Configure a
+1 GiB requester `local_buffer_size` initially. Set one shared namespace for
+compatible replicas, and pin the model/tokenizer revision and KV layout/dtype.
+Use a fresh `cache_prefix` for a cold experiment; intentionally reusing it can
+reuse data across separate deployments/runs.
+
+The package is installed in each Ray replica/worker runtime environment, so
+a driver-only virtualenv is insufficient. The pinned CUDA 13 wheel matches
+this workspace. For a CUDA 12 image select the matching
+`mooncake-transfer-engine` wheel instead; set `package: null` when the image
+already supplies the compatible dependency. Ray and vLLM are not reinstalled.
+
+Start the master and one resource-owning client independently of Serve. In
+this workspace the isolated setup, service manager and cross-replica smoke
+test are in `/home/ray/default/mooncake-kv`:
+
+```bash
+/home/ray/default/mooncake-kv/.venv/bin/python /home/ray/default/mooncake-kv/services.py start --pool-gib 256
+autoscale-harness run experiments/h100_workday_curve_mooncake_scale_down.yaml
+```
+
+The 256 GiB allocation is one pool shared by all replicas, not 256 GiB per
+replica. Harness preflight checks the requester topology, master connectivity
+and optional storage-client health, then saves the effective requester JSON
+and its hash in `deployment/shared_kv_cache.json`. Serve teardown does not stop
+the standalone services, so the pool survives replica removal. Stopping the
+storage process or Workspace loses the pool.
+
+For long contexts over TCP, the service manager uses
+`mooncake_master --default_kv_lease_ttl=120s`. The upstream 10-second default
+expired during a measured 158K-token load. The connector defaults to
+`load_failure_policy: recompute`, allowing vLLM to recompute after a failed
+cache load instead of its default error finish. Neither setting makes a
+transfer fast; failed operations and fallback work must still be measured.
+
+The toggle does not change the selected router or its implementation. The
+current KV-aware router still models replica-local residency; this integration
+does not add shared-pool awareness. Correctness comes from the engine's own
+Mooncake lookup, and a miss falls back to prefill. Inspect routing and actual
+scheduler work separately when interpreting the token autoscaler.
+
+`telemetry/serve_metrics.jsonl` includes per-replica Mooncake operation counts,
+bytes, failure counts and latency. Optional master/client endpoints are saved
+in `telemetry/mooncake_metrics.jsonl`; master occupancy/capacity and eviction
+counters describe the external pool, rather than in-flight transfer workspace.
+The ordinary automatic diagnostic plots and HTML gallery remain enabled.
+
+The longer H100 experiment is
+[`experiments/h100_workday_curve_mooncake_decay_long.yaml`](experiments/h100_workday_curve_mooncake_decay_long.yaml).
+It adds one concurrency slot every 30 seconds to reach 32 sessions at 930s,
+holds for 2790s, then lowers the limit at the same rate over 930s. The paired
+control points compensate for AIPerf's nearest-integer interpolation. Limit
+updates have polling tolerance; reducing the limit retires session trees at
+turn boundaries rather than cancelling every in-flight request immediately.
+Its upscale/downscale delays are 40s/250s, and it sets:
+
+```yaml
+deployment:
+  routing:
+    policy: kv_aware
+    request_router_kwargs:
+      prefill_decay_tokens_per_second: 10000
+```
+
+This option needs the local Ray branch's decay implementation. It estimates
+remaining prefill using one FIFO service budget per engine replica, shared
+among that replica's requests. It changes the token autoscaling signal; it
+does not change Dynamo's selection load or add awareness of shared residency.
+Zero disables decay. Keep the same rate and token target when interpreting
+this experiment; the rate is an assumption, not measured GPU throughput.
+
+The 16-session comparison rerun is
+[`experiments/h100_workday_curve_mooncake_decay_400s.yaml`](experiments/h100_workday_curve_mooncake_decay_400s.yaml).
+It keeps the original 1050-second up/hold workload and 40-second upscale delay,
+adds 10,000 tokens/sec per-replica prefill estimate decay, and sets a 400-second
+downscale delay. Its 600-second idle observation allows the longer downscale
+delay to elapse. Each run uses a fresh cache namespace.
 
 ## Autoscaling policy
 
 `deployment.autoscaling.policy` is the only autoscaling key the harness
 always sends. Every other `deployment.autoscaling` key (`min_replicas`,
 `max_replicas`, `target_ongoing_requests`, the delays, ...) and every
-`deployment.engine` key except `enable_prompt_tokens_details` is forwarded
+`deployment.engine` key except `enable_prompt_tokens_details` and the translated
+`shared_kv_cache` setting is forwarded
 only when the experiment sets it; unset keys take Ray Serve's, Ray Serve
 LLM's or vLLM's own defaults. The same holds for `max_ongoing_requests`,
 `experimental_configs` and `routing.policy`.
@@ -651,6 +795,113 @@ After the run, the harness derives the analysis from the raw artifacts:
   carries these as `lifecycle.markers` and `lifecycle.periods`. Signals that
   were not collected are omitted with a warning rather than drawn as zero.
 
+### Automatic AgentX diagnostic plots
+
+Every AgentX run with `analysis.generate_plots: true` now generates the same
+four diagnostic plots used in the results site, in addition to the scaling
+timeline:
+
+- Arrival statistics: p95, p90 and mean load at arrival, queue time and client
+  TTFT in 180-second windows, with request counts.
+- Replica percentiles: 180-second windows, blank below 10 requests per replica.
+- Policy versus engine mean: the policy's lookback (60 seconds by default),
+  comparing its router signal with remaining prefill from scheduler traces.
+- Session lanes: recorded initial lane IDs when available, otherwise explicitly
+  labeled inferred request-span rows. Bar ends are last observed requests,
+  not verified session completion. The CSV lists all observed root replicas.
+
+Open `runs/<run>/analysis/index.html` for the local gallery. Generation status,
+warnings and the exact trace inputs are saved in `diagnostic_plots.json`;
+each command has its own generation log. Missing traces and failed charts are
+reported explicitly and do not turn a successful benchmark into a failed run.
+
+The harness enables scheduler tracing automatically for new AgentX runs and
+passes the same absolute path through `LLMConfig.runtime_env` to every replica
+and vLLM worker. It uses a unique directory for each run, so other experiments'
+load cannot pollute the charts. On a single node it defaults to that run's
+`telemetry/scheduler-traces` directory. For **multiple nodes**, set a shared
+base directory visible at the same path on every node:
+
+```yaml
+analysis:
+  generate_plots: true
+  diagnostic_plots: true
+  scheduler_trace_dir: /mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces
+```
+
+`RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR` is also accepted as the base if the config
+does not set one. The resolved per-run path is recorded in `resolved.yaml` and
+the run manifest. This needs a Ray build with the scheduler tracing hook; a
+build without it will produce a clear missing-trace notice. Set
+`analysis.diagnostic_plots: false` to opt out of the extra plots and automatic
+tracing, or `generate_plots: false` to disable all plots.
+
+To regenerate the gallery without using a GPU:
+
+```bash
+python -m serve_llm_autoscaling.cli analyze runs/<run>
+# For older runs whose traces are elsewhere:
+python -m serve_llm_autoscaling.cli analyze runs/<run> --traces-dir /path/to/traces
+```
+
+New continuous runs using `routing.policy: kv_aware` also save the existing
+vLLM KV-event streams to `telemetry/gpu_kv_events.jsonl` by default
+(`analysis.record_gpu_kv_events: false` disables this). The recorder discovers
+initial and autoscaled replicas from Serve's advertised routing metadata and
+uses the replay endpoint to recover missed batches. It records sequence gaps
+and collection errors explicitly. This needs `pyzmq` and `msgspec` in the driver
+environment (both are present with vLLM); it does not start a model or change
+the router or connector.
+
+Each batch retains its publisher timestamp, receive timestamp, replica/actor
+ID, DP rank, sequence number and block hashes by cache group and medium.
+Prompt token IDs are omitted. For a GPU prefix-removal timeline, select
+`BlockRemoved` events with `medium: GPU`; keep hybrid-model cache groups
+separate. `AllBlocksCleared` is a separate cache reset, and Mooncake DRAM-pool
+evictions remain separate metrics. Timestamps identify the publishing batch,
+not the exact allocator instruction. Do not infer zero evictions from an empty
+file or a period containing sequence gaps or collection errors. Earlier runs
+without this file cannot recover the individual event history.
+
+For cache-credit attribution, new traced KV-aware runs also enable
+`analysis.record_router_estimates` (default `true`). The router saves its actual
+selection-time prompt length, GPU/CPU overlap and effective-prefill booking,
+then each request's remaining decayed contribution at autoscaling snapshot time,
+under `<scheduler_trace_dir>/router-request-audit/`. Engine admission traces
+separately retain local cached tokens, external cached tokens and initial GPU
+prefill tokens. These share request IDs and epoch timestamps. No prompt token
+IDs are written. This requires the local Ray changes preserved in
+`patches/router-request-audit.patch`; the routing preflight rejects an unsupported
+Ray build instead of silently claiming collection succeeded.
+
+After a run, produce a per-request comparison without using a GPU:
+
+```bash
+python -m serve_llm_autoscaling.diagnostics.router_cache_credit runs/<run>
+# Optionally account for a verified 75% host-cache credit in the selector:
+python -m serve_llm_autoscaling.diagnostics.router_cache_credit runs/<run> --host-credit .75
+```
+
+Results are `analysis/router_cache_credit/requests.csv` and `audit.json`.
+A large router booking alongside external hits and little GPU computation is
+evidence of an estimate/computation disagreement. To attribute it specifically
+to missed external credit, compare the router's GPU overlap with the engine's
+local hits and allow for intentional host-transfer weighting. Snapshot records
+then show whether decay and delayed completion carried that request's excess
+into the plotted mean. Missing historical selection logs remain unavailable.
+
+For a controlled proof, use one fixed replica and an unchanged decay setting:
+compute prefix A, repeat A while GPU-resident, fill with distinct prefixes until
+A's GPU removals are recorded, then repeat A and confirm an external hit. Join
+the three A requests' router bookings to their engine cache splits/computation.
+This removes replica placement and autoscaling as confounders. Test any event
+format fix separately afterward; changing it during evidence collection would
+mix the baseline and the proposed correction.
+
+Legacy shared trace directories are filtered by this run's request IDs before
+plotting. The five original `tools/*.py` entry points remain available and now
+use the packaged implementations.
+
 ## Autoscaling evaluation
 
 Every analyzed continuous run also gets `analysis/autoscaling_evaluation.json`,
@@ -692,6 +943,11 @@ per-request records only. Its sections:
   summarized as counts, first upscale and mean/max upscale lag.
 - **Latency by replica count**: steady-state mean and p90 TTFT/ITL grouped by
   the replicas running when each request started.
+- **Raw prefill workload**: telemetry also captures
+  `ray_serve_router_uncached_prefill_tokens` when routers export it. Each
+  application/deployment/handle/actor series is the router's latest raw snapshot,
+  independent of the selected policy. Routers report replicated global views,
+  so do not sum these series to estimate total workload.
 - **Token policy** (when the controller's `serve_autoscaling_policy_metric`
   gauge was collected): which term, prefill or decode, asked for each
   scale-up and, if the policy also publishes its raw inputs, how strongly

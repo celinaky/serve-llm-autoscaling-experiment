@@ -1,0 +1,430 @@
+{
+  "title": "H100s, 16 session concurrency, KV Offloading with scale down",
+  "run": "20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s",
+  "status": "succeeded",
+  "config": "experiments/h100_workday_curve_prefill_mean_offload_scale_down.yaml",
+  "downscale_delay_s": 200,
+  "cpu_cache_gib_per_replica": 64,
+  "downscales_during_load": 2,
+  "downscales_after_load": 1,
+  "baseline_run": "20261103T233308Z-h100-workday-curve-prefill-mean",
+  "scale_events": [
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "up",
+      "from_replicas": 1.0,
+      "lag_s": 156.15165725100002,
+      "prefill_term_replicas": 1.821612376631923,
+      "running_matched_at_s": 350.477405094,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 194.325747843,
+      "to_replicas": 2.0
+    },
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "down",
+      "from_replicas": 2.0,
+      "lag_s": 0.9291802789999792,
+      "prefill_term_replicas": 0.3278592809203525,
+      "running_matched_at_s": 675.477410362,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 674.548230083,
+      "to_replicas": 1.0
+    },
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "up",
+      "from_replicas": 1.0,
+      "lag_s": null,
+      "prefill_term_replicas": 6.373227557763548,
+      "running_matched_at_s": null,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 724.371891598,
+      "to_replicas": 7.0
+    },
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "down",
+      "from_replicas": 7.0,
+      "lag_s": 0.03426326600003904,
+      "prefill_term_replicas": 2.6366237678905797,
+      "running_matched_at_s": 944.477417925,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 944.443154659,
+      "to_replicas": 3.0
+    },
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "down",
+      "from_replicas": 3.0,
+      "lag_s": 0.9081810259999656,
+      "prefill_term_replicas": 0.0,
+      "running_matched_at_s": 1285.477419366,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 1284.56923834,
+      "to_replicas": 1.0
+    }
+  ],
+  "scaling": {
+    "decisions": 5,
+    "downscales": 3,
+    "first_upscale_at_s": 194.325747843,
+    "max_upscale_lag_s": 156.15165725100002,
+    "mean_upscale_lag_s": 156.15165725100002,
+    "upscales": 2
+  },
+  "requests": {
+    "both_slo_attainment": 0.6145251396648045,
+    "failed_requests": 19,
+    "itl": {
+      "mean_ms": 47.868921925268964,
+      "p50_ms": 41.49666287748747,
+      "p90_ms": 68.09530439001921,
+      "p95_ms": 81.72159506032979,
+      "p99_ms": 202.38532449390596,
+      "sample_count": 358,
+      "slo_attainment": 0.6675977653631285,
+      "slo_met": false,
+      "slo_percentile_ms": 81.72159506032979
+    },
+    "requests": 377,
+    "slo_met": false,
+    "slo_percentile": 0.95,
+    "ttft": {
+      "mean_ms": 2050.0569053156423,
+      "p50_ms": 818.9146765,
+      "p90_ms": 5378.7273901,
+      "p95_ms": 8290.337194449994,
+      "p99_ms": 17787.80093997001,
+      "sample_count": 358,
+      "slo_attainment": 0.8910614525139665,
+      "slo_met": false,
+      "slo_percentile_ms": 8290.337194449994
+    },
+    "ttft_by_cache": {
+      "cold": {
+        "mean_ms": 4673.735120191176,
+        "p50_ms": 3116.364717,
+        "p90_ms": 11303.642706200002,
+        "p95_ms": 18165.846185349998,
+        "p99_ms": 23171.34178542999,
+        "sample_count": 68,
+        "slo_attainment": 0.6911764705882353,
+        "slo_met": false,
+        "slo_percentile_ms": 18165.846185349998
+      },
+      "warm": {
+        "mean_ms": 1434.8495997586208,
+        "p50_ms": 735.479053,
+        "p90_ms": 3292.0408215,
+        "p95_ms": 5526.889596600001,
+        "p99_ms": 11377.467443110003,
+        "sample_count": 290,
+        "slo_attainment": 0.9379310344827586,
+        "slo_met": false,
+        "slo_percentile_ms": 5526.889596600001
+      }
+    }
+  },
+  "baseline_requests": {
+    "both_slo_attainment": 0.7822784810126582,
+    "failed_requests": 8,
+    "itl": {
+      "mean_ms": 36.410105291480896,
+      "p50_ms": 31.490575248263255,
+      "p90_ms": 57.17948624421954,
+      "p95_ms": 61.98503684800129,
+      "p99_ms": 101.2241859315,
+      "sample_count": 395,
+      "slo_attainment": 0.8329113924050633,
+      "slo_met": false,
+      "slo_percentile_ms": 61.98503684800129
+    },
+    "requests": 403,
+    "slo_met": false,
+    "slo_percentile": 0.95,
+    "ttft": {
+      "mean_ms": 1476.464879807595,
+      "p50_ms": 731.573996,
+      "p90_ms": 3608.1738234000013,
+      "p95_ms": 5151.454366599991,
+      "p99_ms": 9118.21408342,
+      "sample_count": 395,
+      "slo_attainment": 0.9417721518987342,
+      "slo_met": false,
+      "slo_percentile_ms": 5151.454366599991
+    },
+    "ttft_by_cache": {
+      "cold": {
+        "mean_ms": 3656.3893103157893,
+        "p50_ms": 3279.184099,
+        "p90_ms": 7344.876263999998,
+        "p95_ms": 9169.587798399998,
+        "p99_ms": 14945.514961119974,
+        "sample_count": 57,
+        "slo_attainment": 0.7368421052631579,
+        "slo_met": false,
+        "slo_percentile_ms": 9169.587798399998
+      },
+      "warm": {
+        "mean_ms": 1108.8444876804733,
+        "p50_ms": 691.2602675,
+        "p90_ms": 2443.8231111000005,
+        "p95_ms": 3413.9830073499975,
+        "p99_ms": 7200.613709809996,
+        "sample_count": 338,
+        "slo_attainment": 0.9763313609467456,
+        "slo_met": true,
+        "slo_percentile_ms": 3413.9830073499975
+      }
+    }
+  },
+  "load_cost": {
+    "covered_s": 1050.0,
+    "gpu_hours": 0.8519569980405555,
+    "max_running_replicas": 3,
+    "mean_running_replicas": 1.5648049382323814,
+    "running_replica_seconds": 1643.0451851440005,
+    "starting_replica_seconds": 1424.0000078019993
+  },
+  "baseline_load_cost": {
+    "covered_s": 1050.0,
+    "gpu_hours": 0.5308931143741666,
+    "max_running_replicas": 2,
+    "mean_running_replicas": 1.624014479282857,
+    "running_replica_seconds": 1705.2152032469999,
+    "starting_replica_seconds": 206.00000850000004
+  },
+  "plot_errors": [],
+  "error": null,
+  "root_replica_transitions": [
+    {
+      "trace_id": "083832",
+      "time_s": 790.522899071,
+      "request_id": "12154442-64fd-47b8-b426-23df43001b0a",
+      "from_engine": "k-c35e22130000_pid-3316964",
+      "to_engine": "k-c35e22130000_pid-3302872",
+      "turn_index": 9,
+      "input_tokens": 134128,
+      "computed_prefill_tokens": 3984,
+      "client_ttft_ms": 11116.588614
+    },
+    {
+      "trace_id": "2efb65",
+      "time_s": 897.685602654,
+      "request_id": "1c57b3b3-2861-4d8a-a572-27fb03a117df",
+      "from_engine": "k-c35e22130000_pid-3316964",
+      "to_engine": "k-c35e22130000_pid-3337647",
+      "turn_index": 5,
+      "input_tokens": 146650,
+      "computed_prefill_tokens": 146650,
+      "client_ttft_ms": 18767.281802999998
+    }
+  ],
+  "request_errors": [
+    {
+      "request_id": "d6d1e0b1-24e5-491c-9ec7-10f51c58e4b2",
+      "trace_id": "dcea9a",
+      "type": "ClientPayloadError",
+      "start_s": 335.167968868,
+      "end_s": 469.89674065,
+      "ended_at_utc": "2026-11-04T09:15:19.264673+00:00"
+    },
+    {
+      "request_id": "6e0cdd4a-5228-4a28-a11a-43bacd6b8067",
+      "trace_id": "4a2beb",
+      "type": "ClientPayloadError",
+      "start_s": 300.972307859,
+      "end_s": 469.896748001,
+      "ended_at_utc": "2026-11-04T09:15:19.264680+00:00"
+    },
+    {
+      "request_id": "bf8f86b6-d841-48fd-b1c6-e2b9a1294e65",
+      "trace_id": "ea262f",
+      "type": "ClientPayloadError",
+      "start_s": 385.400926195,
+      "end_s": 469.896926668,
+      "ended_at_utc": "2026-11-04T09:15:19.264859+00:00"
+    },
+    {
+      "request_id": "a42d3254-bc25-4122-921c-7e14b63a8da2",
+      "trace_id": "4a2beb",
+      "type": "ClientPayloadError",
+      "start_s": 469.932940919,
+      "end_s": 470.920007945,
+      "ended_at_utc": "2026-11-04T09:15:20.287940+00:00"
+    },
+    {
+      "request_id": "42ee3701-8c2c-41c5-a89e-b2e596d942d3",
+      "trace_id": "d85c0e",
+      "type": "ClientPayloadError",
+      "start_s": 655.323460477,
+      "end_s": 703.775915387,
+      "ended_at_utc": "2026-11-04T09:19:13.143847+00:00"
+    },
+    {
+      "request_id": "9b5d473f-fbfa-4035-a3f6-6b8b14c64266",
+      "trace_id": "4a2beb",
+      "type": "ClientPayloadError",
+      "start_s": 621.220795891,
+      "end_s": 788.663186248,
+      "ended_at_utc": "2026-11-04T09:20:38.031118+00:00"
+    },
+    {
+      "request_id": "30b5a9d6-7c44-43d5-b957-8e203e6b9cd8",
+      "trace_id": "d13287",
+      "type": "ClientPayloadError",
+      "start_s": 662.417892528,
+      "end_s": 788.663188098,
+      "ended_at_utc": "2026-11-04T09:20:38.031120+00:00"
+    },
+    {
+      "request_id": "092fbdab-542f-444f-939d-95c461df6929",
+      "trace_id": "645c48",
+      "type": "ClientPayloadError",
+      "start_s": 648.896321228,
+      "end_s": 788.6632112,
+      "ended_at_utc": "2026-11-04T09:20:38.031143+00:00"
+    },
+    {
+      "request_id": "6841d678-4b6e-4f0d-895e-c406de8983c3",
+      "trace_id": "4701d9",
+      "type": "ClientPayloadError",
+      "start_s": 664.822491788,
+      "end_s": 788.663343144,
+      "ended_at_utc": "2026-11-04T09:20:38.031275+00:00"
+    },
+    {
+      "request_id": "6f8b48ae-978e-48ff-96f7-4ef7975e598c",
+      "trace_id": "38e03f",
+      "type": "ClientPayloadError",
+      "start_s": 658.50515111,
+      "end_s": 788.663359955,
+      "ended_at_utc": "2026-11-04T09:20:38.031292+00:00"
+    },
+    {
+      "request_id": "4ca22af1-2b61-412f-9562-73ceca9e0906",
+      "trace_id": "af78a5",
+      "type": "ClientPayloadError",
+      "start_s": 608.689265226,
+      "end_s": 788.663435648,
+      "ended_at_utc": "2026-11-04T09:20:38.031368+00:00"
+    },
+    {
+      "request_id": "05748b5c-17d0-42d1-b5cd-eb7298ae00e1",
+      "trace_id": "083832",
+      "type": "ClientPayloadError",
+      "start_s": 700.671374193,
+      "end_s": 788.663452009,
+      "ended_at_utc": "2026-11-04T09:20:38.031384+00:00"
+    },
+    {
+      "request_id": "1757d56b-347f-44fa-ad6d-13c2615dcbf0",
+      "trace_id": "645c48",
+      "type": "ClientPayloadError",
+      "start_s": 788.900825634,
+      "end_s": 789.893076873,
+      "ended_at_utc": "2026-11-04T09:20:39.261009+00:00"
+    },
+    {
+      "request_id": "9f9cb097-1cf2-4934-973e-c822f7811fb1",
+      "trace_id": "b64b5d",
+      "type": "ClientPayloadError",
+      "start_s": 953.146483891,
+      "end_s": 1012.921684616,
+      "ended_at_utc": "2026-11-04T09:24:22.289617+00:00"
+    },
+    {
+      "request_id": "49a7230a-6b9f-4e10-af3c-5b4482a4abb8",
+      "trace_id": "083832",
+      "type": "ClientPayloadError",
+      "start_s": 875.743126155,
+      "end_s": 1012.921707977,
+      "ended_at_utc": "2026-11-04T09:24:22.289640+00:00"
+    },
+    {
+      "request_id": "ecebaf78-2b9d-4966-832d-07c27501c201",
+      "trace_id": "d85c0e",
+      "type": "ClientPayloadError",
+      "start_s": 747.383024174,
+      "end_s": 1012.921734158,
+      "ended_at_utc": "2026-11-04T09:24:22.289666+00:00"
+    },
+    {
+      "request_id": "ed8d9358-1223-41f8-9bfd-488b0832e248",
+      "trace_id": "d13287",
+      "type": "ClientPayloadError",
+      "start_s": 986.226939823,
+      "end_s": 1012.921857913,
+      "ended_at_utc": "2026-11-04T09:24:22.289790+00:00"
+    },
+    {
+      "request_id": "cf7bfade-db29-49fa-8ed2-f94d720b00a7",
+      "trace_id": "dcea9a",
+      "type": "ClientPayloadError",
+      "start_s": 788.578638282,
+      "end_s": 1012.921909006,
+      "ended_at_utc": "2026-11-04T09:24:22.289841+00:00"
+    },
+    {
+      "request_id": "2a45b4e0-0e63-4c5d-9753-4e97684f3476",
+      "trace_id": "af78a5",
+      "type": "ClientPayloadError",
+      "start_s": 869.416145996,
+      "end_s": 1012.921921346,
+      "ended_at_utc": "2026-11-04T09:24:22.289853+00:00"
+    }
+  ],
+  "request_errors_by_type": {
+    "ClientPayloadError": 19
+  },
+  "baseline_request_errors_by_type": {
+    "ClientPayloadError": 8
+  },
+  "errors_completed_before_first_downscale": 4,
+  "haproxy_evidence": {
+    "effective_config": [
+      "hard-stop-after 120s"
+    ],
+    "hard_stop_logs": [
+      {
+        "file": "admin.sock.3301219.4.stderr.log",
+        "modified_at": "2026-11-04T09:15:20.268495+00:00",
+        "hard_stop_lines": [
+          "[WARNING]  (3307942) : soft-stop running for too long, performing a hard-stop.",
+          "[WARNING]  (3307942) : Proxy http_frontend hard-stopped (6 remaining conns will be closed).",
+          "[WARNING]  (3307942) : Some tasks resisted to hard-stop, exiting now."
+        ]
+      },
+      {
+        "file": "admin.sock.3301219.5.stderr.log",
+        "modified_at": "2026-11-04T09:20:39.251761+00:00",
+        "hard_stop_lines": [
+          "[WARNING]  (3322437) : soft-stop running for too long, performing a hard-stop.",
+          "[WARNING]  (3322437) : Proxy http_frontend hard-stopped (10 remaining conns will be closed).",
+          "[WARNING]  (3322437) : Some tasks resisted to hard-stop, exiting now."
+        ]
+      },
+      {
+        "file": "admin.sock.3301219.6.stderr.log",
+        "modified_at": "2026-11-04T09:24:22.311033+00:00",
+        "hard_stop_lines": [
+          "[WARNING]  (3333697) : soft-stop running for too long, performing a hard-stop.",
+          "[WARNING]  (3333697) : Proxy http_frontend hard-stopped (6 remaining conns will be closed)."
+        ]
+      }
+    ]
+  },
+  "sessions_with_multiple_root_replicas": 2,
+  "observed_sessions": 16
+}

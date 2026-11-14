@@ -1,0 +1,24 @@
+{
+  "backend": "mooncake",
+  "connector": "MooncakeStoreConnector",
+  "config_path": "/mnt/cluster_storage/mooncake-kv/requester.json",
+  "config_sha256": "875425a45d3e938dfdfcd6632c64bb8b9afc883df248142dd996570d9600e65f",
+  "requester": {
+    "mode": "standalone-store",
+    "metadata_server": "http://10.1.154.0:8080/metadata",
+    "master_server_address": "10.1.154.0:50051",
+    "global_segment_size": 0,
+    "local_buffer_size": "1GB",
+    "protocol": "tcp",
+    "device_name": "",
+    "enable_offload": false,
+    "tenant_id": "ray-serve"
+  },
+  "cache_prefix": "Qwen-Qwen3.6-27B-FP8@e89b16ebf1988b3d6befa7de50abc2d76f26eb09/tp1/kv-fp8/workday16-sd400-decay10k-20261104T162717Z",
+  "package": "mooncake-transfer-engine-cuda13==0.3.14",
+  "health": {
+    "status": "healthy",
+    "code": 0
+  },
+  "router_modified": false
+}

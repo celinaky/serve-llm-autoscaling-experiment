@@ -1,0 +1,838 @@
+{
+  "captured_at": "2026-11-04T12:15:37.207096+00:00",
+  "time_basis": "RelativeAIPerfstdoutlocalclock;doesnotrequireassumingUTCoffset.",
+  "phase_start_clock": "02:55:05.142",
+  "phase_start_line": "02:55:05.142 NOTICE   Phase profiling (profiling) started | phase_index=0 | profiling_index=0 | target: 4650.0s duration (runner.py:661)",
+  "phase_sending_stop_clock": "04:12:35.142",
+  "phase_sending_stop_seconds": 4650.0,
+  "phase_sending_stop_line": "04:12:35.142 NOTICE   Phase profiling (profiling) sending complete | sent=2,174, completed=2,169, in_flight=5 | sessions: sent=39, completed=12 | timeout_triggered=True (runner.py:1136)",
+  "events": [
+    {
+      "local_clock": "02:55:05.145",
+      "seconds_from_aiperf_phase_start": 0.0030000000006111804,
+      "requested_session_limit": 1,
+      "observed_live_sessions": 0,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:55:05.145 INFO     Concurrency series: session limit set to 1 (live sessions 0, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:55:35.183",
+      "seconds_from_aiperf_phase_start": 30.041000000001077,
+      "requested_session_limit": 2,
+      "observed_live_sessions": 2,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:55:35.183 INFO     Concurrency series: session limit set to 2 (live sessions 2, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:56:05.218",
+      "seconds_from_aiperf_phase_start": 60.07600000000093,
+      "requested_session_limit": 3,
+      "observed_live_sessions": 3,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:56:05.218 INFO     Concurrency series: session limit set to 3 (live sessions 3, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:56:35.163",
+      "seconds_from_aiperf_phase_start": 90.02100000000064,
+      "requested_session_limit": 4,
+      "observed_live_sessions": 4,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:56:35.163 INFO     Concurrency series: session limit set to 4 (live sessions 4, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:57:05.212",
+      "seconds_from_aiperf_phase_start": 120.06999999999971,
+      "requested_session_limit": 5,
+      "observed_live_sessions": 5,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:57:05.212 INFO     Concurrency series: session limit set to 5 (live sessions 5, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:57:35.162",
+      "seconds_from_aiperf_phase_start": 150.02000000000044,
+      "requested_session_limit": 6,
+      "observed_live_sessions": 6,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:57:35.162 INFO     Concurrency series: session limit set to 6 (live sessions 6, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:58:05.209",
+      "seconds_from_aiperf_phase_start": 180.06700000000092,
+      "requested_session_limit": 7,
+      "observed_live_sessions": 7,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:58:05.209 INFO     Concurrency series: session limit set to 7 (live sessions 7, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:58:35.154",
+      "seconds_from_aiperf_phase_start": 210.01200000000063,
+      "requested_session_limit": 8,
+      "observed_live_sessions": 8,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:58:35.154 INFO     Concurrency series: session limit set to 8 (live sessions 8, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:59:05.198",
+      "seconds_from_aiperf_phase_start": 240.0560000000005,
+      "requested_session_limit": 9,
+      "observed_live_sessions": 9,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:59:05.198 INFO     Concurrency series: session limit set to 9 (live sessions 9, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "02:59:35.235",
+      "seconds_from_aiperf_phase_start": 270.09300000000076,
+      "requested_session_limit": 10,
+      "observed_live_sessions": 10,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "02:59:35.235 INFO     Concurrency series: session limit set to 10 (live sessions 10, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:00:05.167",
+      "seconds_from_aiperf_phase_start": 300.02499999999964,
+      "requested_session_limit": 11,
+      "observed_live_sessions": 11,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:00:05.167 INFO     Concurrency series: session limit set to 11 (live sessions 11, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:00:35.210",
+      "seconds_from_aiperf_phase_start": 330.0679999999993,
+      "requested_session_limit": 12,
+      "observed_live_sessions": 12,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:00:35.210 INFO     Concurrency series: session limit set to 12 (live sessions 12, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:01:05.153",
+      "seconds_from_aiperf_phase_start": 360.0110000000004,
+      "requested_session_limit": 13,
+      "observed_live_sessions": 13,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:01:05.153 INFO     Concurrency series: session limit set to 13 (live sessions 13, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:01:35.199",
+      "seconds_from_aiperf_phase_start": 390.0570000000007,
+      "requested_session_limit": 14,
+      "observed_live_sessions": 14,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:01:35.199 INFO     Concurrency series: session limit set to 14 (live sessions 14, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:02:05.148",
+      "seconds_from_aiperf_phase_start": 420.0059999999994,
+      "requested_session_limit": 15,
+      "observed_live_sessions": 15,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:02:05.148 INFO     Concurrency series: session limit set to 15 (live sessions 15, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:02:35.193",
+      "seconds_from_aiperf_phase_start": 450.0509999999995,
+      "requested_session_limit": 16,
+      "observed_live_sessions": 16,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:02:35.193 INFO     Concurrency series: session limit set to 16 (live sessions 16, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:03:05.235",
+      "seconds_from_aiperf_phase_start": 480.09300000000076,
+      "requested_session_limit": 17,
+      "observed_live_sessions": 17,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:03:05.235 INFO     Concurrency series: session limit set to 17 (live sessions 17, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:03:35.187",
+      "seconds_from_aiperf_phase_start": 510.0450000000001,
+      "requested_session_limit": 18,
+      "observed_live_sessions": 18,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:03:35.187 INFO     Concurrency series: session limit set to 18 (live sessions 18, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:04:05.228",
+      "seconds_from_aiperf_phase_start": 540.0859999999993,
+      "requested_session_limit": 19,
+      "observed_live_sessions": 19,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:04:05.228 INFO     Concurrency series: session limit set to 19 (live sessions 19, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:04:35.175",
+      "seconds_from_aiperf_phase_start": 570.0329999999994,
+      "requested_session_limit": 20,
+      "observed_live_sessions": 20,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:04:35.175 INFO     Concurrency series: session limit set to 20 (live sessions 20, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:05:05.214",
+      "seconds_from_aiperf_phase_start": 600.0720000000001,
+      "requested_session_limit": 21,
+      "observed_live_sessions": 21,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:05:05.214 INFO     Concurrency series: session limit set to 21 (live sessions 21, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:05:35.157",
+      "seconds_from_aiperf_phase_start": 630.0149999999994,
+      "requested_session_limit": 22,
+      "observed_live_sessions": 22,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:05:35.157 INFO     Concurrency series: session limit set to 22 (live sessions 22, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:06:05.205",
+      "seconds_from_aiperf_phase_start": 660.0630000000001,
+      "requested_session_limit": 23,
+      "observed_live_sessions": 23,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:06:05.205 INFO     Concurrency series: session limit set to 23 (live sessions 23, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:06:35.234",
+      "seconds_from_aiperf_phase_start": 690.0920000000006,
+      "requested_session_limit": 24,
+      "observed_live_sessions": 24,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:06:35.234 INFO     Concurrency series: session limit set to 24 (live sessions 24, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:07:05.179",
+      "seconds_from_aiperf_phase_start": 720.0370000000003,
+      "requested_session_limit": 25,
+      "observed_live_sessions": 25,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:07:05.179 INFO     Concurrency series: session limit set to 25 (live sessions 25, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:07:35.209",
+      "seconds_from_aiperf_phase_start": 750.0670000000009,
+      "requested_session_limit": 26,
+      "observed_live_sessions": 26,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:07:35.209 INFO     Concurrency series: session limit set to 26 (live sessions 26, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:08:05.147",
+      "seconds_from_aiperf_phase_start": 780.005000000001,
+      "requested_session_limit": 27,
+      "observed_live_sessions": 27,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:08:05.147 INFO     Concurrency series: session limit set to 27 (live sessions 27, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:08:35.186",
+      "seconds_from_aiperf_phase_start": 810.0439999999999,
+      "requested_session_limit": 28,
+      "observed_live_sessions": 28,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:08:35.186 INFO     Concurrency series: session limit set to 28 (live sessions 28, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:09:05.220",
+      "seconds_from_aiperf_phase_start": 840.0779999999995,
+      "requested_session_limit": 29,
+      "observed_live_sessions": 29,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:09:05.220 INFO     Concurrency series: session limit set to 29 (live sessions 29, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:09:35.161",
+      "seconds_from_aiperf_phase_start": 870.0190000000002,
+      "requested_session_limit": 30,
+      "observed_live_sessions": 30,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:09:35.161 INFO     Concurrency series: session limit set to 30 (live sessions 30, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:10:05.192",
+      "seconds_from_aiperf_phase_start": 900.0499999999993,
+      "requested_session_limit": 31,
+      "observed_live_sessions": 31,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:10:05.192 INFO     Concurrency series: session limit set to 31 (live sessions 31, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:10:35.233",
+      "seconds_from_aiperf_phase_start": 930.0910000000003,
+      "requested_session_limit": 32,
+      "observed_live_sessions": 32,
+      "observed_debt": 0,
+      "idle_sessions_retired": 0,
+      "raw_line": "03:10:35.233 INFO     Concurrency series: session limit set to 32 (live sessions 32, debt 0, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:57:35.195",
+      "seconds_from_aiperf_phase_start": 3750.053,
+      "requested_session_limit": 31,
+      "observed_live_sessions": 31,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "03:57:35.195 INFO     Concurrency series: session limit set to 31 (live sessions 31, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:58:05.234",
+      "seconds_from_aiperf_phase_start": 3780.0920000000006,
+      "requested_session_limit": 30,
+      "observed_live_sessions": 30,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "03:58:05.234 INFO     Concurrency series: session limit set to 30 (live sessions 30, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:58:35.166",
+      "seconds_from_aiperf_phase_start": 3810.0239999999994,
+      "requested_session_limit": 29,
+      "observed_live_sessions": 29,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "03:58:35.166 INFO     Concurrency series: session limit set to 29 (live sessions 29, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:59:05.215",
+      "seconds_from_aiperf_phase_start": 3840.0730000000003,
+      "requested_session_limit": 28,
+      "observed_live_sessions": 28,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "03:59:05.215 INFO     Concurrency series: session limit set to 28 (live sessions 28, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "03:59:35.160",
+      "seconds_from_aiperf_phase_start": 3870.018,
+      "requested_session_limit": 27,
+      "observed_live_sessions": 27,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "03:59:35.160 INFO     Concurrency series: session limit set to 27 (live sessions 27, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:00:05.200",
+      "seconds_from_aiperf_phase_start": 3900.058000000001,
+      "requested_session_limit": 26,
+      "observed_live_sessions": 26,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:00:05.200 INFO     Concurrency series: session limit set to 26 (live sessions 26, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:00:35.155",
+      "seconds_from_aiperf_phase_start": 3930.013000000001,
+      "requested_session_limit": 25,
+      "observed_live_sessions": 25,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:00:35.155 INFO     Concurrency series: session limit set to 25 (live sessions 25, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:01:05.191",
+      "seconds_from_aiperf_phase_start": 3960.049000000001,
+      "requested_session_limit": 24,
+      "observed_live_sessions": 24,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:01:05.191 INFO     Concurrency series: session limit set to 24 (live sessions 24, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:01:35.232",
+      "seconds_from_aiperf_phase_start": 3990.09,
+      "requested_session_limit": 23,
+      "observed_live_sessions": 23,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:01:35.232 INFO     Concurrency series: session limit set to 23 (live sessions 23, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:02:05.170",
+      "seconds_from_aiperf_phase_start": 4020.0280000000002,
+      "requested_session_limit": 22,
+      "observed_live_sessions": 22,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:02:05.170 INFO     Concurrency series: session limit set to 22 (live sessions 22, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:02:35.218",
+      "seconds_from_aiperf_phase_start": 4050.076000000001,
+      "requested_session_limit": 21,
+      "observed_live_sessions": 21,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:02:35.218 INFO     Concurrency series: session limit set to 21 (live sessions 21, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:03:05.163",
+      "seconds_from_aiperf_phase_start": 4080.0210000000006,
+      "requested_session_limit": 20,
+      "observed_live_sessions": 20,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:03:05.163 INFO     Concurrency series: session limit set to 20 (live sessions 20, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:03:35.212",
+      "seconds_from_aiperf_phase_start": 4110.07,
+      "requested_session_limit": 19,
+      "observed_live_sessions": 20,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:03:35.212 INFO     Concurrency series: session limit set to 19 (live sessions 20, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:04:05.156",
+      "seconds_from_aiperf_phase_start": 4140.014000000001,
+      "requested_session_limit": 18,
+      "observed_live_sessions": 19,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:04:05.156 INFO     Concurrency series: session limit set to 18 (live sessions 19, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:04:35.203",
+      "seconds_from_aiperf_phase_start": 4170.061,
+      "requested_session_limit": 17,
+      "observed_live_sessions": 17,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:04:35.203 INFO     Concurrency series: session limit set to 17 (live sessions 17, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:05:05.146",
+      "seconds_from_aiperf_phase_start": 4200.004000000001,
+      "requested_session_limit": 16,
+      "observed_live_sessions": 16,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:05:05.146 INFO     Concurrency series: session limit set to 16 (live sessions 16, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:05:35.192",
+      "seconds_from_aiperf_phase_start": 4230.049999999999,
+      "requested_session_limit": 15,
+      "observed_live_sessions": 15,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:05:35.192 INFO     Concurrency series: session limit set to 15 (live sessions 15, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:06:05.232",
+      "seconds_from_aiperf_phase_start": 4260.09,
+      "requested_session_limit": 14,
+      "observed_live_sessions": 14,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:06:05.232 INFO     Concurrency series: session limit set to 14 (live sessions 14, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:06:35.175",
+      "seconds_from_aiperf_phase_start": 4290.032999999999,
+      "requested_session_limit": 13,
+      "observed_live_sessions": 14,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:06:35.175 INFO     Concurrency series: session limit set to 13 (live sessions 14, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:07:05.217",
+      "seconds_from_aiperf_phase_start": 4320.075000000001,
+      "requested_session_limit": 12,
+      "observed_live_sessions": 12,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:07:05.217 INFO     Concurrency series: session limit set to 12 (live sessions 12, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:07:35.156",
+      "seconds_from_aiperf_phase_start": 4350.014000000001,
+      "requested_session_limit": 11,
+      "observed_live_sessions": 11,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:07:35.156 INFO     Concurrency series: session limit set to 11 (live sessions 11, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:08:05.194",
+      "seconds_from_aiperf_phase_start": 4380.052,
+      "requested_session_limit": 10,
+      "observed_live_sessions": 11,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:08:05.194 INFO     Concurrency series: session limit set to 10 (live sessions 11, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:08:35.239",
+      "seconds_from_aiperf_phase_start": 4410.097,
+      "requested_session_limit": 9,
+      "observed_live_sessions": 10,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:08:35.239 INFO     Concurrency series: session limit set to 9 (live sessions 10, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:09:05.183",
+      "seconds_from_aiperf_phase_start": 4440.041000000001,
+      "requested_session_limit": 8,
+      "observed_live_sessions": 8,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:09:05.183 INFO     Concurrency series: session limit set to 8 (live sessions 8, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:09:35.220",
+      "seconds_from_aiperf_phase_start": 4470.0779999999995,
+      "requested_session_limit": 7,
+      "observed_live_sessions": 7,
+      "observed_debt": 0,
+      "idle_sessions_retired": 1,
+      "raw_line": "04:09:35.220 INFO     Concurrency series: session limit set to 7 (live sessions 7, debt 0, idle sessions retired 1) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:10:05.165",
+      "seconds_from_aiperf_phase_start": 4500.023000000001,
+      "requested_session_limit": 6,
+      "observed_live_sessions": 7,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:10:05.165 INFO     Concurrency series: session limit set to 6 (live sessions 7, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:10:35.207",
+      "seconds_from_aiperf_phase_start": 4530.0650000000005,
+      "requested_session_limit": 5,
+      "observed_live_sessions": 6,
+      "observed_debt": 1,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:10:35.207 INFO     Concurrency series: session limit set to 5 (live sessions 6, debt 1, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:11:05.155",
+      "seconds_from_aiperf_phase_start": 4560.013000000001,
+      "requested_session_limit": 4,
+      "observed_live_sessions": 6,
+      "observed_debt": 2,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:11:05.155 INFO     Concurrency series: session limit set to 4 (live sessions 6, debt 2, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:11:35.205",
+      "seconds_from_aiperf_phase_start": 4590.063,
+      "requested_session_limit": 3,
+      "observed_live_sessions": 6,
+      "observed_debt": 3,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:11:35.205 INFO     Concurrency series: session limit set to 3 (live sessions 6, debt 3, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:12:05.243",
+      "seconds_from_aiperf_phase_start": 4620.101000000001,
+      "requested_session_limit": 2,
+      "observed_live_sessions": 6,
+      "observed_debt": 4,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:12:05.243 INFO     Concurrency series: session limit set to 2 (live sessions 6, debt 4, idle sessions retired 0) (runner.py:845)"
+    },
+    {
+      "local_clock": "04:12:35.196",
+      "seconds_from_aiperf_phase_start": 4650.054,
+      "requested_session_limit": 1,
+      "observed_live_sessions": 6,
+      "observed_debt": 5,
+      "idle_sessions_retired": 0,
+      "raw_line": "04:12:35.196 INFO     Concurrency series: session limit set to 1 (live sessions 6, debt 5, idle sessions retired 0) (runner.py:845)"
+    }
+  ],
+  "observed_update_count": 63,
+  "expected_update_count": 63,
+  "ordered_limits_match_expected": true,
+  "upward_limits_observed": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32
+  ],
+  "downward_limits_observed": [
+    31,
+    30,
+    29,
+    28,
+    27,
+    26,
+    25,
+    24,
+    23,
+    22,
+    21,
+    20,
+    19,
+    18,
+    17,
+    16,
+    15,
+    14,
+    13,
+    12,
+    11,
+    10,
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1
+  ],
+  "upward_max_timing_deviation_seconds": 0.0930000000007567,
+  "downward_max_timing_deviation_seconds": 0.10100000000056752,
+  "last_observed_limit_event": {
+    "local_clock": "04:12:35.196",
+    "seconds_from_aiperf_phase_start": 4650.054,
+    "requested_session_limit": 1,
+    "observed_live_sessions": 6,
+    "observed_debt": 5,
+    "idle_sessions_retired": 0,
+    "raw_line": "04:12:35.196 INFO     Concurrency series: session limit set to 1 (live sessions 6, debt 5, idle sessions retired 0) (runner.py:845)"
+  },
+  "endpoint_limit1_observed": true,
+  "endpoint_update_seconds_after_sending_stop": 0.05400000000008731,
+  "actual_live_tree_count_at_endpoint_update": 6,
+  "debt_at_endpoint_update": 5,
+  "max_observed_debt_at_updates": 5,
+  "session_counters_at_sending_stop": {
+    "sent": 39,
+    "completed": 12
+  },
+  "request_counters_at_sending_stop": {
+    "sent": 2174,
+    "completed": 2169,
+    "in_flight": 5
+  },
+  "retirement_logs": [
+    {
+      "local_clock": "03:57:35.195",
+      "seconds_from_aiperf_phase_start": 3750.053,
+      "root_correlation_id": "0426253e-bc2d-417c-acc2-50afbc5338a4",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "03:57:35.195 INFO     Retiring idle session 0426253e-bc2d-417c-acc2-50afbc5338a4 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "03:58:05.234",
+      "seconds_from_aiperf_phase_start": 3780.0920000000006,
+      "root_correlation_id": "2d278603-3d8a-4d18-a8c3-164bb3fd0535",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "03:58:05.234 INFO     Retiring idle session 2d278603-3d8a-4d18-a8c3-164bb3fd0535 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "03:58:35.165",
+      "seconds_from_aiperf_phase_start": 3810.023000000001,
+      "root_correlation_id": "3620624f-00f6-4fc8-b3df-22407e646c6e",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "03:58:35.165 INFO     Retiring idle session 3620624f-00f6-4fc8-b3df-22407e646c6e (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "03:59:05.215",
+      "seconds_from_aiperf_phase_start": 3840.0730000000003,
+      "root_correlation_id": "bbcf6ff3-83f8-4e1c-ac8a-eb3c10b27906",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "03:59:05.215 INFO     Retiring idle session bbcf6ff3-83f8-4e1c-ac8a-eb3c10b27906 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "03:59:35.160",
+      "seconds_from_aiperf_phase_start": 3870.018,
+      "root_correlation_id": "97bb2dbd-e3aa-4b58-9da1-e2828d5798f6",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "03:59:35.160 INFO     Retiring idle session 97bb2dbd-e3aa-4b58-9da1-e2828d5798f6 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:00:05.199",
+      "seconds_from_aiperf_phase_start": 3900.0570000000007,
+      "root_correlation_id": "a9fbd8d8-52c2-4188-84b0-4ecc3a9a0a16",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:00:05.199 INFO     Retiring idle session a9fbd8d8-52c2-4188-84b0-4ecc3a9a0a16 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:00:35.154",
+      "seconds_from_aiperf_phase_start": 3930.0120000000006,
+      "root_correlation_id": "510bd6a2-e955-4737-8b08-413d442f5e52",
+      "lane_index": 26,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:00:35.154 INFO     Retiring idle session 510bd6a2-e955-4737-8b08-413d442f5e52 (lane 26): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:01:05.191",
+      "seconds_from_aiperf_phase_start": 3960.049000000001,
+      "root_correlation_id": "a043ab1a-ad64-4a13-b686-44213bf64e85",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:01:05.191 INFO     Retiring idle session a043ab1a-ad64-4a13-b686-44213bf64e85 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:01:35.232",
+      "seconds_from_aiperf_phase_start": 3990.09,
+      "root_correlation_id": "3654cff1-6626-46de-8511-ea7df76a0027",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:01:35.232 INFO     Retiring idle session 3654cff1-6626-46de-8511-ea7df76a0027 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:02:05.170",
+      "seconds_from_aiperf_phase_start": 4020.0280000000002,
+      "root_correlation_id": "dea00a1d-690d-4e00-8859-8d10a7191920",
+      "lane_index": 13,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:02:05.170 INFO     Retiring idle session dea00a1d-690d-4e00-8859-8d10a7191920 (lane 13): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:02:35.218",
+      "seconds_from_aiperf_phase_start": 4050.076000000001,
+      "root_correlation_id": "7399f2e0-513c-407e-8a26-7d42c6bfb57e",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:02:35.218 INFO     Retiring idle session 7399f2e0-513c-407e-8a26-7d42c6bfb57e (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:03:05.162",
+      "seconds_from_aiperf_phase_start": 4080.0200000000004,
+      "root_correlation_id": "43761da1-202c-4fdc-90dc-aaae53441806",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:03:05.162 INFO     Retiring idle session 43761da1-202c-4fdc-90dc-aaae53441806 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:04:35.202",
+      "seconds_from_aiperf_phase_start": 4170.0599999999995,
+      "root_correlation_id": "5f633837-86c7-400b-a443-61782567037e",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:04:35.202 INFO     Retiring idle session 5f633837-86c7-400b-a443-61782567037e (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:05:05.146",
+      "seconds_from_aiperf_phase_start": 4200.004000000001,
+      "root_correlation_id": "65ec9c09-f1a1-4c82-a4dd-ca1c8bb92a79",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:05:05.146 INFO     Retiring idle session 65ec9c09-f1a1-4c82-a4dd-ca1c8bb92a79 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:05:35.191",
+      "seconds_from_aiperf_phase_start": 4230.049000000001,
+      "root_correlation_id": "9b096c5a-5dc0-48fe-b43d-16b62bbffe5a",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:05:35.191 INFO     Retiring idle session 9b096c5a-5dc0-48fe-b43d-16b62bbffe5a (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:06:05.231",
+      "seconds_from_aiperf_phase_start": 4260.089,
+      "root_correlation_id": "fecb1e89-5d9d-4fec-b50b-bf88e0a09147",
+      "lane_index": 22,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:06:05.231 INFO     Retiring idle session fecb1e89-5d9d-4fec-b50b-bf88e0a09147 (lane 22): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:07:05.216",
+      "seconds_from_aiperf_phase_start": 4320.0740000000005,
+      "root_correlation_id": "e797e503-9c95-4ee1-a5e2-9c0d8a6dd563",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:07:05.216 INFO     Retiring idle session e797e503-9c95-4ee1-a5e2-9c0d8a6dd563 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:07:35.156",
+      "seconds_from_aiperf_phase_start": 4350.014000000001,
+      "root_correlation_id": "a7e13e26-3cb9-4746-8a13-bd4199c0622d",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:07:35.156 INFO     Retiring idle session a7e13e26-3cb9-4746-8a13-bd4199c0622d (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:09:05.183",
+      "seconds_from_aiperf_phase_start": 4440.041000000001,
+      "root_correlation_id": "4470597f-daac-4126-baa9-b929835306a8",
+      "lane_index": null,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:09:05.183 INFO     Retiring idle session 4470597f-daac-4126-baa9-b929835306a8 (lane None): session limit is below the live session count (agentic_replay.py:1467)"
+    },
+    {
+      "local_clock": "04:09:35.219",
+      "seconds_from_aiperf_phase_start": 4470.076999999999,
+      "root_correlation_id": "0f6c2537-36ee-45ad-86d4-dbde1eb2f446",
+      "lane_index": 7,
+      "meaning": "Rootmarkedterminalandnextscheduledrootturncancelled;treecanremainliveuntiloutstandingdescendantsdrain.",
+      "raw_line": "04:09:35.219 INFO     Retiring idle session 0f6c2537-36ee-45ad-86d4-dbde1eb2f446 (lane 7): session limit is below the live session count (agentic_replay.py:1467)"
+    }
+  ],
+  "explicit_idle_root_retirement_count": 20,
+  "sum_idle_retired_at_limit_updates": 20,
+  "interpretation": "Requestedlimitreached1attheend,buttheupdateoccurredafterHTTPsendingstoppedandstillreported6livetrees/debt5.Noone-live-sessiontrafficplateauisproven.Rootretirementisnotautomaticallytheentiretreedrain;lastHTTPRequestenddoesnotestablishsessioncompletion."
+}

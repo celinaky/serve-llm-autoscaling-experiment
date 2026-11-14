@@ -1,0 +1,41 @@
+{
+  "pid": 3448719,
+  "started_at": "2026-11-04T09:58:04.364400+00:00",
+  "command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "-m",
+    "serve_llm_autoscaling.cli",
+    "run",
+    "experiments/h100_workday_curve_mooncake_scale_down.yaml"
+  ],
+  "log": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-scale-down-200s/run-attempt1.log",
+  "router_source_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py": "437ad29010711f1bc53e09403eeffc7b11dcb9a5e6ce4dcb7f7d5785ada5fbf9",
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py": "76215883957ab76314d04a131a1387e44f008ace94f6a4621ea42372762091f5"
+  },
+  "smoke_result": "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+  "title": "H100s, 16 session concurrency, Mooncake shared KV cache with scale down",
+  "run_dir": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T095804Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+  "site_dir": "/home/ray/default/sites/h100-mooncake-shared-kv",
+  "site_project_id": "appgprj_6aeb0217ac988191b9bfabb8ce57c420",
+  "site_expected_url": "https://h100-mooncake-shared-kv-scale-down.anyscale-ent-1806.chatgpt.site",
+  "report_pid": 3468745,
+  "report_command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "tools/report_mooncake.py",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T095804Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+    "--site-dir",
+    "/home/ray/default/sites/h100-mooncake-shared-kv",
+    "--baseline",
+    "runs/20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s",
+    "--smoke",
+    "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+    "--driver-log",
+    "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-scale-down-200s/run.log",
+    "--wait",
+    "--driver-pid",
+    "3448719"
+  ]
+}

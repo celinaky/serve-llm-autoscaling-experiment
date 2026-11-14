@@ -1,0 +1,42 @@
+{
+  "run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "evidence_basis": [
+    "Saved controller gauges",
+    "All364scheduler request histories and completed GPU prefill chunks",
+    "Per-request successful Mooncake DRAM GET log lines"
+  ],
+  "spikes": [
+    {
+      "time_s": 496.9835352897644,
+      "router_mean_tokens": 60651.159426718725,
+      "gpu_remaining_mean_tokens": 16663.134416266283
+    },
+    {
+      "time_s": 736.9832437038422,
+      "router_mean_tokens": 86375.39676094992,
+      "gpu_remaining_mean_tokens": 6514.378829781214
+    },
+    {
+      "time_s": 856.9831681251526,
+      "router_mean_tokens": 101941.52004223558,
+      "gpu_remaining_mean_tokens": 8329.715754950046
+    }
+  ],
+  "findings": [
+    "The high router means coincide with bursts of long returning prompts whose prefixes are loaded from Mooncake. All selected GET examples ran on the original replica.",
+    "The router takes its initial effective-prefill estimate from Dynamo overlap, decays one FIFO budget per replica, and clears a request on the first output token. It receives no early per-request external-cache-hit correction.",
+    "The green curve is reconstructed retrospectively from GPU chunks and excludes KV transfer time/bytes. Waiting requests can therefore contribute only a small suffix to it even before their external load finishes.",
+    "The60s trailing window retains earlier bursts; its peaks are later than many individual request arrivals. The400s downscale delay acts on replica decisions, not these gauge values."
+  ],
+  "limits": [
+    "Per-request selection-time Dynamo overlaps were not recorded, so the exact purple contribution of an individual request cannot be recovered.",
+    "Before-first-prefill-step wait includes asynchronous cache reload and scheduling; it is not isolated network latency.",
+    "The middle illustrated request later encountered a proxy stream failure, after its measured first token.",
+    "The counterfactual field in evidence.json is an auxiliary simulation, not an observed router signal, and is not used for the measured spike table."
+  ],
+  "sources_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py": "76215883957ab76314d04a131a1387e44f008ace94f6a4621ea42372762091f5",
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py": "437ad29010711f1bc53e09403eeffc7b11dcb9a5e6ce4dcb7f7d5785ada5fbf9"
+  },
+  "plot": "spike_comparison.png"
+}

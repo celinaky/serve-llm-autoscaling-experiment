@@ -1,0 +1,13 @@
+H100s, 16 session concurrency, Mooncake shared KV cache with scale down
+Run: /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s
+Status: succeeded
+Mooncake metrics: {"gpu_queries": 28767228.0, "computed_prefill_tokens": 3309709.0, "external_queries": 4693724.0, "save_exists_timed_operations_ok": 1023.0, "save_exists_seconds_ok": 0.579, "save_put_timed_operations_ok": 894.0, "save_put_seconds_ok": 1015.7500000000009, "lookup_exists_timed_operations_ok": 418.0, "lookup_exists_seconds_ok": 0.25650000000000023, "save_exists_operations_ok": 1023.0, "save_put_operations_ok": 894.0, "lookup_exists_operations_ok": 418.0, "save_put_bytes_ok": 147615383552.0, "gpu_hits": 24073504.0, "external_hits": 1359456.0, "load_get_timed_operations_ok": 19.0, "load_get_seconds_ok": 119.75, "load_get_operations_ok": 19.0, "load_get_bytes_ok": 47475326976.0}
+Pool: {"master_allocated_bytes": {"initial": 0, "peak": 147615383552, "last": 147615383552}, "master_total_capacity_bytes": {"initial": 274877906944, "peak": 274877906944, "last": 274877906944}, "master_evicted_key_count": 0, "master_evicted_size_bytes": 0, "master_successful_evictions_total": 0}
+9 failed request records: {'ClientPayloadError': 9}. Latency percentiles include successful requests. The selected KV router was not changed to understand shared residency. Proxy reload/drain effects and routing estimates can influence the comparison; this is one experimental run, not an isolated causal estimate.
+TTFT p50: baseline 818.91 ms; Mooncake 827.66 ms
+TTFT p95: baseline 8,290.34 ms; Mooncake 6,233.59 ms
+TTFT p99: baseline 17,787.80 ms; Mooncake 13,863.73 ms
+Failed / total requests: baseline 19 / 377; Mooncake 9 / 420
+Load GPU-hours: baseline 0.852; Mooncake 0.619
+Starting replica-seconds: baseline 1,424.0; Mooncake 327.0
+Peak running replicas: baseline 3; Mooncake 3

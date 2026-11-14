@@ -1,0 +1,14 @@
+H100s, 32 sessions, Mooncake shared KV with 10k/sec decay and scale down
+Run: /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s
+Status: succeeded
+Mooncake metrics: {"gpu_queries": 175392349.0, "computed_prefill_tokens": 14362693.0, "external_queries": 50720669.0, "lookup_exists_timed_operations_ok": 59655.0, "lookup_exists_seconds_ok": 46.83200000000004, "lookup_exists_operations_ok": 59655.0, "save_exists_timed_operations_ok": 5199.0, "save_exists_seconds_ok": 3.4014999999999915, "save_put_timed_operations_ok": 4473.0, "save_put_seconds_ok": 5932.726999999992, "save_exists_operations_ok": 5199.0, "save_put_operations_ok": 4473.0, "save_put_bytes_ok": 680068644864.0, "gpu_hits": 124671680.0, "external_hits": 36054592.0, "load_get_timed_operations_ok": 374.0, "load_get_seconds_ok": 2517.325, "load_get_operations_ok": 374.0, "load_get_bytes_ok": 1246535614464.0}
+Pool: {"master_allocated_bytes": {"initial": 0, "peak": 247344398336, "last": 241898094592}, "master_total_capacity_bytes": {"initial": 274877906944, "peak": 274877906944, "last": 274877906944}, "master_evicted_key_count": 8490, "master_evicted_size_bytes": 436218101760, "master_successful_evictions_total": 35}
+128 failed request records: {'ClientPayloadError': 127, 'ServerDisconnectedError': 1}. Latency percentiles use successful requests only; compare failure counts alongside them. The selected KV router was not changed to understand shared residency. Proxy reload/drain effects and routing estimates can influence the comparison; this is one experimental run, not an isolated causal estimate.
+TTFT p50: baseline 827.66 ms; Mooncake 914.88 ms
+TTFT p95: baseline 6,233.59 ms; Mooncake 67,764.67 ms
+TTFT p99: baseline 13,863.73 ms; Mooncake 143,315.61 ms
+Failed / total requests: baseline 9 / 420; Mooncake 128 / 2174
+Allocated load GPU-hours: baseline 0.619; Mooncake 6.414
+Mean allocated GPUs during load: baseline 2.12; Mooncake 4.97
+Starting replica-seconds: baseline 327.0; Mooncake 3,999.5
+Peak running replicas: baseline 3; Mooncake 7

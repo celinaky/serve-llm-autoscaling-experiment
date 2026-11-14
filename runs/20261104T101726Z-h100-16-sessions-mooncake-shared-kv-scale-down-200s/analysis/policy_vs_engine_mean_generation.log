@@ -1,0 +1,4 @@
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s/analysis/policy_vs_engine_mean60_0_1050.png
+  policy mean / engine mean where engine mean >= 1K: median 2.23, p10 0.61, p90 8.84 (n=523)
+  time-average over the load phase: policy 22.0K, engine 8.9K
+  published policy mean vs recomputed from the gauge: max abs diff 32.6K

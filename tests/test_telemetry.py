@@ -218,6 +218,23 @@ def test_parse_metrics_without_serve_metrics():
     assert parse_metrics("# TYPE ray_tasks gauge\nray_tasks 1\n") == ([], [])
 
 
+@pytest.mark.parametrize("value, expected", [(12345, 12345), (0, 0), ("NaN", None)])
+def test_parse_raw_prefill_tokens(value, expected):
+    name = "ray_serve_router_uncached_prefill_tokens"
+    samples, families = parse_metrics(
+        f'# TYPE {name} gauge\n'
+        f'{name}{{application="app",deployment="LLMServer:x",handle="h1",actor_id="a1"}} {value}\n'
+    )
+    assert samples == [{
+        "name": name,
+        "normalized_name": name.removeprefix("ray_"),
+        "type": "gauge",
+        "labels": {"application": "app", "deployment": "LLMServer:x", "handle": "h1", "actor_id": "a1"},
+        "value": expected,
+    }]
+    assert name.removeprefix("ray_") in families
+
+
 def test_parse_native_offload_evidence_preserves_replica_and_histograms():
     samples, _ = parse_metrics('''
 # TYPE ray_vllm_external_prefix_cache_hits_total counter

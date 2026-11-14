@@ -1,0 +1,26 @@
+placed 358 of 358 successful AIPerf requests; chunk budget 15680 tokens, block 1568 tokens
+requests preempted before their first token: 0 (0 tokens recomputed)
+requests that sat in a step without tokens after admission: 1 (1 steps in all)
+engine uncached prefill load at arrival, tokens: p10 0  p25 0  p50 0  p75 0  p90 5747  p95 31478  p99 129515  p100 177972
+requests arriving to an engine with no uncached prefill load: 285
+kind  step load    n step ms
+cold       ≤16K   37     453
+cold     16–32K   12     825
+cold     32–64K   14    1250
+cold    64–128K    3    1674
+cold      >128K    2    1322
+warm       ≤16K  283     353
+warm     16–32K    5    1526
+warm    64–128K    2    2125
+kind     load    n   TTFT  queue prefill   pre post steps  step own unc   (ms; steps = own steps; step = mean step ms)
+cold        0   49   4044     24    3905    97   18  3.98   981   39587
+cold     ≤16K   12   1910    225    1361   314   11  2.50   544   13012
+cold   16–32K    2   8046   1396    5724   892   33  4.00  1431   37833
+cold   32–64K    2   8211   4837    2208  1154   12  2.50   883   14700
+cold     >64K    3  21412  12951    7873   557   31  6.00  1312   62365
+warm        0  236    907    100     641   140   26  1.75   366    4452
+warm     ≤16K   36   1894    510     730   623   31  1.83   398    4033
+warm   16–32K    6   4455   2359    1491   578   27  2.17   688   10460
+warm   32–64K    6   6250   4255    1345   605   45  1.67   807    3337
+warm     >64K    6  11611   8249    2482   803   78  2.00  1241    3346
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s/analysis/load_breakdown.png, load_breakdown.csv, load_breakdown_steps.csv, load_requests.csv

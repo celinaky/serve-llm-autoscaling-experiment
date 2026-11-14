@@ -1,0 +1,150 @@
+{
+  "analysis": {
+    "diagnostic_plots": {
+      "gallery": "index.html",
+      "load_breakdown": {
+        "file": "load_requests.csv",
+        "log": "load_breakdown_generation.log",
+        "status": "generated"
+      },
+      "plots": {
+        "arrival_stats_stack": {
+          "description": "Successful requests matched to traces: p95, p90 and mean load at arrival, engine queue time and client TTFT; request counts under each point.",
+          "file": "arrival_stats_stack180_0_1050.png",
+          "log": "arrival_stats_stack_generation.log",
+          "status": "generated",
+          "title": "Arrival statistics \u00b7 180s windows"
+        },
+        "policy_vs_engine_mean": {
+          "description": "Router policy signal and actual remaining engine prefill, averaged over 60 seconds.",
+          "file": "policy_vs_engine_mean60_0_1050.png",
+          "log": "policy_vs_engine_mean_generation.log",
+          "status": "generated",
+          "title": "Policy vs engine mean"
+        },
+        "replica_percentile_lines": {
+          "description": "Matched successful requests per replica: p95, p90 and mean arrival load; windows with fewer than 10 requests are blank.",
+          "file": "replica_percentiles180_0_1050.png",
+          "log": "replica_percentile_lines_generation.log",
+          "status": "generated",
+          "title": "Replica percentiles \u00b7 180s windows"
+        },
+        "session_lanes": {
+          "description": "Observed first-to-last request spans with recorded lane IDs when available; inferred rows are explicitly labeled.",
+          "file": "session_lanes_0_1050.png",
+          "log": "session_lanes_generation.log",
+          "status": "generated",
+          "title": "Session lanes and replica placement"
+        }
+      },
+      "status": "generated",
+      "trace_files": [
+        "/mnt/cluster_storage/mooncake-kv/traces/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/k-c35e22130000_pid-579840.0000.jsonl",
+        "/mnt/cluster_storage/mooncake-kv/traces/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/k-c35e22130000_pid-592591.0000.jsonl",
+        "/mnt/cluster_storage/mooncake-kv/traces/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/k-c35e22130000_pid-610472.0000.jsonl"
+      ],
+      "warnings": []
+    },
+    "plot_error": null,
+    "warnings": [
+      "phase_manifest.json unavailable; time origin is the first profiling credit"
+    ]
+  },
+  "autoscaling": {
+    "policy": "token",
+    "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+    "policy_kwargs": {
+      "target_prefill_tokens_per_replica": 20000,
+      "upscale_aggregation": "mean",
+      "upscale_lookback_s": 60
+    },
+    "verified_deployments": [
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ]
+  },
+  "environment": {
+    "aiperf_source": "git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0",
+    "aiperf_version": "0.13.0",
+    "cluster_resources": {
+      "CPU": 184.0,
+      "GPU": 8.0,
+      "accelerator_type:H100": 1.0,
+      "anyscale/accelerator_shape:8xH100-80G": 1.0,
+      "anyscale/node-group:head": 1.0,
+      "anyscale/provider:aws": 1.0,
+      "anyscale/region:us-east-1": 1.0,
+      "memory": 2061584302080.0,
+      "node:10.1.154.0": 1.0,
+      "node:__internal_head__": 1.0,
+      "object_store_memory": 200000000000.0
+    },
+    "python_executable": "/home/ray/anaconda3/bin/python",
+    "python_version": "3.12.15",
+    "ray_path": "/home/ray/anaconda3/lib/python3.12/site-packages/ray/__init__.py",
+    "ray_version": "3.0.0.dev0"
+  },
+  "error": null,
+  "failure_stage": null,
+  "finished_at": "2026-11-04T23:38:17.991444+00:00",
+  "git_revision": "8e58d1142156f465ccd2a0adab28448cccb9a2f1",
+  "name": "h100-16-sessions-mooncake-no-decay-audit-scale-down-400s",
+  "readiness_s": 0.025770969921723008,
+  "routing": {
+    "ai_dynamo_version": "1.6.1",
+    "deployments": [
+      "LLMRouter",
+      "LLMServer:Qwen--Qwen3_6-27B-FP8"
+    ],
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
+    "router_request_audit_supported": true,
+    "topology": "direct_streaming"
+  },
+  "scheduler_traces": {
+    "directory": "/mnt/cluster_storage/mooncake-kv/traces/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s"
+  },
+  "shared_kv_cache": {
+    "backend": "mooncake",
+    "cache_prefix": "Qwen-Qwen3.6-27B-FP8@e89b16ebf1988b3d6befa7de50abc2d76f26eb09/tp1/kv-fp8/workday16-sd400-no-decay-request-audit",
+    "config_path": "/mnt/cluster_storage/mooncake-kv/requester.json",
+    "config_sha256": "875425a45d3e938dfdfcd6632c64bb8b9afc883df248142dd996570d9600e65f",
+    "connector": "MooncakeStoreConnector",
+    "health": {
+      "code": 0,
+      "status": "healthy"
+    },
+    "package": "mooncake-transfer-engine-cuda13==0.3.14",
+    "requester": {
+      "device_name": "",
+      "enable_offload": false,
+      "global_segment_size": 0,
+      "local_buffer_size": "1GB",
+      "master_server_address": "10.1.154.0:50051",
+      "metadata_server": "http://10.1.154.0:8080/metadata",
+      "mode": "standalone-store",
+      "protocol": "tcp",
+      "tenant_id": "ray-serve"
+    },
+    "router_modified": false
+  },
+  "started_at": "2026-11-04T23:04:53.201226+00:00",
+  "status": "succeeded",
+  "telemetry": {
+    "gpu_kv_events.jsonl": {
+      "error_records": 0,
+      "records": 1270
+    },
+    "mooncake_metrics.jsonl": {
+      "error_records": 0,
+      "records": 1792
+    },
+    "serve_metrics.jsonl": {
+      "error_records": 0,
+      "records": 448
+    },
+    "serve_status.jsonl": {
+      "error_records": 0,
+      "records": 1791
+    }
+  }
+}

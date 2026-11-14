@@ -1,0 +1,751 @@
+{
+  "captured_at": "2026-11-04T10:41:14.276950+00:00",
+  "producer_profile_record": {
+    "metadata": {
+      "session_num": 373,
+      "x_request_id": "12298040-903c-4537-99dc-aaf38114196f",
+      "x_correlation_id": "43d28791-c110-4f13-96e8-5637b7ab1273",
+      "conversation_id": "03e110ac6921c2fe9ac7772a9654314a2beb::sa:subagent_004_e80b5a20",
+      "turn_index": 0,
+      "source_trace_id": "03e110ac6921c2fe9ac7772a9654314a2beb",
+      "source_outer_idx": 9,
+      "source_inner_idx": 0,
+      "source_kind": "weka_subagent",
+      "credit_issued_ns": 1793788563618263984,
+      "request_start_ns": 1793788563644136267,
+      "request_ack_ns": 1793788563754547099,
+      "request_end_ns": 1793788573748766379,
+      "worker_id": "worker_35780b66",
+      "record_processor_id": "record_processor_c3314ebf",
+      "benchmark_phase": "profiling",
+      "phase_index": 0,
+      "profiling_index": 0,
+      "phase_name": "profiling",
+      "phase_kind": "profiling",
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "agent_depth": 1,
+      "parent_correlation_id": "cc529f04-2b6a-41dc-94d4-ea02afc4d5d3",
+      "root_correlation_id": "cc529f04-2b6a-41dc-94d4-ea02afc4d5d3"
+    },
+    "metrics": {
+      "http_req_chunks_received": {
+        "value": 201,
+        "unit": "count"
+      },
+      "output_sequence_length": {
+        "value": 203,
+        "unit": "tokens"
+      },
+      "usage_total_tokens": {
+        "value": 29010,
+        "unit": "tokens"
+      },
+      "http_req_dns_lookup": {
+        "value": 0.0,
+        "unit": "ms"
+      },
+      "http_req_receiving": {
+        "value": 7590.739063,
+        "unit": "ms"
+      },
+      "http_req_sending": {
+        "value": 0.250321,
+        "unit": "ms"
+      },
+      "http_req_connecting": {
+        "value": 0.0,
+        "unit": "ms"
+      },
+      "http_req_waiting": {
+        "value": 2513.553904,
+        "unit": "ms"
+      },
+      "http_req_blocked": {
+        "value": 0.0,
+        "unit": "ms"
+      },
+      "time_to_first_token": {
+        "value": 2513.903699,
+        "unit": "ms"
+      },
+      "request_latency": {
+        "value": 10104.630111999999,
+        "unit": "ms"
+      },
+      "time_to_second_token": {
+        "value": 697.635332,
+        "unit": "ms"
+      },
+      "inter_chunk_latency": {
+        "value": [
+          697.635332,
+          441.09752599999996,
+          0.0,
+          30.550020999999997,
+          42.82595,
+          42.962816,
+          42.489304999999995,
+          42.397469,
+          43.033328,
+          43.422747,
+          42.117808,
+          42.349737,
+          42.575148,
+          43.065441,
+          42.365688999999996,
+          42.393128999999995,
+          42.098087,
+          42.436552999999996,
+          42.648041,
+          42.586068,
+          41.851946,
+          43.05965,
+          42.757287,
+          42.937473,
+          42.485275,
+          43.718379,
+          42.062146,
+          41.847434,
+          41.578764,
+          41.154596,
+          40.670593,
+          41.607133999999995,
+          41.533822,
+          40.839081,
+          41.71051,
+          41.315501,
+          40.827211,
+          41.414597,
+          40.423120999999995,
+          41.024508999999995,
+          40.652393,
+          41.005089,
+          41.664795999999996,
+          40.992577999999995,
+          40.432663,
+          40.867732,
+          41.794529999999995,
+          38.285205,
+          37.316325,
+          37.171628999999996,
+          36.72885,
+          36.870186,
+          37.543005,
+          36.919578,
+          37.375657,
+          36.507281,
+          37.385808,
+          37.45502,
+          36.756271,
+          37.018102999999996,
+          37.065034,
+          37.624348,
+          38.044695,
+          36.217718999999995,
+          36.467318999999996,
+          37.311085,
+          37.159467,
+          37.447592,
+          37.040442999999996,
+          37.106096,
+          37.308163,
+          36.922149,
+          37.297694,
+          37.303005,
+          37.099985,
+          37.012592999999995,
+          36.794332,
+          37.044284,
+          37.019031999999996,
+          37.444161,
+          37.139925999999996,
+          41.922129,
+          22.921421,
+          25.204877,
+          30.05192,
+          22.90281,
+          22.355808,
+          23.788438,
+          24.480045999999998,
+          24.367652,
+          23.567528,
+          24.880713999999998,
+          23.883971,
+          25.049611,
+          24.143352,
+          25.471107999999997,
+          23.469544,
+          23.887262,
+          24.678675,
+          23.868201,
+          24.612641999999997,
+          23.865191,
+          25.035649,
+          24.021568,
+          24.365391,
+          23.720205,
+          24.039617999999997,
+          24.891544,
+          24.019416,
+          24.398874,
+          24.286697999999998,
+          24.07078,
+          24.811729999999997,
+          23.970366,
+          24.381432,
+          24.235495999999998,
+          24.331550999999997,
+          24.649442999999998,
+          23.983216,
+          24.812721,
+          23.930473,
+          24.360992,
+          24.190193999999998,
+          24.0915,
+          24.245867,
+          24.012836999999998,
+          24.665905,
+          24.234005999999997,
+          24.294618,
+          24.094721,
+          24.183494,
+          24.455986,
+          23.734894999999998,
+          24.07836,
+          24.597761,
+          24.187264,
+          24.208406,
+          24.308678999999998,
+          24.071918999999998,
+          24.032759,
+          23.999315,
+          28.418552,
+          28.693514,
+          28.995124999999998,
+          28.219313,
+          28.760906,
+          28.712125,
+          27.91859,
+          28.174152,
+          28.485163999999997,
+          27.150689,
+          24.122861999999998,
+          23.742725,
+          24.179133999999998,
+          24.232156,
+          24.322699999999998,
+          24.348630999999997,
+          24.864783,
+          24.094251,
+          24.044916999999998,
+          24.219687,
+          24.206324,
+          24.579241,
+          24.141472,
+          24.030037999999998,
+          25.380074,
+          27.41658,
+          337.35745599999996,
+          0.0,
+          11.295524,
+          26.425188,
+          26.601965999999997,
+          26.524962,
+          26.590835,
+          26.891067999999997,
+          26.219148999999998,
+          26.771843,
+          26.650537,
+          26.331744,
+          26.576075,
+          26.504291,
+          26.789374,
+          26.819694,
+          26.564655,
+          26.768742,
+          26.726851,
+          26.47299,
+          26.812814,
+          26.832005,
+          26.299453,
+          26.674899,
+          27.015462,
+          26.502232,
+          26.524752,
+          26.906568999999998,
+          26.366505,
+          26.671419,
+          26.96156,
+          26.634847999999998,
+          26.470739,
+          26.838476,
+          29.018437
+        ],
+        "unit": "ms"
+      },
+      "http_req_chunks_sent": {
+        "value": 1,
+        "unit": "count"
+      },
+      "http_req_data_sent": {
+        "value": 98.791015625,
+        "unit": "KB"
+      },
+      "output_token_count": {
+        "value": 203,
+        "unit": "tokens"
+      },
+      "http_req_data_received": {
+        "value": 50.61328125,
+        "unit": "KB"
+      },
+      "usage_prompt_cache_read_tokens": {
+        "value": 0,
+        "unit": "tokens"
+      },
+      "http_req_connection_reused": {
+        "value": 1,
+        "unit": "ratio"
+      },
+      "input_sequence_length": {
+        "value": 28807,
+        "unit": "tokens"
+      },
+      "http_req_duration": {
+        "value": 10104.543287999999,
+        "unit": "ms"
+      },
+      "usage_prompt_tokens": {
+        "value": 28807,
+        "unit": "tokens"
+      },
+      "usage_completion_tokens": {
+        "value": 203,
+        "unit": "tokens"
+      },
+      "time_to_first_output_token": {
+        "value": 2513.903699,
+        "unit": "ms"
+      },
+      "osl_mismatch_diff_pct": {
+        "value": 0.0,
+        "unit": "%"
+      },
+      "http_req_total": {
+        "value": 10104.543287999999,
+        "unit": "ms"
+      },
+      "http_req_connection_overhead": {
+        "value": 0.0,
+        "unit": "ms"
+      },
+      "inter_token_latency": {
+        "value": 37.57785352970297,
+        "unit": "ms"
+      },
+      "decode_duration": {
+        "value": 7590.726412999999,
+        "unit": "ms"
+      },
+      "e2e_output_token_throughput": {
+        "value": 20.089800195548214,
+        "unit": "tokens/sec/user"
+      },
+      "prefill_throughput_per_user": {
+        "value": 11459.070612553325,
+        "unit": "tokens/sec/user"
+      },
+      "output_token_throughput_per_user": {
+        "value": 26.611418856310188,
+        "unit": "tokens/sec/user"
+      }
+    }
+  },
+  "consumer_profile_record": {
+    "metadata": {
+      "session_num": 378,
+      "x_request_id": "1d7ad85c-a797-42d2-976e-1d2c81b4f16a",
+      "x_correlation_id": "43d28791-c110-4f13-96e8-5637b7ab1273",
+      "conversation_id": "03e110ac6921c2fe9ac7772a9654314a2beb::sa:subagent_004_e80b5a20",
+      "turn_index": 1,
+      "source_trace_id": "03e110ac6921c2fe9ac7772a9654314a2beb",
+      "source_outer_idx": 9,
+      "source_inner_idx": 1,
+      "source_kind": "weka_subagent",
+      "credit_issued_ns": 1793788574400809971,
+      "request_start_ns": 1793788574402402938,
+      "request_ack_ns": 1793788574523548428,
+      "request_end_ns": 1793788579744361922,
+      "worker_id": "worker_35780b66",
+      "record_processor_id": "record_processor_5d03b21d",
+      "benchmark_phase": "profiling",
+      "phase_index": 0,
+      "profiling_index": 0,
+      "phase_name": "profiling",
+      "phase_kind": "profiling",
+      "was_cancelled": false,
+      "context_overflow_skip": false,
+      "agent_depth": 1,
+      "parent_correlation_id": "cc529f04-2b6a-41dc-94d4-ea02afc4d5d3",
+      "root_correlation_id": "cc529f04-2b6a-41dc-94d4-ea02afc4d5d3"
+    },
+    "metrics": {
+      "http_req_chunks_received": {
+        "value": 146,
+        "unit": "count"
+      },
+      "output_sequence_length": {
+        "value": 146,
+        "unit": "tokens"
+      },
+      "usage_total_tokens": {
+        "value": 48017,
+        "unit": "tokens"
+      },
+      "http_req_dns_lookup": {
+        "value": 0.0,
+        "unit": "ms"
+      },
+      "http_req_receiving": {
+        "value": 2753.847139,
+        "unit": "ms"
+      },
+      "http_req_sending": {
+        "value": 0.849896,
+        "unit": "ms"
+      },
+      "http_req_connecting": {
+        "value": 0.5626829999999999,
+        "unit": "ms"
+      },
+      "http_req_waiting": {
+        "value": 2587.174626,
+        "unit": "ms"
+      },
+      "http_req_blocked": {
+        "value": 0.0,
+        "unit": "ms"
+      },
+      "time_to_first_token": {
+        "value": 2588.126366,
+        "unit": "ms"
+      },
+      "request_latency": {
+        "value": 5341.958984,
+        "unit": "ms"
+      },
+      "time_to_second_token": {
+        "value": 3.882112,
+        "unit": "ms"
+      },
+      "inter_chunk_latency": {
+        "value": [
+          3.882112,
+          18.869612,
+          20.103082,
+          19.998879,
+          20.374803,
+          19.663085,
+          19.919463999999998,
+          19.964197,
+          20.371983,
+          20.631415999999998,
+          19.982917999999998,
+          19.953915,
+          19.558080999999998,
+          19.899583,
+          20.024279999999997,
+          19.82276,
+          19.584632,
+          20.863293,
+          19.405673999999998,
+          19.856952,
+          19.902214999999998,
+          19.949064999999997,
+          19.744287999999997,
+          19.747557,
+          19.890224,
+          20.088521999999998,
+          19.840652,
+          19.657342999999997,
+          20.123184,
+          19.890083,
+          20.223598,
+          20.191546,
+          19.523699,
+          19.574759,
+          20.520711,
+          19.10481,
+          19.653844,
+          19.577220999999998,
+          19.760607999999998,
+          19.770668999999998,
+          20.059691,
+          19.953395999999998,
+          19.646172999999997,
+          19.773979,
+          20.200796,
+          19.907175,
+          19.919735,
+          19.830230999999998,
+          19.551059,
+          19.757528,
+          19.869293,
+          19.920966,
+          19.695674,
+          20.005339,
+          19.405253,
+          19.894054999999998,
+          19.617041,
+          20.173676,
+          21.276920999999998,
+          17.698473,
+          20.261478,
+          19.589322,
+          19.822,
+          20.195427,
+          19.957746,
+          20.047090999999998,
+          19.818559999999998,
+          19.508468,
+          19.934655,
+          19.713027,
+          19.661693,
+          19.78888,
+          19.797079,
+          19.869213,
+          19.528918,
+          19.842171999999998,
+          19.762278,
+          19.950667,
+          19.619612999999998,
+          19.564508999999997,
+          19.967067,
+          19.654353,
+          19.77256,
+          20.192655,
+          20.132714999999997,
+          20.379452999999998,
+          19.31695,
+          19.899164,
+          19.045807999999997,
+          19.605221999999998,
+          19.483176,
+          19.585711,
+          19.745967999999998,
+          19.790858999999998,
+          19.803701,
+          19.645823,
+          20.017208999999998,
+          19.890213,
+          19.942977,
+          20.170564,
+          19.372373,
+          19.907334,
+          19.624453,
+          19.653672999999998,
+          19.690566,
+          19.985187,
+          19.404024,
+          19.657773,
+          20.144164999999997,
+          19.397551999999997,
+          19.832452,
+          20.035199,
+          19.423605,
+          19.987745999999998,
+          20.01869,
+          19.247666,
+          19.965588,
+          20.585272,
+          19.56879,
+          20.444387,
+          20.304771,
+          19.850793,
+          20.555350999999998,
+          20.731189,
+          20.28504,
+          19.862963,
+          15.427235999999999,
+          13.685663,
+          14.073151,
+          14.138091999999999,
+          13.785077,
+          14.246888,
+          13.828419,
+          14.012367,
+          13.998187,
+          14.160553,
+          13.896132999999999,
+          14.06406,
+          13.939383999999999,
+          14.146742999999999,
+          14.134482,
+          14.030408999999999,
+          14.060559,
+          13.882361,
+          14.889534999999999
+        ],
+        "unit": "ms"
+      },
+      "http_req_chunks_sent": {
+        "value": 1,
+        "unit": "count"
+      },
+      "http_req_data_sent": {
+        "value": 165.1962890625,
+        "unit": "KB"
+      },
+      "output_token_count": {
+        "value": 146,
+        "unit": "tokens"
+      },
+      "http_req_data_received": {
+        "value": 36.6669921875,
+        "unit": "KB"
+      },
+      "usage_prompt_cache_read_tokens": {
+        "value": 28224,
+        "unit": "tokens"
+      },
+      "http_req_connection_reused": {
+        "value": 0,
+        "unit": "ratio"
+      },
+      "input_sequence_length": {
+        "value": 47871,
+        "unit": "tokens"
+      },
+      "http_req_duration": {
+        "value": 5341.871661,
+        "unit": "ms"
+      },
+      "usage_prompt_tokens": {
+        "value": 47871,
+        "unit": "tokens"
+      },
+      "usage_completion_tokens": {
+        "value": 146,
+        "unit": "tokens"
+      },
+      "time_to_first_output_token": {
+        "value": 2588.126366,
+        "unit": "ms"
+      },
+      "osl_mismatch_diff_pct": {
+        "value": 0.0,
+        "unit": "%"
+      },
+      "http_req_total": {
+        "value": 5342.434343999999,
+        "unit": "ms"
+      },
+      "http_req_connection_overhead": {
+        "value": 0.5626829999999999,
+        "unit": "ms"
+      },
+      "inter_token_latency": {
+        "value": 18.991949089655172,
+        "unit": "ms"
+      },
+      "decode_duration": {
+        "value": 2753.832618,
+        "unit": "ms"
+      },
+      "e2e_output_token_throughput": {
+        "value": 27.330797641332094,
+        "unit": "tokens/sec/user"
+      },
+      "prefill_throughput_per_user": {
+        "value": 18496.392072998184,
+        "unit": "tokens/sec/user"
+      },
+      "output_token_throughput_per_user": {
+        "value": 52.65389009202301,
+        "unit": "tokens/sec/user"
+      }
+    }
+  },
+  "scheduler_queue_events": {
+    "12298040-903c-4537-99dc-aaf38114196f": {
+      "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s/k-c35e22130000_pid-3499714.0000.jsonl",
+      "event": {
+        "arrival_time_s": 1793788563.708759,
+        "event": "request_queued",
+        "external_request_id": "chatcmpl-12298040-903c-4537-99dc-aaf38114196f-83d4b4e6",
+        "max_tokens": 203,
+        "monotonic_s": 1230323.50450034,
+        "priority": 0,
+        "prompt_tokens": 28807,
+        "queued_after_batch": 18744,
+        "request_id": "chatcmpl-12298040-903c-4537-99dc-aaf38114196f-83d4b4e6",
+        "running_requests": 4,
+        "schema_version": 1,
+        "waiting_requests": 2,
+        "wall_time_s": 1793788563.7692099
+      }
+    },
+    "1d7ad85c-a797-42d2-976e-1d2c81b4f16a": {
+      "trace_file": "/mnt/cluster_storage/mooncake-kv/traces/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s/k-c35e22130000_pid-3516624.0000.jsonl",
+      "event": {
+        "arrival_time_s": 1793788574.519484,
+        "event": "request_queued",
+        "external_request_id": "chatcmpl-1d7ad85c-a797-42d2-976e-1d2c81b4f16a-9c1f13b4",
+        "max_tokens": 146,
+        "monotonic_s": 1230334.261948436,
+        "priority": 0,
+        "prompt_tokens": 47871,
+        "queued_after_batch": 21,
+        "request_id": "chatcmpl-1d7ad85c-a797-42d2-976e-1d2c81b4f16a-9c1f13b4",
+        "running_requests": 0,
+        "schema_version": 1,
+        "waiting_requests": 1,
+        "wall_time_s": 1793788574.5266585
+      }
+    }
+  },
+  "consumer_replica_id": "81zrh05t",
+  "consumer_actor_pid": 3515469,
+  "consumer_gpu_worker_pid": 3517005,
+  "consumer_prior_request": {
+    "request_id": "bc286bfc-cd30-4f41-ab64-4dc171cc53da",
+    "prompt_tokens": 1111,
+    "max_output_tokens": 21,
+    "note": "Only earlier queued request on new engine; total tokens below1568 cache block size."
+  },
+  "consumer_get_keys": 21,
+  "consumer_get_bytes": 1078984704,
+  "consumer_cached_tokens": 28224,
+  "consumer_input_tokens": 47871,
+  "computed_prefill_expected_from_cached_tokens": 19647,
+  "actual_computed_prefill_tokens": 19647,
+  "load_tier_log_lines": [
+    "(RayWorkerProc pid=3517005) (Worker pid=3517005) INFO 11-04 02:36:14 [worker.py:288] Mooncake load tier summary: req_id=chatcmpl-1d7ad85c-a797-42d2-976e-1d2c81b4f16a-9c1f13b4 batch_keys=21 memory_keys=21 disk_keys=0 unknown_keys=0 success_keys=21 failed_keys=0 bytes_by_tier={'memory': 1078984704, 'disk': 0, 'unknown': 0}"
+  ],
+  "interpretation": "Confirmed new replica3 cross-process reuse: prior request on newengine was too short for a full1568-tokenGPU block; turn1 loaded21 keys/1,078,984,704bytes fromsharedDRAM and actuallycomputed19,647of47,871inputtokens, reusing28,224tokens fromproducerreplica2.",
+  "load_requests_csv_row": {
+    "request_id": "1d7ad85c-a797-42d2-976e-1d2c81b4f16a",
+    "engine": "k-c35e22130000_pid-3516624",
+    "kind": "warm",
+    "engine_load_tokens": "0",
+    "ongoing_sequences": "0",
+    "kv_context_tokens": "1131",
+    "kv_cache_usage": "0.004773269689737458",
+    "step_load_tokens": "8148.333333333333",
+    "idle_steps": "0",
+    "own_uncached": "19647",
+    "isl": "47871",
+    "preemptions_before_first_token": "0",
+    "recompute_tokens_before_first_token": "0",
+    "steps": "3",
+    "step_ms": "716.5952519668887",
+    "client_ttft_ms": "2588.126366",
+    "pre_ms": "124.255744",
+    "queue_ms": "295.5182420555502",
+    "prefill_ms": "2149.785755900666",
+    "post_ms": "18.566624043783577",
+    "min_steps": "3",
+    "chunk_budget": "15680"
+  }
+}

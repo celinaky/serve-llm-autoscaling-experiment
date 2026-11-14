@@ -1,0 +1,32 @@
+{
+  "time": "2026-11-04T12:22:38.478330+00:00",
+  "tick": 174,
+  "manifest_status": "succeeded",
+  "driver_alive": false,
+  "target": null,
+  "replicas": [],
+  "replica_states": {},
+  "pool": {
+    "master_allocated_bytes": 241898094592,
+    "master_total_capacity_bytes": 274877906944,
+    "master_successful_evictions_total": 35,
+    "master_attempted_evictions_total": 35,
+    "master_evicted_key_count_total": 8490,
+    "master_evicted_size_bytes_total": 436218101760
+  },
+  "client_health": {
+    "status": "healthy",
+    "code": 0
+  },
+  "exported_requests": 2174,
+  "request_error_types": {
+    "ClientPayloadError": 127,
+    "ServerDisconnectedError": 1
+  },
+  "observed_root_sessions": 39,
+  "observed_source_traces": 39,
+  "context_overflow_skips": 0,
+  "router_lifecycle_warnings": 12,
+  "lease_expiration_log_lines": 0,
+  "failed_get_batch_log_lines": 0
+}

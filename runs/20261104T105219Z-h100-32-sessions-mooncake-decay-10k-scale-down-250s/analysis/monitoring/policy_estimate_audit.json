@@ -1,0 +1,15 @@
+{
+  "time_basis": "Harnessplot_datarelativeclock",
+  "published_policy_mean_tokens_time_weighted": 113599.50825417484,
+  "published_policy_mean_tokens_by_phase": {
+    "ramp_up": 31678.306031578308,
+    "hold": 147908.396870905,
+    "ramp_down": 92594.04462658084
+  },
+  "max_controller_series_per_point": 1,
+  "engine_remaining_prefill_mean_tokens_from_plot_log": 40600,
+  "recomputed_gauge_mean_tokens_from_plot_log": 101800,
+  "published_vs_recomputed_max_abs_difference_tokens_from_plot_log": 146700,
+  "methods_note": "Publishedmeanintegrateddirectlyfromplot_data.token_prefill_replicas*20K;engine40.6Kandraw101.8Kareplottoolaveragesroundedto0.1K. Do notsubstitutetherawrecomputedgaugeaverageforactualpublishedmean.",
+  "interpretation": "Whole-runpublishedprefillsignalaverage113.6Kexceedsreconstructedschedulerremaining-prefillaverage40.6K,about2.8x.PointwiseratioquantilesfromtheplotlogarefortheRECOMPUTEDrawgaugeproxy,notactualpublishedseries,sotheydonotestablishpublishedpointwiseratios.Transport/decodeworkisnotincludedingreencurve;comparisonisnotacompleteGPUcapacityoracle."
+}

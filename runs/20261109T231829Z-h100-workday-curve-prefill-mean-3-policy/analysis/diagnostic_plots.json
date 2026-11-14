@@ -1,0 +1,46 @@
+{
+  "gallery": "index.html",
+  "load_breakdown": {
+    "file": "load_requests.csv",
+    "log": "load_breakdown_generation.log",
+    "status": "generated"
+  },
+  "plots": {
+    "arrival_stats_stack": {
+      "description": "Successful requests matched to traces: p95, p90 and mean load at arrival, engine queue time and client TTFT; request counts under each point.",
+      "file": "arrival_stats_stack180_0_1050.png",
+      "log": "arrival_stats_stack_generation.log",
+      "status": "generated",
+      "title": "Arrival statistics \u00b7 180s windows"
+    },
+    "policy_vs_engine_mean": {
+      "description": "Router policy signal and actual remaining engine prefill, averaged over 60 seconds.",
+      "log": "policy_vs_engine_mean_generation.log",
+      "reason": "plot command exited 1; see policy_vs_engine_mean_generation.log",
+      "status": "failed",
+      "title": "Policy vs engine mean"
+    },
+    "replica_percentile_lines": {
+      "description": "Matched successful requests per replica: p95, p90 and mean arrival load; windows with fewer than 10 requests are blank.",
+      "file": "replica_percentiles180_0_1050.png",
+      "log": "replica_percentile_lines_generation.log",
+      "status": "generated",
+      "title": "Replica percentiles \u00b7 180s windows"
+    },
+    "session_lanes": {
+      "description": "Observed first-to-last request spans with recorded lane IDs when available; inferred rows are explicitly labeled.",
+      "file": "session_lanes_0_1050.png",
+      "log": "session_lanes_generation.log",
+      "status": "generated",
+      "title": "Session lanes and replica placement"
+    }
+  },
+  "status": "partial",
+  "trace_files": [
+    "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/20261109T231829Z-h100-workday-curve-prefill-mean-3-policy/k-18f733060000_pid-279465.0000.jsonl",
+    "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/20261109T231829Z-h100-workday-curve-prefill-mean-3-policy/k-18f733060000_pid-292845.0000.jsonl"
+  ],
+  "warnings": [
+    "Policy vs engine mean: plot command exited 1; see policy_vs_engine_mean_generation.log"
+  ]
+}

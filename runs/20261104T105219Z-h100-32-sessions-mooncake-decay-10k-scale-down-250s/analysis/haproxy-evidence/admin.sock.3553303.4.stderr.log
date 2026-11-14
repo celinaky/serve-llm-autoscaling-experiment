@@ -1,0 +1,21 @@
+[NOTICE]   (3558861) : haproxy version is 2.8.25-5cf5d0683
+[NOTICE]   (3558861) : path to executable is /home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy
+[WARNING]  (3558861) : config : log format ignored for frontend 'prometheus' since it has no log address.
+[WARNING]  (3558861) : config : missing timeouts for backend 'http-ttft-benchmark'.
+   | While not properly invalid, you will certainly encounter various problems
+   | with such a configuration. To fix this, please ensure that all following
+   | timeouts are set to a non-zero value: 'client', 'connect', 'server'.
+[WARNING]  (3558861) : config : missing timeouts for backend 'http-ttft-benchmark-via-ingress-request-router'.
+   | While not properly invalid, you will certainly encounter various problems
+   | with such a configuration. To fix this, please ensure that all following
+   | timeouts are set to a non-zero value: 'client', 'connect', 'server'.
+[WARNING]  (3558861) : Health check for server http-ttft-benchmark/SERVE_REPLICA_ttft-benchmark-LLMServer_Qwen--Qwen3_6-27B-FP8-h1nx2oex succeeded, reason: Layer7 check passed, code: 200, check duration: 0ms, status: 2/2 UP.
+[WARNING]  (3558861) : Proxy prometheus stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (3558861) : Proxy http_frontend stopped (cumulated conns: FE: 69, BE: 0).
+[WARNING]  (3558861) : Proxy stats stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (3558861) : Proxy default_backend stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (3558861) : Proxy http-ttft-benchmark stopped (cumulated conns: FE: 0, BE: 0).
+[WARNING]  (3558861) : Proxy http-ttft-benchmark-via-ingress-request-router stopped (cumulated conns: FE: 0, BE: 2040).
+[WARNING]  (3558861) : soft-stop running for too long, performing a hard-stop.
+[WARNING]  (3558861) : Proxy http_frontend hard-stopped (16 remaining conns will be closed).
+[WARNING]  (3558861) : Some tasks resisted to hard-stop, exiting now.

@@ -1,0 +1,29 @@
+{
+  "prepared_at": "2026-11-04T16:27:17.192888+00:00",
+  "experiment": "/home/ray/default/serve-llm-autoscaling-experiment/experiments/h100_workday_curve_mooncake_decay_400s.yaml",
+  "baseline": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+  "changes": {
+    "prefill_decay_tokens_per_second": {
+      "before": 0,
+      "after": 10000
+    },
+    "downscale_delay_s": {
+      "before": 200,
+      "after": 400
+    },
+    "post_load_observation_s": {
+      "before": 300,
+      "after": 600
+    },
+    "cache_namespace": "fresh for this run; pool reset before launch"
+  },
+  "workload_unchanged": true,
+  "load_duration_s": 1050,
+  "upscale_delay_s": 40,
+  "router_source_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py": "437ad29010711f1bc53e09403eeffc7b11dcb9a5e6ce4dcb7f7d5785ada5fbf9",
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py": "76215883957ab76314d04a131a1387e44f008ace94f6a4621ea42372762091f5"
+  },
+  "smoke_result": "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+  "title": "H100s, 16 sessions, Mooncake shared KV with 10k/sec decay and 400s scale down"
+}

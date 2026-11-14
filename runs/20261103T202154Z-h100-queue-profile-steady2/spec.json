@@ -1,0 +1,110 @@
+{
+ "_doc": [
+  "Repeat of h100_queue_profile_steady.json for more 0-100K data, with its mid-run cold",
+  "prober running from the start (that run went from 58% of arrivals at 0 load to an even",
+  "spread over 0-100K once it started) and a third prober of <=704-token requests, the",
+  "noisiest row (110 requests pooled), on a shared prefix so it adds almost no load.",
+  "Sessions held at 5 7 6 8 twice, as before."
+ ],
+ "duration_s": 2455,
+ "grace_period_s": 120,
+ "target_concurrency": 8,
+ "seed": 47,
+ "points": [
+  {
+   "time_s": 0,
+   "concurrency": 1
+  },
+  {
+   "time_s": 45,
+   "concurrency": 5
+  },
+  {
+   "time_s": 325,
+   "concurrency": 5
+  },
+  {
+   "time_s": 345,
+   "concurrency": 7
+  },
+  {
+   "time_s": 625,
+   "concurrency": 7
+  },
+  {
+   "time_s": 645,
+   "concurrency": 6
+  },
+  {
+   "time_s": 925,
+   "concurrency": 6
+  },
+  {
+   "time_s": 945,
+   "concurrency": 8
+  },
+  {
+   "time_s": 1225,
+   "concurrency": 8
+  },
+  {
+   "time_s": 1245,
+   "concurrency": 5
+  },
+  {
+   "time_s": 1525,
+   "concurrency": 5
+  },
+  {
+   "time_s": 1545,
+   "concurrency": 7
+  },
+  {
+   "time_s": 1825,
+   "concurrency": 7
+  },
+  {
+   "time_s": 1845,
+   "concurrency": 6
+  },
+  {
+   "time_s": 2125,
+   "concurrency": 6
+  },
+  {
+   "time_s": 2145,
+   "concurrency": 8
+  },
+  {
+   "time_s": 2425,
+   "concurrency": 8
+  },
+  {
+   "time_s": 2455,
+   "concurrency": 1
+  }
+ ],
+ "probes": [
+  {
+   "rate": 0.4,
+   "min_new": 1000,
+   "max_new": 8000,
+   "prefix": 40000,
+   "seed": 12
+  },
+  {
+   "rate": 0.15,
+   "min_new": 20000,
+   "max_new": 40000,
+   "prefix": 0,
+   "seed": 13
+  },
+  {
+   "rate": 0.3,
+   "min_new": 100,
+   "max_new": 700,
+   "prefix": 40000,
+   "seed": 14
+  }
+ ]
+}

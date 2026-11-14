@@ -1,0 +1,24 @@
+placed 415 of 415 successful AIPerf requests; chunk budget 15680 tokens, block 1568 tokens
+requests preempted before their first token: 0 (0 tokens recomputed)
+requests that sat in a step without tokens after admission: 0 (0 steps in all)
+engine uncached prefill load at arrival, tokens: p10 0  p25 0  p50 0  p75 0  p90 2531  p95 7508  p99 26099  p100 73065
+requests arriving to an engine with no uncached prefill load: 334
+kind  step load    n step ms
+cold       ≤16K   40     502
+cold     16–32K   15     906
+cold     32–64K    8    1306
+warm       ≤16K  336     415
+warm     16–32K   12     728
+warm     32–64K    3    2018
+warm    64–128K    1     374
+kind     load    n   TTFT  queue prefill   pre post steps  step own unc   (ms; steps = own steps; step = mean step ms)
+cold        0   51   2848     32    2708    93   15  3.22   842   27898
+cold     ≤16K    9   2561    193    1800   558   11  2.89   623   17221
+cold   16–32K    2   3486   1927     702   841   16  1.50   468    1687
+cold   32–64K    1   8198   4415    3069   693   21  3.00  1023   28670
+warm        0  283   1140    208     753   150   29  1.75   431    4535
+warm     ≤16K   55   2254    757     988   479   31  1.82   543    4529
+warm   16–32K   12   2097   1151     654   266   27  1.83   357    2415
+warm   32–64K    1  15479   2676   12388   358   56  6.00  2065   67700
+warm     >64K    1   1017     33     748   194   42  2.00   374    2564
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/analysis/load_breakdown.png, load_breakdown.csv, load_breakdown_steps.csv, load_requests.csv

@@ -1,0 +1,11 @@
+{
+  "trace_started": 1,
+  "request_queued": 322,
+  "batch_scheduled": 24402,
+  "request_admitted": 322,
+  "request_first_token": 322,
+  "batch_completed": 24402,
+  "scheduler_idle_step": 13,
+  "request_finished": 322,
+  "reconstructed_requests": 322
+}

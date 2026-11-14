@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import importlib.metadata
 import os
+from pathlib import Path
 import re
 import sys
 import time
@@ -77,10 +78,13 @@ def check_routing_support(config: ExperimentConfig) -> dict[str, Any]:
         try:
             version = importlib.metadata.version("ai-dynamo")
         except importlib.metadata.PackageNotFoundError:
-            raise RuntimeError(
-                f"routing policy kv_aware requires ai-dynamo>={wanted}; install it "
-                f"on every node (pip install 'ai-dynamo>={wanted}')"
-            ) from None
+            try:
+                version = importlib.metadata.version("ai-dynamo-runtime")
+            except importlib.metadata.PackageNotFoundError:
+                raise RuntimeError(
+                    f"routing policy kv_aware requires ai-dynamo>={wanted}; install it "
+                    f"on every node (pip install 'ai-dynamo>={wanted}')"
+                ) from None
         if _release(version) < MIN_AI_DYNAMO_VERSION:
             raise RuntimeError(
                 f"routing policy kv_aware requires ai-dynamo>={wanted}, found {version}"
@@ -93,6 +97,17 @@ def check_routing_support(config: ExperimentConfig) -> dict[str, Any]:
                 f"is not importable ({type(exc).__name__}: {exc})"
             ) from exc
         result["ai_dynamo_version"] = version
+        if (config.analysis.record_router_estimates
+                and config.analysis.scheduler_trace_dir is not None):
+            from ray.llm._internal.serve.routing_policies.kv_aware.kv_token_tracker import KVTokenTracker
+
+            if not hasattr(KVTokenTracker, "_trace_request_event"):
+                raise RuntimeError(
+                    "record_router_estimates requires the request-audit Ray patch; "
+                    "apply patches/router-request-audit.patch to this Ray build "
+                    "or disable analysis.record_router_estimates"
+                )
+            result["router_request_audit_supported"] = True
     return result
 
 
@@ -288,7 +303,7 @@ class RayServeBackend:
                 "model_id": deployment.model_id,
                 "model_source": deployment.model_source,
             },
-            "engine_kwargs": deployment.engine.model_dump(exclude_none=True),
+            "engine_kwargs": deployment.engine.model_dump(exclude_none=True, exclude={"shared_kv_cache"}),
             "deployment_config": {
                 "autoscaling_config": {
                     **deployment.autoscaling.model_dump(
@@ -309,6 +324,54 @@ class RayServeBackend:
             spec["deployment_config"]["max_ongoing_requests"] = deployment.max_ongoing_requests
         if deployment.accelerator_type:
             spec["accelerator_type"] = deployment.accelerator_type
+        env_vars = {}
+        shared = deployment.engine.shared_kv_cache
+        if shared is not None and shared.enabled:
+            env_vars.update({
+                "MOONCAKE_CONFIG_PATH": str(shared.config_path.resolve()),
+                "PYTHONHASHSEED": "0",
+                "VLLM_MOONCAKE_STORE_TIER_LOG": "1",
+            })
+            spec["engine_kwargs"]["kv_transfer_config"] = {
+                "kv_connector": "MooncakeStoreConnector", "kv_role": "kv_both",
+                "kv_load_failure_policy": shared.load_failure_policy,
+                "kv_connector_extra_config": {
+                    "cache_prefix": shared.cache_prefix,
+                    "load_async": shared.load_async,
+                    "save_decode_cache": shared.save_decode_cache,
+                },
+            }
+            if shared.package:
+                spec.setdefault("runtime_env", {})["pip"] = [shared.package]
+        if self.config.analysis.scheduler_trace_dir is not None:
+            trace_dir = str(self.config.analysis.scheduler_trace_dir.resolve())
+            if self.config.analysis.scheduler_trace_backend == "injected":
+                scheduler = "serve_profiler.scheduler.AutoTracingScheduler"
+                if spec["engine_kwargs"].get("scheduler_cls") not in (None, scheduler):
+                    raise ValueError("Cannot replace an existing custom scheduler")
+                package = Path(__file__).resolve().parents[3] / "serve-llm-profiler" / "serve_profiler"
+                if not (package / "scheduler.py").is_file():
+                    raise ValueError(f"Injected scheduler package is missing: {package}")
+                spec["engine_kwargs"]["scheduler_cls"] = scheduler
+                runtime = spec.setdefault("runtime_env", {})
+                runtime.setdefault("py_modules", []).append(str(package))
+                runtime["worker_process_setup_hook"] = "serve_profiler.compat.setup"
+                env_vars.update({
+                    "SERVE_PROFILER_TRACE_DIR": trace_dir,
+                    "RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR": "",
+                    "PYTHONPATH": str(package.parent) + (
+                        os.pathsep + os.environ["PYTHONPATH"] if os.environ.get("PYTHONPATH") else ""
+                    ),
+                })
+            else:
+                env_vars["RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR"] = trace_dir
+            if (self.config.analysis.record_router_estimates
+                    and deployment.routing.policy == "kv_aware"):
+                env_vars["RAY_SERVE_LLM_ROUTER_REQUEST_TRACE_DIR"] = str(
+                    self.config.analysis.scheduler_trace_dir.resolve() / "router-request-audit"
+                )
+        if env_vars:
+            spec.setdefault("runtime_env", {})["env_vars"] = env_vars
         return spec
 
     def routing_summary(self) -> dict[str, Any]:
@@ -344,9 +407,20 @@ class RayServeBackend:
         from ray.serve.llm import LLMConfig, build_openai_app
 
         deployment = self.config.deployment
-        app = build_openai_app(
-            {"llm_configs": [LLMConfig(**self.deployment_spec())]}
-        )
+        spec = self.deployment_spec()
+        # LLMConfig accepts uploaded module URIs, not local directory paths.
+        if spec.get("runtime_env", {}).get("py_modules"):
+            import tempfile
+            import ray
+            from ray._private.runtime_env.py_modules import upload_py_modules_if_needed
+            from ray._private.runtime_env.setup_hook import upload_worker_process_setup_hook_if_needed
+
+            with tempfile.TemporaryDirectory(prefix="token-metrics-packages-") as scratch:
+                for runtime in (spec.get("runtime_env"),):
+                    if runtime:
+                        upload_py_modules_if_needed(runtime, include_gitignore=True, scratch_dir=scratch)
+                        upload_worker_process_setup_hook_if_needed(runtime, ray._private.worker.global_worker)
+        app = build_openai_app({"llm_configs": [LLMConfig(**spec)]})
         # HAProxy and its body forwarding are configured in the controller,
         # which does not inherit the driver's environment.
         controller_options = {"runtime_env": {"env_vars": env}} if env else None

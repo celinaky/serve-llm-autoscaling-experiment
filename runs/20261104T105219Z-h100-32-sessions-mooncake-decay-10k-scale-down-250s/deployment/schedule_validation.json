@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "checked_at": "2026-11-04T10:57:04.591269+00:00",
+  "series_file": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T105219Z-h100-32-sessions-mooncake-decay-10k-scale-down-250s/benchmark/agentx-concurrency-ramp/concurrency_series.json",
+  "series_sha256": "7f5944222b352e73ece7b5b60bb53795c9533d3e1364ba65792a5c5e6c953da4",
+  "interpolation_source": "/home/ray/.cache/uv/git-v0/checkouts/1a530a9203ad6a81/1c61dfbb/src/aiperf/timing/rate_series.py",
+  "interpolation_source_sha256": "f8cb84678b43edc6374767765d6988d9e76a6ad8636f6d8ff68cb33d784f04d9",
+  "integer_seconds_checked": 4651,
+  "transition_boundaries_checked": 62,
+  "nominal_phases": [
+    {
+      "name": "ramp_up",
+      "start_s": 0,
+      "end_s": 930
+    },
+    {
+      "name": "hold",
+      "start_s": 930,
+      "end_s": 3720
+    },
+    {
+      "name": "ramp_down",
+      "start_s": 3720,
+      "end_s": 4650
+    }
+  ],
+  "early_observed_root_starts": [
+    {
+      "trace_id": "002001296e8a8c38ad9d7cc436d691afc602",
+      "root_correlation_id": "2d278603-3d8a-4d18-a8c3-164bb3fd0535",
+      "first_request_s": 0.0
+    },
+    {
+      "trace_id": "006c98de37d819e95b0840e25426bb7ca99d",
+      "root_correlation_id": "5f633837-86c7-400b-a443-61782567037e",
+      "first_request_s": 30.026527327
+    },
+    {
+      "trace_id": "00ca01c4aaeccee751ae6285beb54dea262f",
+      "root_correlation_id": "43761da1-202c-4fdc-90dc-aaae53441806",
+      "first_request_s": 60.064671683
+    }
+  ],
+  "note": "Target concurrency changes at30-second boundaries, subject to controller polling. Downward changes retire session trees at turn boundaries; live sessions need not decrease instantly. Replacement sessions may start between scheduled slot additions."
+}

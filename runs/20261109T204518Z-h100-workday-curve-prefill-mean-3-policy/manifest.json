@@ -1,0 +1,46 @@
+{
+  "autoscaling": {
+    "policy": "token",
+    "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+    "policy_kwargs": {
+      "target_prefill_tokens_per_replica": 20000,
+      "upscale_lookback_s": 60
+    }
+  },
+  "environment": {
+    "aiperf_source": "git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0",
+    "aiperf_version": "0.13.0",
+    "cluster_resources": {
+      "CPU": 184.0,
+      "GPU": 8.0,
+      "accelerator_type:H100": 1.0,
+      "anyscale/accelerator_shape:8xH100-80G": 1.0,
+      "anyscale/node-group:head": 1.0,
+      "anyscale/provider:aws": 1.0,
+      "anyscale/region:us-east-1": 1.0,
+      "memory": 2061584302080.0,
+      "node:10.1.135.135": 1.0,
+      "node:__internal_head__": 1.0,
+      "object_store_memory": 200000000000.0
+    },
+    "python_executable": "/home/ray/anaconda3/bin/python",
+    "python_version": "3.12.14",
+    "ray_path": "/home/ray/anaconda3/lib/python3.12/site-packages/ray/__init__.py",
+    "ray_version": "3.0.0.dev0"
+  },
+  "error": "ModuleNotFoundError: No module named 'vllm.entrypoints.common'",
+  "failure_stage": "deploy",
+  "finished_at": "2026-11-09T20:45:33.403859+00:00",
+  "git_revision": "445c5a463f0af2e41c6081c8b7c9d48f3c04198b",
+  "name": "h100-workday-curve-prefill-mean-3-policy",
+  "routing": {
+    "ai_dynamo_version": "1.6.2",
+    "policy": "kv_aware",
+    "request_router_class": "ray.serve.llm.request_router.KVAwareRouter"
+  },
+  "scheduler_traces": {
+    "directory": "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces/20261109T204518Z-h100-workday-curve-prefill-mean-3-policy"
+  },
+  "started_at": "2026-11-09T20:45:18.866296+00:00",
+  "status": "failed"
+}

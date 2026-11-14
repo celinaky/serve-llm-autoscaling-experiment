@@ -1,0 +1,43 @@
+[
+  {
+    "request_id": "3b346fee-d4bb-43fa-8f6f-e3769974a1fd",
+    "start_s": 481.5252983570099,
+    "prompt_tokens": 84831,
+    "cached_tokens": 83104,
+    "computed_before_first_token": 1727,
+    "queue_wait_s": 23.021547354990616,
+    "prefill_span_s": 0.5873009769711643,
+    "get_bytes": 2877292544,
+    "profile_error": null
+  },
+  {
+    "request_id": "aa3949ad-e888-4e42-ba13-e867722689fa",
+    "start_s": 675.2200396060944,
+    "prompt_tokens": 142029,
+    "cached_tokens": 137984,
+    "computed_before_first_token": 4045,
+    "queue_wait_s": 17.351567411096767,
+    "prefill_span_s": 1.1815016879700124,
+    "get_bytes": 4675600384,
+    "profile_error": {
+      "type": "ClientPayloadError",
+      "message": "ClientPayloadError(\"Response payload is not completed: <TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>\")",
+      "cause": "<TransferEncodingError: 400, message='Not enough data to satisfy transfer length header.'>",
+      "cause_chain": [
+        "ClientPayloadError",
+        "TransferEncodingError"
+      ]
+    }
+  },
+  {
+    "request_id": "d1639e56-8b8f-4916-8916-baf3f057fdcf",
+    "start_s": 814.7612404823303,
+    "prompt_tokens": 119096,
+    "cached_tokens": 117600,
+    "computed_before_first_token": 1496,
+    "queue_wait_s": 18.61974016390741,
+    "prefill_span_s": 0.511637750081718,
+    "get_bytes": 4007657472,
+    "profile_error": null
+  }
+]

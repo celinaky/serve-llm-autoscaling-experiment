@@ -1,0 +1,104 @@
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 361, in __init__
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     self._socket_setup()
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 436, in _socket_setup
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     self._endpoint = self._bind(self._pub, self._endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 461, in _bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     sock.bind(endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/zmq/sugar/socket.py", line 320, in bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     super().bind(addr)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     _check_rc(rc)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     raise ZMQError(errno)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) Process EngineCore:
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) Traceback (most recent call last):
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198)   File "/home/ray/anaconda3/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 361, in __init__
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     self._socket_setup()
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 436, in _socket_setup
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     self._endpoint = self._bind(self._pub, self._endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 461, in _bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     sock.bind(endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/zmq/sugar/socket.py", line 320, in bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     super().bind(addr)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     _check_rc(rc)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     raise ZMQError(errno)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) Process EngineCore:
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) Traceback (most recent call last):
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613)   File "/home/ray/anaconda3/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 361, in __init__
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     self._socket_setup()
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 436, in _socket_setup
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     self._endpoint = self._bind(self._pub, self._endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 461, in _bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     sock.bind(endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/zmq/sugar/socket.py", line 320, in bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     super().bind(addr)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     _check_rc(rc)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     raise ZMQError(errno)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) (EngineCore pid=3652338) ERROR 11-04 03:40:33 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) Process EngineCore:
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980) Traceback (most recent call last):
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3650980)   File "/home/ray/anaconda3/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 361, in __init__
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     self._socket_setup()
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 436, in _socket_setup
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     self._endpoint = self._bind(self._pub, self._endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 461, in _bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     sock.bind(endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/zmq/sugar/socket.py", line 320, in bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     super().bind(addr)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     _check_rc(rc)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     raise ZMQError(errno)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) (EngineCore pid=3707546) ERROR 11-04 04:04:37 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5559')
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) Process EngineCore:
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431) Traceback (most recent call last):
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3705431)   File "/home/ray/anaconda3/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 361, in __init__
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     self._socket_setup()
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 436, in _socket_setup
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     self._endpoint = self._bind(self._pub, self._endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/vllm/distributed/kv_events.py", line 461, in _bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     sock.bind(endpoint)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]   File "/home/ray/anaconda3/lib/python3.12/site-packages/zmq/sugar/socket.py", line 320, in bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     super().bind(addr)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 1009, in zmq.backend.cython._zmq.Socket.bind
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     _check_rc(rc)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]   File "zmq/backend/cython/_zmq.py", line 190, in zmq.backend.cython._zmq._check_rc
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     raise ZMQError(errno)
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433]     ^^^^^^^^^^^
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) (EngineCore pid=3716569) ERROR 11-04 04:07:47 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5559')
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) Process EngineCore:
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122) Traceback (most recent call last):
+(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3715122)   File "/home/ray/anaconda3/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap

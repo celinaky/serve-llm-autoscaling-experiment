@@ -1,0 +1,67 @@
+{
+  "accelerator_type": "H100",
+  "deployment_config": {
+    "autoscaling_config": {
+      "downscale_delay_s": 400.0,
+      "initial_replicas": 1,
+      "look_back_period_s": 60,
+      "max_replicas": 7,
+      "metrics_interval_s": 2,
+      "min_replicas": 1,
+      "policy": {
+        "policy_function": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+        "policy_kwargs": {
+          "target_prefill_tokens_per_replica": 20000,
+          "upscale_aggregation": "mean",
+          "upscale_lookback_s": 60
+        }
+      },
+      "target_ongoing_requests": 8.0,
+      "upscale_delay_s": 40.0
+    },
+    "request_router_config": {
+      "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
+      "request_router_kwargs": {
+        "prefill_decay_tokens_per_second": 10000
+      }
+    }
+  },
+  "engine_kwargs": {
+    "enable_prefix_caching": true,
+    "enable_prompt_tokens_details": true,
+    "gpu_memory_utilization": 0.92,
+    "kv_cache_dtype": "fp8",
+    "kv_transfer_config": {
+      "kv_connector": "MooncakeStoreConnector",
+      "kv_connector_extra_config": {
+        "cache_prefix": "Qwen-Qwen3.6-27B-FP8@e89b16ebf1988b3d6befa7de50abc2d76f26eb09/tp1/kv-fp8/workday16-sd400-decay10k-20261104T162717Z",
+        "load_async": true,
+        "save_decode_cache": true
+      },
+      "kv_load_failure_policy": "recompute",
+      "kv_role": "kv_both"
+    },
+    "language_model_only": true,
+    "max_model_len": 262144,
+    "max_num_batched_tokens": 16384,
+    "max_num_seqs": 512,
+    "revision": "e89b16ebf1988b3d6befa7de50abc2d76f26eb09",
+    "tensor_parallel_size": 1,
+    "tokenizer_revision": "e89b16ebf1988b3d6befa7de50abc2d76f26eb09"
+  },
+  "model_loading_config": {
+    "model_id": "Qwen/Qwen3.6-27B-FP8",
+    "model_source": "Qwen/Qwen3.6-27B-FP8"
+  },
+  "runtime_env": {
+    "env_vars": {
+      "MOONCAKE_CONFIG_PATH": "/mnt/cluster_storage/mooncake-kv/requester.json",
+      "PYTHONHASHSEED": "0",
+      "RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR": "/mnt/cluster_storage/mooncake-kv/traces/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+      "VLLM_MOONCAKE_STORE_TIER_LOG": "1"
+    },
+    "pip": [
+      "mooncake-transfer-engine-cuda13==0.3.14"
+    ]
+  }
+}

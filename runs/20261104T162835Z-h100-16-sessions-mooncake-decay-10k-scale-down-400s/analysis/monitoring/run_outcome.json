@@ -1,0 +1,303 @@
+{
+  "title": "H100s, 16 sessions, Mooncake shared KV with 10k/sec decay and 400s scale down",
+  "run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "status": "succeeded",
+  "verified_at": "2026-11-04T17:03:07.994851+00:00",
+  "teardown_completed": "2026-11-04T17:02:22.800200+00:00",
+  "serve_applications_after_teardown": [],
+  "gpu_compute_processes_after_teardown": "",
+  "mooncake_store_health_after_teardown": {
+    "status": "healthy",
+    "code": 0
+  },
+  "requests": {
+    "both_slo_attainment": 0.46285714285714286,
+    "failed_requests": 12,
+    "itl": {
+      "mean_ms": 46.63930203544092,
+      "p50_ms": 49.09322117684565,
+      "p90_ms": 72.38455104834867,
+      "p95_ms": 80.11046211223358,
+      "p99_ms": 132.73636100831118,
+      "sample_count": 350,
+      "slo_attainment": 0.5314285714285715,
+      "slo_met": false,
+      "slo_percentile_ms": 80.11046211223358
+    },
+    "requests": 362,
+    "slo_met": false,
+    "slo_percentile": 0.95,
+    "ttft": {
+      "mean_ms": 3114.9300572914285,
+      "p50_ms": 809.0037849999999,
+      "p90_ms": 9814.679486600002,
+      "p95_ms": 15662.684632400002,
+      "p99_ms": 23577.901499779993,
+      "sample_count": 350,
+      "slo_attainment": 0.82,
+      "slo_met": false,
+      "slo_percentile_ms": 15662.684632400002
+    },
+    "ttft_by_cache": {
+      "cold": {
+        "mean_ms": 3025.86183025,
+        "p50_ms": 2558.2379364999997,
+        "p90_ms": 7217.4668505,
+        "p95_ms": 8710.76035925,
+        "p99_ms": 9769.414936500001,
+        "sample_count": 56,
+        "slo_attainment": 0.8035714285714286,
+        "slo_met": false,
+        "slo_percentile_ms": 8710.76035925
+      },
+      "warm": {
+        "mean_ms": 3131.895433870748,
+        "p50_ms": 774.0440295,
+        "p90_ms": 10593.561155399997,
+        "p95_ms": 16281.729361449974,
+        "p99_ms": 23920.665928359987,
+        "sample_count": 294,
+        "slo_attainment": 0.8231292517006803,
+        "slo_met": false,
+        "slo_percentile_ms": 16281.729361449974
+      }
+    }
+  },
+  "credit_reconciliation": {
+    "sent_credits": 364,
+    "exported_profiles": 362,
+    "exported_successes": 350,
+    "exported_errors": 12,
+    "unexported_cancelled_credits": 2,
+    "raw_was_cancelled_flags": 0,
+    "grace_period_s": 120,
+    "note": "364 credits sent;362 exported profiles comprise350 successes and12 transport errors. Two remaining credits were cancelled after120s grace and a further10s cancellation-return timeout, without profile records. They are separate from the12 observed transport errors."
+  },
+  "telemetry_warning": "Optional AIPerf gpu_telemetry_manager dropped at16:31:52.121UTC after missed heartbeats; GPU-utilization export may be incomplete.",
+  "load_cost": {
+    "covered_s": 1050.0,
+    "gpu_hours": 0.7839052015850011,
+    "max_running_replicas": 5,
+    "mean_running_replicas": 2.141010323475242,
+    "running_replica_seconds": 2248.060839649004,
+    "starting_replica_seconds": 573.9978860569998
+  },
+  "mean_allocated_gpus_during_load": 2.6876749768628607,
+  "whole_run_cost": {
+    "covered_s": 1783.529862077,
+    "gpu_hours": 1.4143143264886124,
+    "max_running_replicas": 5,
+    "mean_running_replicas": 2.5329173261170608,
+    "running_replica_seconds": 4517.533689302005,
+    "starting_replica_seconds": 573.9978860569998
+  },
+  "scale_events": [
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "up",
+      "from_replicas": 1.0,
+      "lag_s": 138.71041692700004,
+      "prefill_term_replicas": 2.935163489487049,
+      "running_matched_at_s": 625.985748218,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 487.275331291,
+      "to_replicas": 3.0
+    },
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "up",
+      "from_replicas": 3.0,
+      "lag_s": 136.82599006399994,
+      "prefill_term_replicas": 4.318769838047496,
+      "running_matched_at_s": 875.980646066,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 739.154656002,
+      "to_replicas": 5.0
+    },
+    {
+      "binding_term": "prefill",
+      "decode_term_replicas": null,
+      "direction": "down",
+      "from_replicas": 5.0,
+      "lag_s": 0.8051441810000597,
+      "prefill_term_replicas": 0.0,
+      "running_matched_at_s": 1439.980655312,
+      "sla_reason": null,
+      "sla_recommended_replicas": null,
+      "time_s": 1439.175511131,
+      "to_replicas": 1.0
+    }
+  ],
+  "upscale_decisions": 2,
+  "downscale_decisions": 1,
+  "cache_operations": {
+    "gpu_queries": 23095050.0,
+    "computed_prefill_tokens": 2955271.0,
+    "external_queries": 6695338.0,
+    "save_put_timed_operations_ok": 766.0,
+    "save_put_seconds_ok": 1030.9849999999994,
+    "save_exists_timed_operations_ok": 884.0,
+    "save_exists_seconds_ok": 0.5295000000000005,
+    "lookup_exists_timed_operations_ok": 1109.0,
+    "lookup_exists_seconds_ok": 0.5969999999999996,
+    "save_put_operations_ok": 766.0,
+    "save_exists_operations_ok": 884.0,
+    "lookup_exists_operations_ok": 1109.0,
+    "save_put_bytes_ok": 130197487616.0,
+    "gpu_hits": 16399712.0,
+    "external_hits": 3734976.0,
+    "load_get_timed_operations_ok": 51.0,
+    "load_get_seconds_ok": 345.625,
+    "load_get_operations_ok": 51.0,
+    "load_get_bytes_ok": 130248867840.0
+  },
+  "shared_pool": {
+    "master_allocated_bytes": {
+      "initial": 0,
+      "peak": 130197487616,
+      "last": 130197487616
+    },
+    "master_total_capacity_bytes": {
+      "initial": 274877906944,
+      "peak": 274877906944,
+      "last": 274877906944
+    },
+    "master_evicted_key_count": 0,
+    "master_evicted_size_bytes": 0,
+    "master_successful_evictions_total": 0
+  },
+  "root_routing_summary": {
+    "root_trees": 16,
+    "root_requests": 127,
+    "unmatched_root_requests": 0,
+    "root_transitions_including_failures": 0,
+    "failed_receiving_root_transitions": 0,
+    "all_conversation_transitions": 0,
+    "failed_receiving_conversation_transitions": 0
+  },
+  "session_audit_summary": {
+    "root_tree_count": 16,
+    "initial_source_lane_count": 16,
+    "fresh_root_starts_beyond_initial": 0,
+    "minimum_slot_reuse_events": 0,
+    "source_trace_count": 16,
+    "repeated_source_traces": {},
+    "was_cancelled_record_count": 0,
+    "context_overflow_records_by_depth": {}
+  },
+  "concurrency_audit": {
+    "observed_update_count": 16,
+    "all_expected_limits_observed": true,
+    "expected_limits": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "no_down_ramp": true
+  },
+  "publisher_startup_failure_summary": {
+    "captured_at": "2026-11-04T17:01:30.401501+00:00",
+    "distinct_address_in_use_engine_failures": 0,
+    "failures": [],
+    "note": "Only actual EngineCore address-in-use failures are counted; duplicated parent traceback lines are excluded."
+  },
+  "transport_error_summary": {
+    "observed_errors": 12,
+    "timing_consistent_with_reload_plus120s": 12,
+    "unattributed_errors": 0,
+    "direct_hardstop_worker_count": 2
+  },
+  "router_source_hashes_match": true,
+  "nonfatal_router_lifecycle_warning_count": 3,
+  "diagnostic_pipeline_status": "generated",
+  "limits": [
+    "One repeat only; routing and arrival timing vary. These are replica GPU reservations on a fixed8-H100 node, not measured billing savings.",
+    "Original16-session linear-interpolated ramp and hold unchanged; no session down-ramp was configured.",
+    "No during-load producer removal should be claimed unless an actual during-load downscale appears. After-load removal alone does not prove a later request reused that producer cache.",
+    "Twelve observed ClientPayloadError streams coincide with proxy reload+120s clusters; retained old proxy stderr confirms forced connection closure. Per-socket tracing was not collected.",
+    "Two cancelled credits have no profile records; observed success/latency statistics exclude them.",
+    "Optional AIPerf GPU telemetry manager dropped after missed heartbeats; GPU-utilization export may be incomplete. Replica reservation telemetry remains available.",
+    "Mooncake operation histogram sums are approximate: Ray maps >4s observations to8s. Direct vLLM interval logs show longer successful average transfers.",
+    "Session graph rows are observed request spans. Last observed request end does not establish natural session completion or exact recycled lane ownership.",
+    "Recompute-on-load-failure policy is configured, but zero observed GET failures does not exercise that fallback."
+  ],
+  "known_limits": [
+    "One repeat only; routing and arrival timing vary. These are replica GPU reservations on a fixed8-H100 node, not measured billing savings.",
+    "Original16-session linear-interpolated ramp and hold unchanged; no session down-ramp was configured.",
+    "No during-load producer removal should be claimed unless an actual during-load downscale appears. After-load removal alone does not prove a later request reused that producer cache.",
+    "Twelve observed ClientPayloadError streams coincide with proxy reload+120s clusters; retained old proxy stderr confirms forced connection closure. Per-socket tracing was not collected.",
+    "Two cancelled credits have no profile records; observed success/latency statistics exclude them.",
+    "Optional AIPerf GPU telemetry manager dropped after missed heartbeats; GPU-utilization export may be incomplete. Replica reservation telemetry remains available.",
+    "Mooncake operation histogram sums are approximate: Ray maps >4s observations to8s. Direct vLLM interval logs show longer successful average transfers.",
+    "Session graph rows are observed request spans. Last observed request end does not establish natural session completion or exact recycled lane ownership.",
+    "Recompute-on-load-failure policy is configured, but zero observed GET failures does not exercise that fallback."
+  ],
+  "background_monitor_finished": true,
+  "driver_exited_state": "Z (exited, awaiting parent reap)",
+  "policy_estimate_audit": {
+    "captured_at": "2026-11-04T17:02:53.660780+00:00",
+    "published_policy_mean_tokens_time_weighted": 28476.66461180149,
+    "engine_remaining_prefill_mean_tokens_from_plot_log": 11300.0,
+    "raw_recomputed_router_proxy_mean_tokens_from_plot_log": 22200.0,
+    "source_series": "plot_data.serve_metric_series.token_prefill_replicas.points *20000, step-time-weighted0..1050s",
+    "published_series_count_max": 1,
+    "note": "Purple chart uses actual published policy mean where available. Printed22.2K raw gauge reconstruction is a separate statistic; do not label its ratios as exact purple ratios. Engine mean from printed plot log is rounded to0.1K and excludes decode/transport demand."
+  },
+  "post_load_downscale": {
+    "captured_at": "2026-11-04T16:56:33.727431+00:00",
+    "target_change_at_utc": "2026-11-04T16:55:19.791+00:00",
+    "from_target": 5,
+    "to_target": 1,
+    "after_sending_stop_s": 382.929,
+    "during_load": false,
+    "removed_replica_ids": [
+      "08f2x4j5",
+      "dddatd2o",
+      "4hzloari",
+      "0dl7m9o5"
+    ],
+    "remaining_replica_id": "2a1fmw2i",
+    "all_four_stopped_by_utc": "2026-11-04T16:55:50.200+00:00",
+    "snapshot_one_running_at_utc": "2026-11-04T16:55:58.691+00:00",
+    "observed_ongoing_requests_at_decision": 0,
+    "forced_kill_observed": false,
+    "controller_log_excerpt": [
+      "INFO 2026-11-04 08:55:19,791 controller 4106989 -- Downscaling Deployment(name='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') from 5 to 1 replicas. Current ongoing requests: 0.00, current running replicas: 5.",
+      "INFO 2026-11-04 08:55:19,899 controller 4106989 -- Removing 4 replicas from Deployment(name='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark').",
+      "INFO 2026-11-04 08:55:19,899 controller 4106989 -- Stopping Replica(id='08f2x4j5', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') (currently ReplicaState.RUNNING).",
+      "INFO 2026-11-04 08:55:19,902 controller 4106989 -- Stopping Replica(id='dddatd2o', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') (currently ReplicaState.RUNNING).",
+      "INFO 2026-11-04 08:55:19,902 controller 4106989 -- Stopping Replica(id='4hzloari', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') (currently ReplicaState.RUNNING).",
+      "INFO 2026-11-04 08:55:19,903 controller 4106989 -- Stopping Replica(id='0dl7m9o5', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') (currently ReplicaState.RUNNING).",
+      "INFO 2026-11-04 08:55:50,090 controller 4106989 -- Replica(id='08f2x4j5', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.",
+      "INFO 2026-11-04 08:55:50,092 controller 4106989 -- Replica(id='4hzloari', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.",
+      "INFO 2026-11-04 08:55:50,094 controller 4106989 -- Replica(id='0dl7m9o5', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.",
+      "INFO 2026-11-04 08:55:50,095 controller 4106989 -- Cleaning up RequestProtocol.HTTP port 30002 for stale replica 08f2x4j5 on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,096 controller 4106989 -- Quarantined RequestProtocol.HTTP port 30002 for 150.0s after releasing for replica 08f2x4j5 on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,096 controller 4106989 -- Cleaning up RequestProtocol.HTTP port 30004 for stale replica 4hzloari on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,096 controller 4106989 -- Quarantined RequestProtocol.HTTP port 30004 for 150.0s after releasing for replica 4hzloari on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,096 controller 4106989 -- Cleaning up RequestProtocol.HTTP port 30005 for stale replica 0dl7m9o5 on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,096 controller 4106989 -- Quarantined RequestProtocol.HTTP port 30005 for 150.0s after releasing for replica 0dl7m9o5 on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,200 controller 4106989 -- Replica(id='dddatd2o', deployment='LLMServer:Qwen--Qwen3_6-27B-FP8', app='ttft-benchmark') is stopped.",
+      "INFO 2026-11-04 08:55:50,201 controller 4106989 -- Cleaning up RequestProtocol.HTTP port 30003 for stale replica dddatd2o on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32",
+      "INFO 2026-11-04 08:55:50,201 controller 4106989 -- Quarantined RequestProtocol.HTTP port 30003 for 150.0s after releasing for replica dddatd2o on node c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32"
+    ],
+    "limitation": "After-load downscale only. No subsequent requests were sent to establish reuse after these replicas stopped."
+  }
+}

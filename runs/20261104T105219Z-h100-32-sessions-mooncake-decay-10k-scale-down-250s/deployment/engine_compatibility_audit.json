@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-04T12:11:21.596191+00:00",
+  "engine_configuration_log_count": 20,
+  "checks": {
+    "model_revision": true,
+    "tokenizer_revision": true,
+    "tp1": true,
+    "kv_fp8": true,
+    "prefix_caching": true
+  },
+  "revision": "e89b16ebf1988b3d6befa7de50abc2d76f26eb09",
+  "router_source_unchanged": true,
+  "source_log": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-long-250s/run.log"
+}

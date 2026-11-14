@@ -1,0 +1,22 @@
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s/analysis/arrival_stats_stack180_0_1050.png
+  uncached prefill tokens on the engine at arrival (K)
+        0-  180s n= 32 p95=  32.76 p90=   7.67 mean=   3.37
+      180-  360s n= 48 p95=  36.56 p90=  19.01 mean=   4.11
+      360-  540s n= 99 p95=   5.94 p90=   2.25 mean=   0.95
+      540-  720s n= 92 p95=  15.24 p90=   2.86 mean=   6.30
+      720-  900s n= 45 p95=  91.73 p90=  81.75 mean=  12.47
+      900- 1050s n= 42 p95=  42.06 p90=  16.82 mean=   5.15
+  engine queue time (s)
+        0-  180s n= 32 p95=   2.96 p90=   0.65 mean=   0.34
+      180-  360s n= 48 p95=   2.55 p90=   1.66 mean=   0.38
+      360-  540s n= 99 p95=   0.65 p90=   0.27 mean=   0.12
+      540-  720s n= 92 p95=   1.09 p90=   0.33 mean=   0.63
+      720-  900s n= 45 p95=   8.13 p90=   4.87 mean=   1.02
+      900- 1050s n= 42 p95=   5.18 p90=   3.18 mean=   0.98
+  client TTFT (s)
+        0-  180s n= 32 p95=   8.51 p90=   6.67 mean=   2.89
+      180-  360s n= 48 p95=   7.78 p90=   4.95 mean=   1.89
+      360-  540s n= 99 p95=   4.82 p90=   2.88 mean=   1.12
+      540-  720s n= 92 p95=  11.58 p90=   2.63 mean=   1.93
+      720-  900s n= 45 p95=  12.67 p90=  11.19 mean=   3.31
+      900- 1050s n= 42 p95=   7.72 p90=   7.15 mean=   2.69

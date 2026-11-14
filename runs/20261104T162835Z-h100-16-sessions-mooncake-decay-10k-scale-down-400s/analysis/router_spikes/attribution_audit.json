@@ -1,0 +1,152 @@
+{
+  "run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "observed": {
+    "requests": 364,
+    "selection_log_coverage": 364,
+    "get_requests": {
+      "requests": 51,
+      "total_prompt_tokens": 4192437,
+      "gpu_prefill_tokens_before_first_output": 457461,
+      "get_bytes": 130248867840,
+      "sum_before_first_prefill_wait_s": 637.1775070223957,
+      "median_before_first_prefill_wait_s": 12.392479613074102,
+      "note": "Wait includes async KV lookup/load plus scheduling; it is not isolated transfer duration."
+    },
+    "no_get_requests": {
+      "requests": 313,
+      "total_prompt_tokens": 18902613,
+      "gpu_prefill_tokens_before_first_output": 2502901,
+      "get_bytes": 0,
+      "sum_before_first_prefill_wait_s": 39.225198982749134,
+      "median_before_first_prefill_wait_s": 0.0035185248125344515,
+      "note": "Wait includes async KV lookup/load plus scheduling; it is not isolated transfer duration."
+    },
+    "get_fraction_of_sum_before_first_prefill_wait": 0.9420091039930719,
+    "get_requests_with_zero_host_and_disk_credit": 51,
+    "get_requests_on_original_replica": 50,
+    "first_get_request_arrival_s": 368.5612437725067,
+    "index_parent_missing_warning_count": 38,
+    "first_index_parent_missing_warning_s": 467.9238078594208,
+    "index_parent_missing_warning_times_s": [
+      467.9238078594208,
+      478.4917109012604,
+      486.9329357147217,
+      532.4974377155304,
+      548.4572267532349,
+      561.9658808708191,
+      564.5099048614502,
+      567.2449867725372,
+      573.5042078495026,
+      713.2350668907166,
+      746.8252408504486,
+      754.1934578418732,
+      763.8885798454285,
+      764.2006638050079,
+      780.1949937343597,
+      797.2161157131195,
+      803.9909257888794,
+      830.1628727912903,
+      841.9428787231445,
+      848.3303537368774,
+      850.402988910675,
+      859.3324947357178,
+      862.4415767192841,
+      891.0545437335968,
+      903.1903328895569,
+      906.4539427757263,
+      923.3555908203125,
+      940.3050277233124,
+      943.5632507801056,
+      981.201201915741,
+      984.3990247249603,
+      986.6376938819885,
+      1008.9081258773804,
+      1011.0498387813568,
+      1049.5162227153778,
+      1079.9297008514404,
+      1114.4157707691193,
+      1145.3143258094788
+    ],
+    "prefill_complete_hook_failures": 0,
+    "request_completed_hook_failures": 3,
+    "lifecycle_transport_drop_warnings": 0,
+    "peak_comparisons": [
+      {
+        "time_s": 496.9835352897644,
+        "observed_router_60s_mean": 60651.159426718725,
+        "observed_engine_60s_mean": 16663.134416266283,
+        "illustrative_accounting_only": {
+          "oracle_gpu_tokens_no_decay": 19348.159128697716,
+          "oracle_gpu_tokens_decay_10k": 2515.9596351540877,
+          "assume_get_full_prompt_decay_10k": 143919.34675308346,
+          "assume_get_full_prompt_decay_20k": 41733.117805144175
+        }
+      },
+      {
+        "time_s": 736.9832437038422,
+        "observed_router_60s_mean": 86375.39676094992,
+        "observed_engine_60s_mean": 6514.378829781214,
+        "illustrative_accounting_only": {
+          "oracle_gpu_tokens_no_decay": 7397.686745707196,
+          "oracle_gpu_tokens_decay_10k": 143.1033002752525,
+          "assume_get_full_prompt_decay_10k": 67843.82353317934,
+          "assume_get_full_prompt_decay_20k": 21189.62290293236
+        }
+      },
+      {
+        "time_s": 856.9831681251526,
+        "observed_router_60s_mean": 101941.52004223558,
+        "observed_engine_60s_mean": 8329.715754950046,
+        "illustrative_accounting_only": {
+          "oracle_gpu_tokens_no_decay": 8937.351248975596,
+          "oracle_gpu_tokens_decay_10k": 1005.403899805629,
+          "assume_get_full_prompt_decay_10k": 100291.87657807201,
+          "assume_get_full_prompt_decay_20k": 35546.93714208955
+        }
+      }
+    ]
+  },
+  "synthetic_cpu_only_probe": [
+    {
+      "name": "mooncake-current",
+      "medium": "cpu",
+      "cpu_cache_spec_kind": null,
+      "host_extension_blocks": 0,
+      "effective_prefill_tokens": 64
+    },
+    {
+      "name": "uppercase-only",
+      "medium": "CPU",
+      "cpu_cache_spec_kind": null,
+      "host_extension_blocks": 4,
+      "effective_prefill_tokens": 16
+    },
+    {
+      "name": "self-describing",
+      "medium": "CPU",
+      "cpu_cache_spec_kind": "full_attention",
+      "host_extension_blocks": 4,
+      "effective_prefill_tokens": 16
+    }
+  ],
+  "conclusions": [
+    "The installed Mooncake store worker emits medium=\"cpu\". A CPU-only event-contract probe reproduced zero host extension after GPU removal with this label; changing only the label to \"CPU\" yielded four host extension blocks and reduced effective prefill from 64 to 16 tokens.",
+    "No configured global Mooncake lookup in the selector (startup shared_cache_type=none); all 51 confirmed GET requests had host_pinned_blocks=0 and disk_blocks=0 in the selection logs, i.e. no additional host/disk credit beyond the selected GPU overlap.",
+    "The connector DOES emit CPU BlockStored events. The event medium spelling is an observed interoperability problem in the installed versions, rather than proof that no events are emitted.",
+    "Even recognized CPU hits are not zero cost: the installed selector defaults to 0.75 host-cache hit credit, leaving a 25% token-equivalent load in the synthetic probe. This is different from GPU tokens actually computed.",
+    "The Ray 10K/s FIFO decay only subtracts work and applies one shared budget per worker; it does not alter Dynamo routing reservations.",
+    "There is no early correction of the original router estimate at external-hit discovery or per-prefill-chunk completion. RequestTokenTracker signals prefill completion on first output token.",
+    "The green curve uses retrospective GPU chunk work; KV transfer duration/bytes are not expressed as GPU-prefill tokens.",
+    "The 60s mean spreads/retains overestimates; 400s downscale delay changes scaling decisions rather than token measurements.",
+    "ParentBlockNotFound is an additional index-consistency concern; it can reduce cache credit but its contribution cannot be quantified from these logs.",
+    "Completion-hook errors occur after local autoscaling state is removed; no prefill-completion failures or lifecycle-transport-drop warnings were observed."
+  ],
+  "limits": [
+    "Selection-time per-request effective_prefill_tokens and GPU overlap were not logged. Zero host/disk credit does NOT imply zero GPU overlap.",
+    "There is no valid exact percentage attribution between missing external credit, GPU-index inconsistency, sampling/lifecycle latency, and fixed-rate estimation.",
+    "Illustrative replays use observed placements/times with hypothetical initial cache credit, not recovered router estimates or predictions of a changed deployment.",
+    "The CPU-only event-contract probe uses one full-attention cache group and synthetic hashes/tokens. It is not an end-to-end Qwen hybrid-model fix validation or a replay of the unsaved historical events."
+  ],
+  "site_modified": false,
+  "gpu_work_started": false
+}

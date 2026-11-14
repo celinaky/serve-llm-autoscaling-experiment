@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-11-04T17:03:30.017838+00:00",
+  "app_status": null,
+  "target": null,
+  "states": {},
+  "replicas": [],
+  "app_absent": true,
+  "pool": {
+    "master_allocated_bytes": 130197487616.0,
+    "master_total_capacity_bytes": 274877906944.0,
+    "master_nof_allocated_bytes": 0.0,
+    "master_total_nof_capacity_bytes": 0.0,
+    "master_total_file_capacity_bytes": 0.0,
+    "master_dfs_allocated_bytes": 0.0,
+    "master_dfs_total_capacity_bytes": 0.0,
+    "master_successful_evictions_total": 0.0,
+    "master_attempted_evictions_total": 0.0,
+    "master_evicted_key_count": 0.0,
+    "master_evicted_size_bytes": 0.0
+  },
+  "log_counts": {
+    "ClientPayloadError": 0,
+    "ServerDisconnectedError": 0,
+    "Address already in use": 0,
+    "lease expired": 0,
+    "failed keys": 0,
+    "free_reservation": 3
+  },
+  "driver_alive": false,
+  "profile_count": 362,
+  "profile_path": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s/benchmark/agentx-concurrency-ramp/profile_export.jsonl",
+  "manifest_status": "succeeded",
+  "teardown_completed": null,
+  "teardown_event_present": true,
+  "driver_process_state": "Z (exited, awaiting parent reap)",
+  "monitor_finished": true,
+  "observer_stopped_after_terminal": true,
+  "verified_at": "2026-11-04T17:03:34.126870+00:00"
+}

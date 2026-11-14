@@ -1,0 +1,129 @@
+# The mean-of-backlog token policy (branch
+# celina/prefill-token-autoscaling-policy, commit ed547dd6dc) on an H100
+# sized workday curve: ramp 1->16 sessions at one cold session every 30s
+# (0-450s), hold at 16 for 600s (450-1050s), no ramp down. Same seed as the
+# B200 run runs/20261102T203807Z-b200-workday-curve-prefill-mean, so the
+# ramp is the same first 16 sessions starting at the same times as that run
+# and as runs/20261103T064300Z-h100-workday-curve-prefill-mean.
+#
+# Why 16 (2026-11-03): the first H100 run kept every setting of the B200
+# run (32 sessions) and hit max_replicas 8. It was capacity-bound on the
+# ramp (the 3->7 scale-up at 767s landed after the spike it answered; a
+# replica takes ~190s to boot) and pinning-bound on the hold: replica 1 held
+# the oldest sessions, its KV (1.26M tokens vs 4.1M on B200) reached 87%,
+# evicted contexts came back as ~89K-token re-prefills (33 of its 62 hold
+# requests were cold) while replicas 4-8 sat idle. H100 prefills ~7K
+# uncached tokens/s per replica against ~16K on B200, so 16 sessions is the
+# B200 run's 32 in replica terms: at 16 sessions on 2 replicas the first
+# H100 run's mean asked for ~3, as the B200 run did at 32.
+#
+# Policy: the KV-aware router keeps one gauge, the total uncached prefill
+# tokens outstanding across all replicas (a request's whole prompt counts
+# until its first token). The policy takes the time-weighted mean of that
+# gauge over the last upscale_lookback_s and asks for
+#   ceil(mean / target_prefill_tokens_per_replica).
+# No per-replica or per-request view.
+#
+# Policy settings unchanged from the B200 run: 20K target (on H100 that is
+# ~3s of queue rather than ~1.2s; the 1s-equivalent would be ~8K),
+# upscale_delay_s 40, downscale_delay_s 1800 (longer than the load phase,
+# so no scale-down and the count only ratchets up).
+#
+# Compare with runs/20261102T203807Z-* (B200, 32 sessions) and
+# runs/20261103T064300Z-* (H100, 32 sessions) with the same tools: python
+# tools/load_breakdown.py <run> && python tools/policy_decision_timeline.py
+# <run> --backlog && python tools/arrival_stats_stack.py <run>
+#
+# Timeline: load 0-1050s, AIPerf drains for up to 120s, then 180s idle.
+name: h100-workday-curve-prefill-mean
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: H100
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    # B200 used 1024. On H100 vLLM 0.31 refuses it: with 1,241,417 KV tokens
+    # there are weonly 824 Mamba cache blocks, and max_num_seqs must not exceed
+    # them for CUDA graph capture. 512 is far above this workload's
+    # concurrency (32 sessions plus fan-outs), so the cap never binds.
+    max_num_seqs: 512
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    # Native CPU KV cache, per replica across TP ranks. Up to 448 GiB at
+    # max_replicas=7, plus Ray/object-store and other process memory.
+    kv_offloading_backend: native
+    kv_offloading_size: 64
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 20000
+        # Window for the time-weighted mean of the router's total outstanding
+        # uncached prefill tokens; must not exceed look_back_period_s. Same
+        # 60s as the earlier mean-policy runs.
+        upscale_lookback_s: 60
+        upscale_aggregation: mean
+    min_replicas: 1
+    initial_replicas: 1
+    # 7, not 8: tools/standalone_engine.py holds GPU 0 for queue profiling
+    # (a detached Ray actor with num_gpus=1), so Serve can place at most 7
+    # replicas; an 8th would sit pending. Set back to 8 when the profiler is
+    # stopped.
+    max_replicas: 7
+    # Unused by the token policy; Serve requires a value.
+    target_ongoing_requests: 8
+    # The mean must ask for more replicas for 40s straight before any are
+    # added, on top of the 60s mean itself.
+    upscale_delay_s: 40
+    # Longer than the load phase: no scale-down during this run.
+    downscale_delay_s: 1800
+    metrics_interval_s: 2
+    look_back_period_s: 60
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1050
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 16
+    # 0-450s ramp 1->16 (one cold session every 30s); 450-1050s hold at 16.
+    # No ramp down: load issuance ends at 1050s and AIPerf drains.
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 450, sessions: 16}
+      - {time_s: 1050, sessions: 16}
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  # The workday-curve AIPerf fork, pinned to a commit.
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

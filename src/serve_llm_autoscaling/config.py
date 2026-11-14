@@ -35,6 +35,24 @@ AGENTX_OWNED_ARGS = {
 }
 
 
+class SharedKVCacheConfig(BaseModel):
+    """Standalone Mooncake pool; the allocation is owned outside Serve."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    config_path: Path
+    cache_prefix: str = Field(min_length=1)
+    # Set to null for an image that already contains the compatible package.
+    package: str | None = "mooncake-transfer-engine-cuda13==0.3.14"
+    load_async: bool = True
+    save_decode_cache: bool = True
+    load_failure_policy: Literal["recompute", "fail"] = "recompute"
+    health_url: str | None = None
+    master_metrics_url: str | None = None
+    client_metrics_url: str | None = None
+
+
 class EngineConfig(BaseModel):
     """vLLM engine settings forwarded to Ray Serve LLM.
 
@@ -51,9 +69,11 @@ class EngineConfig(BaseModel):
     max_num_seqs: int | None = Field(default=None, ge=1)
     max_num_batched_tokens: int | None = Field(default=None, ge=1)
     enable_prefix_caching: bool | None = None
-    # GiB of host memory per replica, across tensor-parallel ranks.
+    # Host RAM per replica in GiB, summed across TP ranks. None disables
+    # offloading; this is independent of GPU type and HBM capacity.
     kv_offloading_size: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     kv_offloading_backend: Literal["native", "lmcache"] | None = None
+    shared_kv_cache: SharedKVCacheConfig | None = None
     # Reports usage.prompt_tokens_details.cached_tokens so AIPerf can record
     # prefix-cache hits. vLLM only computes the count with prefix caching on.
     enable_prompt_tokens_details: bool = True
@@ -61,6 +81,14 @@ class EngineConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_kv_offloading(self) -> "EngineConfig":
+        shared = self.shared_kv_cache
+        if shared is not None and shared.enabled:
+            if self.enable_prefix_caching is not True:
+                raise ValueError("shared KV caching requires enable_prefix_caching: true")
+            if self.kv_offloading_size is not None or self.kv_offloading_backend is not None:
+                raise ValueError("shared_kv_cache replaces the native/LMCache offloading settings; remove kv_offloading_size and kv_offloading_backend")
+            if (self.model_extra or {}).get("kv_transfer_config") is not None:
+                raise ValueError("shared_kv_cache cannot be combined with an explicit kv_transfer_config")
         if self.kv_offloading_size is None:
             return self
         if (self.model_extra or {}).get("kv_transfer_config") is not None:
@@ -527,6 +555,17 @@ class AnalysisConfig(BaseModel):
     metrics_interval_s: float = Field(default=2, gt=0)
     prometheus_enabled: bool = True
     generate_plots: bool = True
+    # AgentX reports add scheduler-load and session diagnostics after each run.
+    diagnostic_plots: bool = True
+    # Save the KV-aware router's existing per-replica block store/removal streams.
+    # Uses the advertised ZMQ endpoints; no GPU workload or connector change.
+    record_gpu_kv_events: bool = True
+    # Per-request router bookings/decay, joined to engine local/external hits.
+    record_router_estimates: bool = True
+    # Base directory for per-run scheduler traces. Use shared storage when
+    # replicas can run on other nodes; otherwise the run directory is used.
+    scheduler_trace_dir: Path | None = None
+    scheduler_trace_backend: Literal["ray", "injected"] = "ray"
     # Mean-latency targets the run is scored against. With the sla policy
     # they default to its ttft_ms and itl_ms and must match them.
     ttft_slo_ms: float | None = Field(default=None, gt=0)

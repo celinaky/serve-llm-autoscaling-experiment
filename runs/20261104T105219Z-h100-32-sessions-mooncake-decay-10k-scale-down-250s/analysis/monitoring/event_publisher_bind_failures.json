@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-11-04T11:39:11.726030+00:00",
+  "raw_match_count_including_repeated_tracebacks": 4,
+  "matches": [
+    {
+      "line": 23879,
+      "text": "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) (EngineCore pid=3640747) ERROR 11-04 03:35:50 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')"
+    },
+    {
+      "line": 23924,
+      "text": "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3639198) zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')"
+    },
+    {
+      "line": 25355,
+      "text": "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) (EngineCore pid=3646989) ERROR 11-04 03:38:11 [core.py:1433] zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')"
+    },
+    {
+      "line": 25400,
+      "text": "(ServeReplica:ttft-benchmark:LLMServer:Qwen--Qwen3_6-27B-FP8 pid=3645613) zmq.error.ZMQError: Address already in use (addr='tcp://*:5560')"
+    }
+  ]
+}

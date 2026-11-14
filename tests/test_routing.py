@@ -191,13 +191,13 @@ def test_apply_routing_environment_detects_stale_import(monkeypatch):
 # --- Preflight --------------------------------------------------------------
 
 
-def _fake_dynamo(monkeypatch, version):
+def _fake_dynamo(monkeypatch, version, distribution="ai-dynamo"):
     # Serve is already imported in this process; the ordering is covered by
     # test_preflight_applies_environment_before_first_serve_import.
     monkeypatch.setattr(backend, "apply_routing_environment", lambda config: {})
 
     def fake_version(name):
-        if name != "ai-dynamo" or version is None:
+        if name != distribution or version is None:
             raise backend.importlib.metadata.PackageNotFoundError(name)
         return version
 
@@ -237,6 +237,12 @@ def test_preflight_accepts_ai_dynamo(monkeypatch):
         "request_router_class": "ray.serve.llm.request_router.KVAwareRouter",
         "ai_dynamo_version": "1.4.0.post1",
     }
+
+
+def test_preflight_accepts_ai_dynamo_runtime(monkeypatch):
+    _fake_dynamo(monkeypatch, "1.7.0", distribution="ai-dynamo-runtime")
+    result = check_routing_support(load_config(AGENTX_PATH))
+    assert result["ai_dynamo_version"] == "1.7.0"
 
 
 def test_preflight_reports_missing_router(monkeypatch):

@@ -25,6 +25,7 @@ SELECTED_METRICS = (
     "serve_autoscaling_desired_replicas",
     "serve_autoscaling_target_replicas",
     "serve_autoscaling_total_requests",
+    "serve_router_uncached_prefill_tokens",
     "serve_autoscaling_target_ongoing_requests",
     "serve_num_ongoing_requests_at_replicas",
     "serve_request_router_queue_len",
@@ -72,6 +73,11 @@ SELECTED_METRICS = (
     "vllm_kv_offload_lookup_async_delay_seconds",
     "vllm_kv_offload_allocation_failure",
     "vllm_kv_offload_cpu_cache_usage_perc",
+    "vllm_mooncake_store_operation_time_seconds",
+    "vllm_mooncake_store_operation",
+    "vllm_mooncake_store_operation_keys",
+    "vllm_mooncake_store_operation_bytes",
+    "vllm_mooncake_store_operation_failed_keys",
 )
 SCRAPE_TIMEOUT_S = 2.0
 
@@ -375,6 +381,38 @@ def prometheus_collector(
     )
 
 
+def mooncake_metrics_collector(
+    path: Path, interval_s: float, endpoints: dict[str, str],
+    fetch: Callable[[str], str] = fetch_metrics_text,
+) -> JsonlCollector:
+    """Keep external pool occupancy/evictions separate from replica counters."""
+    def sample(timestamp_ns: int, tick: int) -> list[dict[str, Any]]:
+        from prometheus_client.parser import text_string_to_metric_families
+
+        records = []
+        for component, endpoint in endpoints.items():
+            record = {"timestamp_ns": timestamp_ns, "component": component,
+                      "endpoint": endpoint, "samples": [], "error": None}
+            try:
+                text = fetch(endpoint)
+                record["bytes"] = len(text)
+                for family in text_string_to_metric_families(text):
+                    for point in family.samples:
+                        record["samples"].append({
+                            "name": point.name, "labels": dict(point.labels),
+                            "value": point.value if math.isfinite(point.value) else None,
+                        })
+            except Exception as exc:
+                record["error"] = _error(exc)
+            record["scrape_finished_at_ns"] = time.time_ns()
+            records.append(record)
+        return records
+
+    return JsonlCollector(path, interval_s, sample,
+        lambda ts, error: {"timestamp_ns": ts, "samples": [], "error": error},
+        name="mooncake-metrics-collector")
+
+
 # --- SLA policy log ---------------------------------------------------------
 
 
@@ -456,6 +494,7 @@ class TelemetrySession:
         discover: Callable[[], list[dict[str, Any]]] = ray_nodes,
         fetch_metrics: Callable[[str], str] = fetch_metrics_text,
         logs_dir: Callable[[], Path] = serve_logs_dir,
+        kv_event_discover: Callable[[], list[dict[str, Any]]] | None = None,
     ):
         analysis = config.analysis
         telemetry_dir = root / "telemetry"
@@ -468,6 +507,14 @@ class TelemetrySession:
                 status_fetch,
             )
         ]
+        if analysis.record_gpu_kv_events and config.deployment.routing.policy == "kv_aware":
+            from .kv_event_recorder import GPUKVEventRecorder
+
+            self.collectors.append(GPUKVEventRecorder(
+                telemetry_dir / "gpu_kv_events.jsonl",
+                config.deployment.application_name,
+                discover=kv_event_discover,
+            ))
         if analysis.prometheus_enabled:
             self.collectors.append(prometheus_collector(
                 telemetry_dir / "serve_metrics.jsonl",
@@ -475,6 +522,17 @@ class TelemetrySession:
                 discover,
                 fetch_metrics,
             ))
+            shared = getattr(config.deployment.engine, "shared_kv_cache", None)
+            if shared is not None and shared.enabled:
+                endpoints = {name: url for name, url in {
+                    "master": shared.master_metrics_url,
+                    "client": shared.client_metrics_url,
+                }.items() if url}
+                if endpoints:
+                    self.collectors.append(mooncake_metrics_collector(
+                        telemetry_dir / "mooncake_metrics.jsonl",
+                        analysis.metrics_interval_s, endpoints, fetch_metrics,
+                    ))
         if config.deployment.autoscaling.policy.name == "sla":
             self.collectors.append(sla_policy_log_collector(
                 telemetry_dir / "sla_policy_events.jsonl",

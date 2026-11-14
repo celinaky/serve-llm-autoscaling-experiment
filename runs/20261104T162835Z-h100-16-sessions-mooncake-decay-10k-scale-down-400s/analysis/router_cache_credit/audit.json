@@ -1,0 +1,19 @@
+{
+  "status": "unavailable",
+  "run": "20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "traces_directory": "/mnt/cluster_storage/mooncake-kv/traces/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "router_files": [],
+  "routed_requests": 0,
+  "matched_rows": 0,
+  "valid_rows": 0,
+  "missing_engine_requests": [],
+  "ambiguous_requests": [],
+  "router_snapshot_count": 0,
+  "snapshot_sum_errors": [],
+  "dropped_trace_events": 0,
+  "assumed_host_credit": null,
+  "external_reuse_with_initial_router_excess": 0,
+  "largest_initial_disagreements": [],
+  "interpretation": "A candidate is an observed estimate/computation disagreement, not automatic proof of a routing bug. Compare GPU overlap, external reuse, timing, and intentional transfer-cost weighting.",
+  "reason": "No unambiguous router selections with separately recorded engine local/external cache counts. Historical combined cached-token counts cannot establish router credit."
+}

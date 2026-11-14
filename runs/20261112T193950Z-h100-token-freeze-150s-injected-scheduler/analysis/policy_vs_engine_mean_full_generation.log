@@ -1,0 +1,6 @@
+/home/ray/.config/matplotlib is not a writable directory
+Matplotlib created a temporary cache directory at /tmp/matplotlib-sqw46t00 because there was an issue with the default path (/home/ray/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261112T193950Z-h100-token-freeze-150s-injected-scheduler/analysis/policy_vs_engine_mean60_full_run_freeze.png
+  policy mean / engine mean where engine mean >= 1K: median 1.80, p10 0.41, p90 3.29 (n=548)
+  time-average over the load phase: policy 16.3K, engine 8.6K
+  published policy mean vs recomputed from the gauge: max abs diff 31.9K

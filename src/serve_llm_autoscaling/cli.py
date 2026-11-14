@@ -41,6 +41,8 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--window-s", type=float)
     analyze.add_argument("--tail-window-s", type=float)
     analyze.add_argument("--no-plot", action="store_true")
+    analyze.add_argument("--traces-dir", type=Path,
+                         help="Scheduler trace directory for diagnostic plots")
     compare = subparsers.add_parser(
         "compare", help="Tabulate the autoscaling evaluation of several analyzed runs"
     )
@@ -62,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
                 window_s=args.window_s,
                 tail_window_s=args.tail_window_s,
                 plot=False if args.no_plot else None,
+                traces_dir=args.traces_dir,
             )
             for warning in result["warnings"]:
                 print(f"WARNING: {warning}", file=sys.stderr)
@@ -73,6 +76,12 @@ def main(argv: list[str] | None = None) -> int:
             if result["plot_error"]:
                 print(f"ERROR: plot failed: {result['plot_error']}", file=sys.stderr)
                 return 1
+            diagnostics = result.get("diagnostic_plots") or {}
+            if diagnostics:
+                print(f"Diagnostic plots: {diagnostics['status']}")
+                print(f"Plot gallery: {args.run_dir / 'analysis/index.html'}")
+                if diagnostics["status"] in ("failed", "partial"):
+                    return 1
             return 0
         if args.command == "compare":
             from .compare import format_comparison

@@ -1,0 +1,27 @@
+{
+  "validated_at": "2026-11-04T12:41:39.965034+00:00",
+  "site_dir": "/home/ray/default/sites/h100-mooncake-decay-long",
+  "project_id": "appgprj_6aeb0e85183c8191a70f518de7902c0f",
+  "all_local_html_links_and_anchors_exist": true,
+  "six_chart_assets_match_run_sources_sha256": {
+    "autoscaling_timeline.png": "24d64071405342d6ea3deea3753c587494340d88850b9f6767dd7d2e1f4cdad3",
+    "mooncake_cache.png": "c4a1c1f9962b0536c6be4ca25c0b2fc10b0a91f504c7477ab8b5179ee42f24be",
+    "arrival_stats_stack180_0_4650.png": "60a2e0c63e41fbc4a8dc78158ced89d585e084532ee5b6e9d3976c79554176c9",
+    "replica_percentiles180_0_4650.png": "822ef6dd10852bc89468836dec48175772010746724930d986d1b401b99893a9",
+    "policy_vs_engine_mean60_0_4650.png": "1773797c62dc894ce66bb79126b9ebebd01228dfa30d3c15cf432f464d200df9",
+    "session_lanes_0_4650.png": "829abd2b8d363746d7f3512ec723b50cbf3ee8bd0685f80505a86c996645b481"
+  },
+  "json_assets_parse": true,
+  "run_summary_matches_final_evidence": true,
+  "config_and_key_outcome_claims_checked": true,
+  "javascript_syntax": "passed",
+  "charts_visually_inspected": [
+    "scaling timeline",
+    "arrival statistics",
+    "replica percentiles, full range",
+    "policy vs engine, full range and per-run traces",
+    "session spans, inferred rows",
+    "Mooncake pool and approximate latency"
+  ],
+  "browser_interaction_verification": "Not exercised; browser preview infrastructure unavailable. Static links, JavaScript syntax, exported assets and figures verified."
+}

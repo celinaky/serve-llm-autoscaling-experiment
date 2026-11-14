@@ -195,6 +195,7 @@ cython_debug/
 # reads profile_export.jsonl) cannot be rerun on that run.
 runs/*/telemetry/serve_metrics.jsonl
 runs/*/telemetry/serve_status.jsonl
+runs/*/telemetry/mooncake_metrics.jsonl
 runs/*/benchmark/*/profile_export.jsonl
 runs/*/benchmark/*/stdout.log
 runs/*/benchmark/*/logs/

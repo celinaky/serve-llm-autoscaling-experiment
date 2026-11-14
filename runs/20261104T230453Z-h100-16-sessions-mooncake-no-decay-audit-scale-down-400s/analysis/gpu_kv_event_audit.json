@@ -1,0 +1,166 @@
+{
+  "counts": [
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 0,
+      "count": 161
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 1,
+      "count": 161
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 2,
+      "count": 161
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 3,
+      "count": 2108
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockStored",
+      "medium": "cpu",
+      "group_idx": 3,
+      "count": 1199
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 0,
+      "count": 141
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 1,
+      "count": 141
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 2,
+      "count": 141
+    },
+    {
+      "replica_id": "7sjoieh2",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 3,
+      "count": 1349
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 0,
+      "count": 143
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 1,
+      "count": 143
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 2,
+      "count": 143
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 3,
+      "count": 667
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockStored",
+      "medium": "cpu",
+      "group_idx": 3,
+      "count": 645
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 0,
+      "count": 60
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 1,
+      "count": 60
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 2,
+      "count": 60
+    },
+    {
+      "replica_id": "u9nc9l4r",
+      "event": "BlockRemoved",
+      "medium": "GPU",
+      "group_idx": 3,
+      "count": 84
+    },
+    {
+      "replica_id": "v7e8goxy",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 0,
+      "count": 16
+    },
+    {
+      "replica_id": "v7e8goxy",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 1,
+      "count": 16
+    },
+    {
+      "replica_id": "v7e8goxy",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 2,
+      "count": 16
+    },
+    {
+      "replica_id": "v7e8goxy",
+      "event": "BlockStored",
+      "medium": "GPU",
+      "group_idx": 3,
+      "count": 188
+    },
+    {
+      "replica_id": "v7e8goxy",
+      "event": "BlockStored",
+      "medium": "cpu",
+      "group_idx": 3,
+      "count": 140
+    }
+  ],
+  "errors": []
+}

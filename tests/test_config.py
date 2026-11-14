@@ -34,6 +34,15 @@ def test_disabled_offloading_allows_prefix_cache_disabled_and_explicit_connector
     EngineConfig(kv_transfer_config={"kv_connector": "MooncakeStoreConnector"})
 
 
+def test_native_offloading_example_has_fixed_two_replicas():
+    config = load_config("experiments/h100_native_cpu_offload.yaml")
+    assert config.deployment.engine.kv_offloading_size == 64
+    assert config.deployment.engine.kv_offloading_backend == "native"
+    assert config.deployment.routing.policy == "kv_aware"
+    scaling = config.deployment.autoscaling
+    assert scaling.min_replicas == scaling.initial_replicas == scaling.max_replicas == 2
+
+
 def test_baseline_config_is_valid():
     config = load_config(Path("experiments/baseline.yaml"))
     assert config.deployment.model_id == "Qwen/Qwen3-0.6B-FP8"

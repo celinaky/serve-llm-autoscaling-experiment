@@ -1,0 +1,81 @@
+# 150-second freeze; 40-second upscale delay.
+# Downscale delay: 200 seconds, matching the earlier H100 scale-down run.
+name: h100-token-freeze-150s-injected-scheduler
+deployment:
+  application_name: ttft-benchmark
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: H100
+  route_prefix: /
+  routing:
+    policy: kv_aware
+    direct_streaming: true
+    forward_request_body: true
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 512
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_offloading_backend: native
+    kv_offloading_size: 64
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 20000
+        upscale_lookback_s: 60
+        post_downscale_cooldown_s: 150
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    target_ongoing_requests: 8
+    upscale_delay_s: 40
+    downscale_delay_s: 200
+    metrics_interval_s: 2
+    look_back_period_s: 60
+    upscaling_factor: 1.0
+    downscaling_factor: 1.0
+benchmark:
+  generator: aiperf
+  mode: agentx_concurrency_ramp
+  duration_s: 1050
+  grace_period_s: 120
+  post_load_observation_s: 600
+  workload:
+    type: agentx
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    target_concurrency: 16
+    concurrency_series:
+    - time_s: 0
+      sessions: 1
+    - time_s: 450
+      sessions: 16
+    - time_s: 1050
+      sessions: 16
+    trajectory_start_min_ratio: 0
+    trajectory_start_max_ratio: 0
+    seed: 42
+  streaming: true
+  fail_fast: true
+runtime:
+  endpoint_url: http://127.0.0.1:8000
+  aiperf_source: git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0
+  readiness_timeout_s: 1800
+  keep_deployment: false
+  results_dir: runs
+analysis:
+  window_s: 5
+  tail_window_s: 30
+  status_interval_s: 1
+  metrics_interval_s: 2
+  generate_plots: true
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  warmup_s: 0
+  record_router_estimates: false
+  scheduler_trace_backend: injected
+  scheduler_trace_dir: /mnt/cluster_storage/serve-llm-autoscaling-experiment/paired-scheduler-traces/token-freeze-150s

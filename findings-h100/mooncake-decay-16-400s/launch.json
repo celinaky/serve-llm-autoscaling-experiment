@@ -1,0 +1,148 @@
+{
+  "prepared_at": "2026-11-04T16:27:17.192888+00:00",
+  "experiment": "/home/ray/default/serve-llm-autoscaling-experiment/experiments/h100_workday_curve_mooncake_decay_400s.yaml",
+  "baseline": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+  "changes": {
+    "prefill_decay_tokens_per_second": {
+      "before": 0,
+      "after": 10000
+    },
+    "downscale_delay_s": {
+      "before": 200,
+      "after": 400
+    },
+    "post_load_observation_s": {
+      "before": 300,
+      "after": 600
+    },
+    "cache_namespace": "fresh for this run; pool reset before launch"
+  },
+  "workload_unchanged": true,
+  "load_duration_s": 1050,
+  "upscale_delay_s": 40,
+  "router_source_sha256": {
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_aware_router.py": "437ad29010711f1bc53e09403eeffc7b11dcb9a5e6ce4dcb7f7d5785ada5fbf9",
+    "/mnt/local_storage/ray/python/ray/llm/_internal/serve/routing_policies/kv_aware/kv_token_tracker.py": "76215883957ab76314d04a131a1387e44f008ace94f6a4621ea42372762091f5"
+  },
+  "smoke_result": "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+  "title": "H100s, 16 sessions, Mooncake shared KV with 10k/sec decay and 400s scale down",
+  "pid": 4105947,
+  "started_at": "2026-11-04T16:28:34.835714+00:00",
+  "command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "-m",
+    "serve_llm_autoscaling.cli",
+    "run",
+    "experiments/h100_workday_curve_mooncake_decay_400s.yaml"
+  ],
+  "log": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-16-400s/run.log",
+  "services": {
+    "host": "10.1.154.0",
+    "pool_gib": 256,
+    "lease_ttl": "120s",
+    "config_path": "/mnt/cluster_storage/mooncake-kv/requester.json",
+    "health_url": "http://10.1.154.0:9300/health",
+    "metrics_url": "http://10.1.154.0:9300/metrics/summary",
+    "processes": [
+      {
+        "pid": 4104542,
+        "command": [
+          "/home/ray/default/mooncake-kv/.venv/bin/mooncake_master",
+          "--port=50051",
+          "--enable_http_metadata_server=true",
+          "--http_metadata_server_host=10.1.154.0",
+          "--http_metadata_server_port=8080",
+          "--default_kv_lease_ttl=120s",
+          "--logtostderr=true"
+        ],
+        "log": "/home/ray/default/mooncake-kv/state/mooncake_master.log"
+      },
+      {
+        "pid": 4104665,
+        "command": [
+          "/home/ray/default/mooncake-kv/.venv/bin/mooncake_client",
+          "--host=10.1.154.0",
+          "--port=50052",
+          "--global_segment_size=256GB",
+          "--master_server_address=10.1.154.0:50051",
+          "--metadata_server=http://10.1.154.0:8080/metadata",
+          "--protocol=tcp",
+          "--tenant_id=ray-serve",
+          "--enable_http_server=true",
+          "--http_port=9300",
+          "--logtostderr=true"
+        ],
+        "log": "/home/ray/default/mooncake-kv/state/mooncake_client.log"
+      }
+    ],
+    "observed_before_launch": {
+      "master_allocated_bytes": 0,
+      "cold_pool": true
+    }
+  },
+  "status": "complete",
+  "site_dir": "/home/ray/default/sites/h100-mooncake-decay-16-400s",
+  "site_project_id": "appgprj_6aeb5d07668881918887c4cad54038d3",
+  "site_expected_url": "https://h100-mooncake-16-decay-10k-sd400.anyscale-ent-1806.chatgpt.site",
+  "run_dir": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+  "report_command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "tools/report_mooncake.py",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+    "--site-dir",
+    "/home/ray/default/sites/h100-mooncake-decay-16-400s",
+    "--baseline",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+    "--smoke",
+    "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+    "--driver-log",
+    "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-16-400s/run.log",
+    "--title",
+    "H100s, 16 sessions, Mooncake shared KV with 10k/sec decay and 400s scale down",
+    "--wait",
+    "--driver-pid",
+    "4105947"
+  ],
+  "report_pid": 4110046,
+  "report_log": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s/analysis/mooncake_report.txt",
+  "completed_at": "2026-11-04T17:08:35.086123+00:00",
+  "publication": {
+    "id": "appgdep_6aeb6666dc9c8191a2bdb3b2157d048c",
+    "project_id": "appgprj_6aeb5d07668881918887c4cad54038d3",
+    "title": "H100s, 16 sessions, Mooncake shared KV with 10k/sec decay and 400s scale down",
+    "version_id": "appgprj_6aeb5d07668881918887c4cad54038d3~appgver_98825fc351b88191a4b4f3659db42e6f",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://h100-mooncake-16-decay-10k-sd400.anyscale-ent-1806.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6aeb5d07668881918887c4cad54038d3",
+    "failure_message": null,
+    "env_set_revision": 0,
+    "updated_at": "2026-11-04T17:08:01.430788+00:00",
+    "source_commit": "a169458a011648d5256ee99a7740d81604c5155b",
+    "archive": "/tmp/h100-mooncake-16-decay-10k-sd400.tar.gz"
+  },
+  "completion_audit": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-16-400s/completion.json",
+  "report_status": "generated and verified",
+  "initial_report_watcher_log": "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-16-400s/report-initial-watcher.log",
+  "final_report_command": [
+    "/home/ray/anaconda3/bin/python",
+    "-u",
+    "tools/report_mooncake.py",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s",
+    "--site-dir",
+    "/home/ray/default/sites/h100-mooncake-decay-16-400s",
+    "--baseline",
+    "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T101726Z-h100-16-sessions-mooncake-shared-kv-scale-down-200s",
+    "--smoke",
+    "/home/ray/default/mooncake-kv/state/smoke-20261104T095128Z/result.json",
+    "--driver-log",
+    "/home/ray/default/serve-llm-autoscaling-experiment/findings-h100/mooncake-decay-16-400s/run.log",
+    "--title",
+    "H100s, 16 sessions, Mooncake shared KV with 10k/sec decay and 400s scale down"
+  ],
+  "report_validation": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s/analysis/monitoring/report_validation.json"
+}

@@ -2,6 +2,32 @@ from serve_llm_autoscaling.backend import RayServeBackend
 from serve_llm_autoscaling.config import ExperimentConfig, load_config
 
 
+def test_injected_scheduler_preserves_autoscaling_and_uploads_package(tmp_path):
+    config = load_config("experiments/h100_workday_curve_prefill_mean_3_policy.yaml")
+    config.analysis.scheduler_trace_backend = "injected"
+    config.analysis.scheduler_trace_dir = tmp_path / "traces"
+    spec = RayServeBackend(config).deployment_spec()
+    assert spec["engine_kwargs"]["scheduler_cls"] == "serve_profiler.scheduler.AutoTracingScheduler"
+    assert spec["deployment_config"]["autoscaling_config"]["max_replicas"] == 8
+    assert spec["deployment_config"]["autoscaling_config"]["policy"]["policy_kwargs"]["upscale_lookback_s"] == 60
+    runtime = spec["runtime_env"]
+    assert runtime["py_modules"][0].endswith("serve-llm-profiler/serve_profiler")
+    assert runtime["worker_process_setup_hook"] == "serve_profiler.compat.setup"
+    assert runtime["env_vars"]["SERVE_PROFILER_TRACE_DIR"] == str((tmp_path / "traces").resolve())
+    assert runtime["env_vars"]["RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR"] == ""
+
+
+def test_injected_scheduler_rejects_replacing_custom_scheduler(tmp_path):
+    import pytest
+
+    config = load_config("experiments/h100_workday_curve_prefill_mean_3_policy.yaml")
+    config.analysis.scheduler_trace_backend = "injected"
+    config.analysis.scheduler_trace_dir = tmp_path / "traces"
+    config.deployment.engine.scheduler_cls = "custom.Scheduler"
+    with pytest.raises(ValueError, match="existing custom scheduler"):
+        RayServeBackend(config).deployment_spec()
+
+
 def test_native_offload_capacity_is_forwarded_per_replica_on_either_gpu():
     for accelerator in ("H100", "B200"):
         config = ExperimentConfig.model_validate({

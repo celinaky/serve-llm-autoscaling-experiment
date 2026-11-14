@@ -1,0 +1,182 @@
+{
+  "captured_at": "2026-11-04T17:01:30.414096+00:00",
+  "effective_hard_stop_after_s": 120,
+  "error_count": 12,
+  "timing_consistent_count": 12,
+  "unattributed_count": 0,
+  "reload_events": [
+    {
+      "at_s": 1793809735.196,
+      "utc": "2026-11-04T16:28:55.196000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:28:55,196 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793809735.859,
+      "utc": "2026-11-04T16:28:55.859000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:28:55,859 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793809879.595,
+      "utc": "2026-11-04T16:31:19.595000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:31:19,595 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793810512.51,
+      "utc": "2026-11-04T16:41:52.510000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:41:52,510 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793810513.452,
+      "utc": "2026-11-04T16:41:53.452000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:41:53,452 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793810762.103,
+      "utc": "2026-11-04T16:46:02.103000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:46:02,103 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793810763.456,
+      "utc": "2026-11-04T16:46:03.456000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:46:03,456 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    },
+    {
+      "at_s": 1793811320.629,
+      "utc": "2026-11-04T16:55:20.629000+00:00",
+      "line": "(HAProxyManager pid=4107065) INFO 2026-11-04 08:55:20,629 proxy 10.1.154.0 -- Successfully performed graceful HAProxy reload with process restart."
+    }
+  ],
+  "retained_direct_hardstop_stderr": [
+    {
+      "file": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s/analysis/monitoring/haproxy/admin.sock.4107065.4.stderr.log",
+      "hard_stop_lines": [
+        "[WARNING]  (4112447) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (4112447) : Proxy http_frontend hard-stopped (8 remaining conns will be closed).",
+        "[WARNING]  (4112447) : Some tasks resisted to hard-stop, exiting now."
+      ]
+    },
+    {
+      "file": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T162835Z-h100-16-sessions-mooncake-decay-10k-scale-down-400s/analysis/monitoring/haproxy/admin.sock.4107065.6.stderr.log",
+      "hard_stop_lines": [
+        "[WARNING]  (4133649) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (4133649) : Proxy http_frontend hard-stopped (7 remaining conns will be closed).",
+        "[WARNING]  (4133649) : Some tasks resisted to hard-stop, exiting now."
+      ]
+    }
+  ],
+  "failed_requests": [
+    {
+      "request_id": "aa3949ad-e888-4e42-ba13-e867722689fa",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979532+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46953201293945,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "d26805ff-5114-4b0d-9cc0-1df414d9be10",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979628+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46962809562683,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "57ea11e5-c0ab-4271-99d4-62b19d2becec",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979636+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46963620185852,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "86d956fd-4275-4166-9df9-46862a304911",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979523+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46952271461487,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "d725da70-3f97-401e-bf37-a94c3e7881c2",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979372+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46937155723572,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "79fef9de-1ac0-4edc-88ee-661b4b48cd95",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979726+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46972584724426,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "65b55eb4-0b8e-4df2-a915-4e9c3344c6e6",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:43:51.979424+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:41:52.510000+00:00",
+      "seconds_after_reload": 119.46942448616028,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "cec81662-54cf-40ca-b6a3-836eead51396",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:48:01.615449+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:46:02.103000+00:00",
+      "seconds_after_reload": 119.51244878768921,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "21811b85-2cb7-490e-b167-3d9f9387c18d",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:48:00.902247+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:46:02.103000+00:00",
+      "seconds_after_reload": 118.79924702644348,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "2f227852-fc98-4bc6-85bb-a44c56d3950b",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:48:00.902482+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:46:02.103000+00:00",
+      "seconds_after_reload": 118.79948234558105,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "7c51e75a-2750-45a9-9eb5-19f8c956e8e2",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:48:00.902382+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:46:02.103000+00:00",
+      "seconds_after_reload": 118.79938197135925,
+      "timing_consistent_with_reload_plus120s": true
+    },
+    {
+      "request_id": "09890d87-ab36-49c5-a6ce-73ff0508dc72",
+      "error_type": "ClientPayloadError",
+      "replica_id": "2a1fmw2i",
+      "end_at_utc": "2026-11-04T16:48:00.902375+00:00",
+      "nearest_reload_at_utc": "2026-11-04T16:46:02.103000+00:00",
+      "seconds_after_reload": 118.79937481880188,
+      "timing_consistent_with_reload_plus120s": true
+    }
+  ],
+  "limitations": [
+    "Reload completion logging differs by about1s from actual old-worker soft-stop.",
+    "Timing plus retained hard-stop stderr is strong evidence but no per-socket tracing was collected.",
+    "No exact HTTP stream-to-proxy-worker association is claimed."
+  ]
+}

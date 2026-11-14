@@ -1,0 +1,9 @@
+{
+  "captured_at": "2026-11-04T17:02:53.660780+00:00",
+  "published_policy_mean_tokens_time_weighted": 28476.66461180149,
+  "engine_remaining_prefill_mean_tokens_from_plot_log": 11300.0,
+  "raw_recomputed_router_proxy_mean_tokens_from_plot_log": 22200.0,
+  "source_series": "plot_data.serve_metric_series.token_prefill_replicas.points *20000, step-time-weighted0..1050s",
+  "published_series_count_max": 1,
+  "note": "Purple chart uses actual published policy mean where available. Printed22.2K raw gauge reconstruction is a separate statistic; do not label its ratios as exact purple ratios. Engine mean from printed plot log is rounded to0.1K and excludes decode/transport demand."
+}

@@ -1,0 +1,209 @@
+{
+  "captured_at": "2026-11-04T17:01:30.394999+00:00",
+  "schedule": "Original linear interpolation: [0,1], [450,16], [1050,16]. No down-ramp configured. Rounded interpolation reaches later integer limits at half-step crossings.",
+  "expected_limits": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "observed_limits": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "all_expected_limits_observed": true,
+  "observed_update_count": 16,
+  "expected_crossings_s_after_series_initialization": {
+    "2": 15.0,
+    "3": 45.0,
+    "4": 75.0,
+    "5": 105.0,
+    "6": 135.0,
+    "7": 165.0,
+    "8": 195.0,
+    "9": 225.0,
+    "10": 255.0,
+    "11": 285.0,
+    "12": 315.0,
+    "13": 345.0,
+    "14": 375.0,
+    "15": 405.0,
+    "16": 435.0
+  },
+  "max_crossing_timing_deviation_s": 0.09499999999752617,
+  "events": [
+    {
+      "local_time": "08:31:26.865",
+      "local_seconds": 30686.865,
+      "limit": 1,
+      "live_sessions": 0,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 0.0
+    },
+    {
+      "local_time": "08:31:41.886",
+      "local_seconds": 30701.886,
+      "limit": 2,
+      "live_sessions": 2,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 15.020999999997002
+    },
+    {
+      "local_time": "08:32:11.933",
+      "local_seconds": 30731.933,
+      "limit": 3,
+      "live_sessions": 3,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 45.0679999999993
+    },
+    {
+      "local_time": "08:32:41.884",
+      "local_seconds": 30761.884,
+      "limit": 4,
+      "live_sessions": 4,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 75.0189999999966
+    },
+    {
+      "local_time": "08:33:11.930",
+      "local_seconds": 30791.93,
+      "limit": 5,
+      "live_sessions": 5,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 105.06499999999869
+    },
+    {
+      "local_time": "08:33:41.876",
+      "local_seconds": 30821.876,
+      "limit": 6,
+      "live_sessions": 6,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 135.0109999999986
+    },
+    {
+      "local_time": "08:34:11.916",
+      "local_seconds": 30851.916,
+      "limit": 7,
+      "live_sessions": 7,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 165.05099999999948
+    },
+    {
+      "local_time": "08:34:41.952",
+      "local_seconds": 30881.952,
+      "limit": 8,
+      "live_sessions": 8,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 195.08699999999953
+    },
+    {
+      "local_time": "08:35:11.894",
+      "local_seconds": 30911.894,
+      "limit": 9,
+      "live_sessions": 9,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 225.02899999999863
+    },
+    {
+      "local_time": "08:35:41.939",
+      "local_seconds": 30941.939,
+      "limit": 10,
+      "live_sessions": 10,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 255.0739999999969
+    },
+    {
+      "local_time": "08:36:11.881",
+      "local_seconds": 30971.881,
+      "limit": 11,
+      "live_sessions": 11,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 285.0159999999996
+    },
+    {
+      "local_time": "08:36:41.923",
+      "local_seconds": 31001.923,
+      "limit": 12,
+      "live_sessions": 12,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 315.05799999999726
+    },
+    {
+      "local_time": "08:37:11.866",
+      "local_seconds": 31031.866,
+      "limit": 13,
+      "live_sessions": 13,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 345.0010000000002
+    },
+    {
+      "local_time": "08:37:41.909",
+      "local_seconds": 31061.909,
+      "limit": 14,
+      "live_sessions": 14,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 375.04399999999805
+    },
+    {
+      "local_time": "08:38:11.960",
+      "local_seconds": 31091.96,
+      "limit": 15,
+      "live_sessions": 15,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 405.0949999999975
+    },
+    {
+      "local_time": "08:38:41.901",
+      "local_seconds": 31121.901,
+      "limit": 16,
+      "live_sessions": 16,
+      "debt": 0,
+      "idle_sessions_retired": 0,
+      "seconds_after_series_initialization": 435.03600000000006
+    }
+  ],
+  "sending_complete_local_time": "08:48:56.862",
+  "sending_complete_line": "08:48:56.862 NOTICE   Phase profiling (profiling) sending complete | sent=364, completed=353, in_flight=11 | sessions: sent=16, completed=1 | timeout_triggered=True (runner.py:1136)",
+  "note": "Series initialization and records-manager profiling-credit clock differ. Relative local-clock elapsed times avoid assuming a timezone. No endpoint=1 update or down-ramp is applicable."
+}

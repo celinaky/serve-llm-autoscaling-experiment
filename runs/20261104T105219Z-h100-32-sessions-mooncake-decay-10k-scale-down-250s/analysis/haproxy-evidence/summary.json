@@ -1,0 +1,388 @@
+{
+  "effective_config": [
+    "hard-stop-after 120s"
+  ],
+  "hard_stop_logs": [
+    {
+      "stderr_file": "admin.sock.3553303.4.stderr.log",
+      "worker_pid": 3558861,
+      "modified_at_utc": "2026-11-04T11:07:30.198685+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3558861) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3558861) : Proxy http_frontend hard-stopped (16 remaining conns will be closed).",
+        "[WARNING]  (3558861) : Some tasks resisted to hard-stop, exiting now."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 03:05:29,187 proxy 10.1.154.0 -- Starting HAProxy (spawn #5, pid=3580787, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.5.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.5.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3558861', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T11:07:29.187000+00:00",
+      "matched_request_errors": [
+        {
+          "request_id": "fbd72a9f-b29b-4a2e-aa8a-63bfa55e5f75",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:29.202104+00:00"
+        },
+        {
+          "request_id": "31708ddf-3c96-4113-8390-99d45ad51c7f",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:29.201757+00:00"
+        },
+        {
+          "request_id": "12e1713d-da98-4fc3-8574-9527ccef676e",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270854+00:00"
+        },
+        {
+          "request_id": "0d6571c0-6f5c-46f0-9d2d-252660b5ce06",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.272451+00:00"
+        },
+        {
+          "request_id": "4f87ffbc-ac96-47d2-b654-436ff5bf591f",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:29.202333+00:00"
+        },
+        {
+          "request_id": "7fd588a6-2cf4-4cbf-a38a-80227575ddb8",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270567+00:00"
+        },
+        {
+          "request_id": "8971b33c-3c7d-440e-8e7a-0c36598a93e3",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270885+00:00"
+        },
+        {
+          "request_id": "9d83aa68-3982-4078-b10e-1345f2cacb2d",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270941+00:00"
+        },
+        {
+          "request_id": "cb0598ff-8a6e-464b-b917-e39029522dc5",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270668+00:00"
+        },
+        {
+          "request_id": "e6a40b9b-88d1-4377-a207-3ce55fbbc62d",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270567+00:00"
+        },
+        {
+          "request_id": "68215b53-e838-4bd2-9808-5de630cd3733",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270428+00:00"
+        },
+        {
+          "request_id": "c6cb95ea-a311-49a3-8524-c3fdaac34438",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270719+00:00"
+        },
+        {
+          "request_id": "1d1e563c-2d91-4d86-acbc-6ba38d5f2d9b",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:07:28.270498+00:00"
+        }
+      ]
+    },
+    {
+      "stderr_file": "admin.sock.3553303.6.stderr.log",
+      "worker_pid": 3580825,
+      "modified_at_utc": "2026-11-04T11:08:11.500411+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3580825) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3580825) : Proxy http_frontend hard-stopped (2 remaining conns will be closed).",
+        "[WARNING]  (3580825) : Some tasks resisted to hard-stop, exiting now."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 03:06:10,392 proxy 10.1.154.0 -- Starting HAProxy (spawn #7, pid=3582547, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.7.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.7.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3580825', '3558861', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T11:08:10.392000+00:00",
+      "matched_request_errors": [
+        {
+          "request_id": "9a150b4d-cf10-40b3-905c-9a5c282d3581",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:08:10.503211+00:00"
+        }
+      ]
+    },
+    {
+      "stderr_file": "admin.sock.3553303.24.stderr.log",
+      "worker_pid": 3701429,
+      "modified_at_utc": "2026-11-04T12:06:46.827948+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3701429) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3701429) : Proxy http_frontend hard-stopped (9 remaining conns will be closed).",
+        "[WARNING]  (3701429) : Some tasks resisted to hard-stop, exiting now."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 04:04:45,818 proxy 10.1.154.0 -- Starting HAProxy (spawn #25, pid=3715216, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.25.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.25.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3701429', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T12:06:45.818000+00:00",
+      "matched_request_errors": [
+        {
+          "request_id": "b9c50739-20af-4a7d-badd-ad3a7d3de483",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.835156+00:00"
+        },
+        {
+          "request_id": "bb9a54be-0a0e-4f3f-81f4-8c9cf118ff01",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.815438+00:00"
+        },
+        {
+          "request_id": "44e306e0-d6af-498e-b212-795729088233",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.815556+00:00"
+        },
+        {
+          "request_id": "f45953ec-8a7a-4ffb-877f-de340a708320",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.815427+00:00"
+        },
+        {
+          "request_id": "0412a174-6b7f-4589-ba21-69c29a62480a",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.815496+00:00"
+        },
+        {
+          "request_id": "d8c21563-77c3-450d-b440-8f89e4275267",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.815339+00:00"
+        },
+        {
+          "request_id": "e979c3f2-86e9-43c2-9a82-19e24d193988",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:06:45.815392+00:00"
+        }
+      ]
+    },
+    {
+      "stderr_file": "admin.sock.3553303.27.stderr.log",
+      "worker_pid": 3715262,
+      "modified_at_utc": "2026-11-04T12:10:32.097469+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3715262) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3715262) : Proxy http_frontend hard-stopped (4 remaining conns will be closed)."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 04:08:32,087 proxy 10.1.154.0 -- Starting HAProxy (spawn #28, pid=3723544, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.28.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.28.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3715262', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T12:10:32.087000+00:00",
+      "matched_request_errors": [
+        {
+          "request_id": "42b262d6-acd7-4520-9448-0e62f2d61d9a",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:10:32.112641+00:00"
+        },
+        {
+          "request_id": "127b7d56-62b9-42bd-aa93-b72203f04d91",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:10:32.112594+00:00"
+        },
+        {
+          "request_id": "2d818a44-5443-4a63-9025-0e00db4df628",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:10:32.082788+00:00"
+        },
+        {
+          "request_id": "b31eb329-ea9f-4c02-b679-6aa77245e026",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:10:32.112599+00:00"
+        }
+      ]
+    },
+    {
+      "stderr_file": "admin.sock.3553303.28.stderr.log",
+      "worker_pid": 3723544,
+      "modified_at_utc": "2026-11-04T12:14:39.327861+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3723544) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3723544) : Proxy http_frontend hard-stopped (3 remaining conns will be closed).",
+        "[WARNING]  (3723544) : Some tasks resisted to hard-stop, exiting now."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 04:12:38,276 proxy 10.1.154.0 -- Starting HAProxy (spawn #29, pid=3732536, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.29.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.29.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3723544', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T12:14:38.276000+00:00",
+      "matched_request_errors": []
+    },
+    {
+      "stderr_file": "admin.sock.3553303.17.stderr.log",
+      "worker_pid": 3667473,
+      "modified_at_utc": "2026-11-04T11:51:03.638314+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3667473) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3667473) : Proxy http_frontend hard-stopped (16 remaining conns will be closed).",
+        "[WARNING]  (3667473) : Some tasks resisted to hard-stop, exiting now."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 03:49:02,633 proxy 10.1.154.0 -- Starting HAProxy (spawn #18, pid=3680324, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.18.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.18.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3667473', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T11:51:02.633000+00:00",
+      "matched_request_errors": [
+        {
+          "request_id": "7f500970-a4c3-4d31-b5d7-4b68570d3416",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.646439+00:00"
+        },
+        {
+          "request_id": "4b73f414-67b6-4d71-92fb-22372c93ded0",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.646451+00:00"
+        },
+        {
+          "request_id": "d27107be-8fc1-4108-9ac6-4d1f56662584",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.646417+00:00"
+        },
+        {
+          "request_id": "54261460-c2a3-4d7d-91dd-dfb4e630694a",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.646589+00:00"
+        },
+        {
+          "request_id": "8e3850eb-a808-47bd-9a88-759a37b4e04c",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.646483+00:00"
+        },
+        {
+          "request_id": "f516b7ff-76af-4560-8e7d-c32be50cf564",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617372+00:00"
+        },
+        {
+          "request_id": "23fcf3cf-3bff-4479-b43e-c223a6498707",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617249+00:00"
+        },
+        {
+          "request_id": "3d6fa7e6-ed06-489d-b97f-ba1fe3f9dba5",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617147+00:00"
+        },
+        {
+          "request_id": "b715e15b-7737-4ec9-939f-6e26a0fe3960",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617244+00:00"
+        },
+        {
+          "request_id": "955bf5b0-de8f-4598-b1f9-37e7cb41bb95",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.662924+00:00"
+        },
+        {
+          "request_id": "0defa49b-5cd9-4522-9328-e8fc03ae1387",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.663467+00:00"
+        },
+        {
+          "request_id": "38e847d3-a7c8-4ce2-b7c6-b649e529ad09",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.664031+00:00"
+        },
+        {
+          "request_id": "dbb672eb-a552-47fe-8163-4a96a752d773",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617127+00:00"
+        },
+        {
+          "request_id": "0c62dd15-9bb2-4bb2-949f-b649ce0ddcc4",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617262+00:00"
+        },
+        {
+          "request_id": "c8271d87-71d8-4ed5-8e5a-b2c62be83b11",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T11:51:02.617284+00:00"
+        }
+      ]
+    },
+    {
+      "stderr_file": "admin.sock.3553303.23.stderr.log",
+      "worker_pid": 3680448,
+      "modified_at_utc": "2026-11-04T12:02:05.586074+00:00",
+      "hard_stop_lines": [
+        "[WARNING]  (3680448) : soft-stop running for too long, performing a hard-stop.",
+        "[WARNING]  (3680448) : Proxy http_frontend hard-stopped (20 remaining conns will be closed).",
+        "[WARNING]  (3680448) : Some tasks resisted to hard-stop, exiting now."
+      ],
+      "reload_trigger_line": "(HAProxyManager pid=3553303) INFO 2026-11-04 04:00:04,583 proxy 10.1.154.0 -- Starting HAProxy (spawn #24, pid=3701429, stdout=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.24.stdout.log, stderr=/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock.3553303.24.stderr.log); args=['/home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy', '-db', '-f', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/haproxy.cfg', '-dR', '-sf', '3680448', '-x', '/tmp/haproxy-serve/c7e54ddf3e8987340282a5b7bdf244d27c8912f06b3540e3efa17c32/admin.sock']",
+      "reported_reload_plus_120s_utc": "2026-11-04T12:02:04.583000+00:00",
+      "matched_request_errors": [
+        {
+          "request_id": "743684f0-879d-4324-8b86-61bb71d42f3a",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596856+00:00"
+        },
+        {
+          "request_id": "0233ac83-ddee-4775-b5e6-6d9535c5db50",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596865+00:00"
+        },
+        {
+          "request_id": "2d568f99-68ae-45c8-bd82-c03306b8a879",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596846+00:00"
+        },
+        {
+          "request_id": "b5fd3606-7cb1-4758-827d-053676a36ffe",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596782+00:00"
+        },
+        {
+          "request_id": "d76a0c47-d2e8-419e-a045-8a07c6432074",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.597023+00:00"
+        },
+        {
+          "request_id": "7f7b0410-3f75-4bb7-a564-8c79f2b376c1",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596984+00:00"
+        },
+        {
+          "request_id": "8249346f-ea00-4943-a745-1a453f9af788",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.597077+00:00"
+        },
+        {
+          "request_id": "36c646af-84d2-4209-af56-456712da8a4f",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596846+00:00"
+        },
+        {
+          "request_id": "c8f5b14f-0ebe-46e6-90f2-b72bcbc3f7c5",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596902+00:00"
+        },
+        {
+          "request_id": "c23b92e4-e298-455c-8e39-045b766ce3a0",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.597000+00:00"
+        },
+        {
+          "request_id": "1b599051-22b0-43e6-982c-7fd4b9736c45",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.597903+00:00"
+        },
+        {
+          "request_id": "1015b612-9041-424b-a6b4-38908ea895cf",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.596812+00:00"
+        },
+        {
+          "request_id": "1cc4b5ca-d9e9-4aa6-83d4-21662d1f4178",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.593132+00:00"
+        },
+        {
+          "request_id": "ac7bfeb1-bca5-4aff-b33a-39824833b38d",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.593006+00:00"
+        },
+        {
+          "request_id": "223d28c5-6a7f-456f-b327-551cbf8e0c9e",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:04.592996+00:00"
+        },
+        {
+          "request_id": "d5feba8c-ee32-4376-9795-11b7027ee0f3",
+          "error_type": "ServerDisconnectedError",
+          "end_utc": "2026-11-04T12:02:05.607729+00:00"
+        },
+        {
+          "request_id": "1dcf4e44-27d4-48d7-9906-7bded4d2ba82",
+          "error_type": "ClientPayloadError",
+          "end_utc": "2026-11-04T12:02:05.607711+00:00"
+        }
+      ]
+    }
+  ]
+}

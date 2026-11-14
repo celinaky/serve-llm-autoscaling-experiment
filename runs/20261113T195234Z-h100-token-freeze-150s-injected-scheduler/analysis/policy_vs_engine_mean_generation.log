@@ -1,0 +1,4 @@
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261113T195234Z-h100-token-freeze-150s-injected-scheduler/analysis/policy_vs_engine_mean60_0_1050.png
+  policy mean / engine mean where engine mean >= 1K: median 1.63, p10 0.24, p90 4.16 (n=503)
+  time-average over the load phase: policy 14.5K, engine 8.1K
+  published policy mean vs recomputed from the gauge: max abs diff 63.7K

@@ -1,0 +1,6 @@
+{
+  "captured_at": "2026-11-04T17:01:30.401501+00:00",
+  "distinct_address_in_use_engine_failures": 0,
+  "failures": [],
+  "note": "Only actual EngineCore address-in-use failures are counted; duplicated parent traceback lines are excluded."
+}

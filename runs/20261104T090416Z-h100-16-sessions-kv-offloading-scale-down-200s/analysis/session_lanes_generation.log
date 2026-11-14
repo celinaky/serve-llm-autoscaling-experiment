@@ -1,0 +1,5 @@
+replicas: 1=pid 3302872 (first request 0s), 2=pid 3316964 (first request 374s), 3=pid 3337647 (first request 898s), 4=pid 3337581 (first request 1025s)
+lane source: recorded initial lane IDs
+Bar ends are last observed request ends, not verified session completion.
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s/analysis/session_lanes_0_1050.png
+wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T090416Z-h100-16-sessions-kv-offloading-scale-down-200s/analysis/session_lanes.csv

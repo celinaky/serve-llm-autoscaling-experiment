@@ -1,0 +1,11 @@
+[NOTICE]   (3362999) : haproxy version is 2.8.25-5cf5d0683
+[NOTICE]   (3362999) : path to executable is /home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy
+[WARNING]  (3362999) : config : log format ignored for frontend 'prometheus' since it has no log address.
+[WARNING]  (3362999) : config : missing timeouts for backend 'http-ttft-benchmark'.
+   | While not properly invalid, you will certainly encounter various problems
+   | with such a configuration. To fix this, please ensure that all following
+   | timeouts are set to a non-zero value: 'client', 'connect', 'server'.
+[WARNING]  (3362999) : config : missing timeouts for backend 'http-ttft-benchmark-via-ingress-request-router'.
+   | While not properly invalid, you will certainly encounter various problems
+   | with such a configuration. To fix this, please ensure that all following
+   | timeouts are set to a non-zero value: 'client', 'connect', 'server'.
