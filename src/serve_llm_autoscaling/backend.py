@@ -349,7 +349,8 @@ class RayServeBackend:
                 scheduler = "serve_profiler.scheduler.AutoTracingScheduler"
                 if spec["engine_kwargs"].get("scheduler_cls") not in (None, scheduler):
                     raise ValueError("Cannot replace an existing custom scheduler")
-                package = Path(__file__).resolve().parents[3] / "serve-llm-profiler" / "serve_profiler"
+                # serve-llm-profiler is vendored at the repo root.
+                package = Path(__file__).resolve().parents[2] / "serve-llm-profiler" / "serve_profiler"
                 if not (package / "scheduler.py").is_file():
                     raise ValueError(f"Injected scheduler package is missing: {package}")
                 spec["engine_kwargs"]["scheduler_cls"] = scheduler

@@ -1,5 +1,7 @@
 # Restoring the serve-llm-autoscaling workspace (migrated 2026-11-02)
 
+> Superseded for the token autoscaling work by [`RESTORE.md`](../RESTORE.md) at the repo root (2026-11-14).
+
 Point a fresh Claude Code session at this file. Everything it needs is
 either in git or under `/mnt/cluster_storage/serve-llm-autoscaling-experiment/`
 (cluster storage, shared across Anyscale workspaces in this cloud).

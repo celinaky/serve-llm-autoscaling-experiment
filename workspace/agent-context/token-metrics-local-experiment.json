@@ -1,0 +1,68 @@
+{
+  "purpose": "Local experiment only; do not push these changes to PR #68044.",
+  "ray_checkout": "/home/ray/default/ray-token-metrics",
+  "ray_branch": "celina/prefill-token-metrics-local-experiment",
+  "local_commit": "9b66a28e6541deea4cc0f3b00b908872eaf4d1ef",
+  "published_pr_branch": "celina/prefill-token-autoscaling-raw-metric",
+  "published_pr_commit": "c0923ca1d387f25ec80200f5ab2555a8ca902a3f",
+  "pr_stack": [
+    67937,
+    67938,
+    67941,
+    68044
+  ],
+  "scheduler_provider": "/home/ray/default/serve-llm-profiler/serve_profiler/scheduler.py",
+  "scheduler_sha256": "120ea2af932abf4747be6d783eae1b5d463aac27e028bce9f9d43b34af869004",
+  "scheduler_class": "serve_profiler.scheduler.AutoTracingScheduler",
+  "harness_config": "/home/ray/default/serve-llm-autoscaling-experiment/experiments/h100_token_metrics_injected_scheduler_local.yaml",
+  "deployment_spec": "/home/ray/default/local-token-metrics-deployment-spec.json",
+  "mean_metric": "ray_serve_autoscaling_policy_metric{metric=\"prefill_tokens_lookback_mean\"}",
+  "purple_compatibility_metric": "ray_serve_autoscaling_policy_metric{metric=\"prefill_required_replicas\"} * target_prefill_tokens_per_replica",
+  "harness_changes": "Local, uncommitted; pre-existing workspace changes preserved.",
+  "validation": {
+    "ray_unit_tests_passed": 61,
+    "harness_backend_config_telemetry": "passed",
+    "profiler_setup_scheduler": "passed",
+    "pre_commit": "passed",
+    "cooldown_policy_tests": 40,
+    "combined_policy_controller_tests": 88
+  },
+  "deployment_started": true,
+  "installed_ray_runtime_modified": true,
+  "runtime_setup": {
+    "method": "setup-dev.py symlinks",
+    "packages": [
+      "llm",
+      "serve",
+      "_private/authentication/http_token_authentication.py"
+    ],
+    "core_wheel_commit": "a450e8d44b938a7523f8d647517e3485b116b233",
+    "proto_generation": "bazel 7.5.0 run --jobs=4 //:gen_py_proto succeeded",
+    "remote_pr_head_verified": "d198691eafe00f27bc89e73117bebff9cb0bdc1b"
+  },
+  "active_run": {
+    "pid": 1022132,
+    "log": "/home/ray/default/local-token-metrics-run-20261111T002026Z.log",
+    "launched_at": "20261111T002026Z",
+    "directory": "/home/ray/default/serve-llm-autoscaling-experiment/runs/20261111T002035Z-h100-token-metrics-injected-scheduler-local",
+    "status": "succeeded",
+    "teardown_completed": true
+  },
+  "worker_compatibility": "Clear inherited RAY_RUNTIME_ENV_HOOK in serve_profiler.compat.setup for nested vLLM Ray driver; no installed vLLM changes.",
+  "completed_run_ray_commit": "1ee27850683cdeeb753f904e20264645830a17f7",
+  "local_backup_branch": "celina/prefill-token-metrics-before-cooldown",
+  "cooldown_pr": {
+    "number": 8,
+    "url": "https://github.com/celinaky/ray/pull/8",
+    "repo": "celinaky/ray",
+    "head": "celina/prefill-token-autoscaling-post-downscale-cooldown",
+    "base": "celina/prefill-token-autoscaling-raw-metric",
+    "sha": "f922feb1779e2cc0da45157181f1a6eec36831ce",
+    "draft": true
+  },
+  "cooldown_config": {
+    "post_downscale_cooldown_s_default": 0,
+    "experiment_config_unchanged": true,
+    "requires_unit_scaling_factors_when_enabled": true
+  }
+}
