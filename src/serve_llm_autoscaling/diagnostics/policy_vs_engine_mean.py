@@ -3,18 +3,19 @@
 
 Two accountings of the same quantity, total outstanding uncached prefill
 tokens across all replicas:
-  policy: the policy's lookback mean: the max across KV routers of the
-          controller's serve_autoscaling_router_metric, or on older branches
-          the published prefill_required_replicas x target. It reflects
-          configured router estimate decay. The raw
-          gauge reconstruction is used only when that published series is absent.
+  policy: the policy's lookback mean: the max across KV router replicas of
+          the load they report (serve_autoscaling_replica_metric; on runs
+          from older Ray branches serve_autoscaling_router_metric, or the
+          published prefill_required_replicas x target). The raw gauge
+          reconstruction is used only when that published series is absent.
   engine: rebuilt from the vLLM scheduler traces: a request's uncached tokens
           enter when it is queued and each chunk leaves when its batch
           completes, so the total is the work still to do. Same lookback mean.
 Faint lines are the raw signals, solid lines the lookback means. Target
 dotted; scale decisions as in the other charts.
 
-usage: python tools/policy_vs_engine_mean.py runs/<run_dir> [--lookback 60] [--ymax K]
+Run by ``autoscale-harness analyze``; by hand:
+    python -m serve_llm_autoscaling.diagnostics.policy_vs_engine_mean runs/<run_dir> [--lookback 60] [--ymax K]
            [--start 0] [--end END] [--traces DIR] [--out PATH]
 """
 import argparse, bisect, datetime, glob, json, math, os
@@ -38,8 +39,10 @@ ap.add_argument("--lookback", type=float, default=None, help="mean window; defau
 ap.add_argument("--ymax", type=float, default=None)
 ap.add_argument("--start", type=float, default=0.0)
 ap.add_argument("--end", type=float, default=None)
-ap.add_argument("--traces", default=None, help="scheduler trace directory; default: the run's analysis.scheduler_trace_dir, else the shared trace root")
+ap.add_argument("--traces", default=None, help="scheduler trace directory; default: the run's analysis.scheduler_trace_dir, else <run>/telemetry/scheduler-traces")
 ap.add_argument("--out", default=None)
+ap.add_argument("--no-engine", action="store_true", help="omit the engine-side line (policy signal only)")
+ap.add_argument("--no-timers", action="store_true", help="omit the upscale/downscale delay-timer bars on the x axis")
 ap.add_argument("--raw", action="store_true", help="also draw the raw gauge and raw engine total under the means")
 ap.add_argument("--mark-evictions", action="store_true", help="red ticks where a returning session arrived with its context evicted (turn >= 2, engine found <10%% cached, prompt not shorter than its previous turn)")
 a = ap.parse_args()
@@ -57,9 +60,9 @@ resolved = yaml.safe_load(open(f"{R}/resolved.yaml"))
 lookback = (a.lookback or kwargs.get("upscale_lookback_s")
             or ((resolved.get("deployment") or {}).get("autoscaling") or {}).get("look_back_period_s")
             or 60)
-# Runs write traces to their own subdirectory of the shared root.
 a.traces = (a.traces or ((resolved.get("analysis") or {}).get("scheduler_trace_dir"))
-            or "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces")
+            or f"{R}/telemetry/scheduler-traces")
+from ..analysis import router_report
 from .curve import phase_points
 curve = ((resolved.get("benchmark") or {}).get("workload") or {}).get("concurrency_series") or []
 curve = phase_points(curve)
@@ -76,7 +79,8 @@ for line in open(f"{R}/telemetry/serve_metrics.jsonl"):
     scrape_ts.append(t)
     d = {}
     for s in rec["samples"]:
-        if "LLMServer" not in s["labels"].get("deployment", ""):
+        s = router_report(s)  # one shape for the router's report across Ray versions
+        if s.get("value") is None or "LLMServer" not in s["labels"].get("deployment", ""):
             continue
         if s["name"] == "ray_serve_autoscaling_policy_metric":
             # Older branches: generic policy metric gauge, tagged by metric name.
@@ -237,7 +241,8 @@ def delay_timer_spans(direction):
 timer_spans = delay_timer_spans("up")
 down_timer_spans = delay_timer_spans("down")
 
-peak = max(([v for _, v in raw] + [v for _, v in eng_raw]) if a.raw else (pub_v or policy_mean) + engine_mean) if (raw or eng_raw) else 1.0
+_eng_peak = [] if a.no_engine else ([v for _, v in eng_raw] if a.raw else engine_mean)
+peak = max(([v for _, v in raw] if a.raw else (pub_v or policy_mean)) + _eng_peak) if (raw or eng_raw) else 1.0
 ycap = a.ymax if a.ymax else max(peak * 1.05, 1.5 * target)
 
 fig, ax = plt.subplots(figsize=(14, 5.8), dpi=150)
@@ -275,13 +280,15 @@ for e in evaluation["scale_events"]:
 
 if a.raw:
     ax.step([t for t, _ in raw], [min(v, ycap) for _, v in raw], where="post", color=POLICY, lw=0.7, alpha=0.3)
-    ax.step([t for t, _ in eng_raw], [min(v, ycap) for _, v in eng_raw], where="post", color=ENGINE, lw=0.7, alpha=0.3)
+    if not a.no_engine:
+        ax.step([t for t, _ in eng_raw], [min(v, ycap) for _, v in eng_raw], where="post", color=ENGINE, lw=0.7, alpha=0.3)
 has_policy = bool(pub or raw)
 if pub:
     ax.plot(pub_t, [min(v, ycap) for v in pub_v], color=POLICY, lw=1.8)
 elif raw:
     ax.plot(ts, [min(v, ycap) for v in policy_mean], color=POLICY, lw=1.8)
-ax.plot(ts, [min(v, ycap) for v in engine_mean], color=ENGINE, lw=1.8)
+if not a.no_engine:
+    ax.plot(ts, [min(v, ycap) for v in engine_mean], color=ENGINE, lw=1.8)
 ax.axhline(target, color=INK2, lw=1, ls=":")
 if a.mark_evictions:
     # Returning sessions whose context the engine had evicted: from the traces
@@ -329,7 +336,7 @@ for direction, spans, passed_color, pending_color in (
     ("down", down_timer_spans, DOWN_TIMER_PASS, DOWN_TIMER_RESET),
 ):
     for t1, t2, status in spans:
-        if t2 < a.start or t1 > end:
+        if a.no_timers or t2 < a.start or t1 > end:
             continue
         passed = status == "passed"
         ax.axvspan(max(t1, a.start), min(t2, end), ymin=0.0, ymax=0.035,
@@ -339,7 +346,7 @@ for direction, spans, passed_color, pending_color in (
         elif t2 - t1 >= 8:
             ax.text((t1 + t2) / 2, -ycap * 0.055, f"{t2 - t1:.0f}s", ha="center", va="top", fontsize=6.5, color=passed_color)
         print(f"  {direction}scale timer: {t1:.1f}-{t2:.1f}s ({status})")
-ax.set_ylim(-ycap * 0.06, ycap * 1.12)
+ax.set_ylim(0 if a.no_timers else -ycap * 0.06, ycap * 1.12)
 ax.set_xlim(a.start, end)
 ax.set_xlabel("seconds since profiling start", color=INK2)
 ax.set_ylabel("total outstanding uncached prefill tokens, all replicas (K)", color=INK2)
@@ -352,6 +359,10 @@ handles = [Line2D([], [], color=POLICY, lw=1.8, label=f"policy: {lookback:.0f}s 
            Patch(color=TIMER_RESET, label="upscale-delay timer running or reset before a scale decision"),
            Patch(color=DOWN_TIMER_PASS, label=f"on the x axis: downscale-delay timer passed ({down_delay:.0f}s of asking for fewer), ends at the decision"),
            Patch(color=DOWN_TIMER_RESET, label="downscale-delay timer running or reset before a scale decision")]
+if a.no_timers:
+    handles = [h for h in handles if not isinstance(h, Patch)]
+if a.no_engine:
+    handles = [h for h in handles if not (isinstance(h, Line2D) and h.get_color() == ENGINE)]
 if freeze_windows:
     handles.append(Patch(facecolor="#e8b642", alpha=0.35,
                          label=f"{freeze_s:g}s freeze after accepted target decrease (sampled boundaries)"))
@@ -371,9 +382,11 @@ settings = (f"policy: ceil({lookback:.0f}s mean / {target:.0f}K) {DOT} Serve ups
 if freeze_s > 0:
     settings += f" {DOT} post-downscale freeze {freeze_s:g}s"
 fig.text(0.5, -0.19, settings, ha="center", va="top", fontsize=8.5, color=INK2)
-fig.suptitle(f"{evaluation['experiment']} {DOT} what the mean policy observed vs what the engines held: total outstanding uncached prefill tokens",
+fig.suptitle(f"{evaluation['experiment']} {DOT} " + ("what the mean policy observed: total outstanding uncached prefill tokens" if a.no_engine else
+             "what the mean policy observed vs what the engines held: total outstanding uncached prefill tokens"),
              x=0.01, ha="left", fontsize=10, color=INK)
-out = a.out or f"{R}/analysis/policy_vs_engine_mean{int(lookback)}{'_raw' if a.raw else ''}{'_evictions' if a.mark_evictions else ''}_{int(a.start)}_{int(end)}.png"
+out = a.out or (f"{R}/analysis/policy_vs_engine_mean{int(lookback)}{'_raw' if a.raw else ''}{'_evictions' if a.mark_evictions else ''}"
+                f"{'_policy_only' if a.no_engine else ''}{'_no_timers' if a.no_timers else ''}_{int(a.start)}_{int(end)}.png")
 fig.savefig(out, facecolor=SURFACE, bbox_inches="tight")
 print("wrote", out)
 

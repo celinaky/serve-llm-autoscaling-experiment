@@ -4,12 +4,10 @@ import platform
 import subprocess
 import sys
 import time
-from contextlib import nullcontext
-from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from .artifacts import RunArtifacts, format_run_summary, format_slo_calibration, write_json
+from .artifacts import RunArtifacts, format_run_summary, write_json
 from .backend import (
     RayServeBackend,
     check_autoscaling_support,
@@ -17,15 +15,8 @@ from .backend import (
     verify_autoscaling_policy,
     verify_topology,
 )
-from .benchmark import AIPerfRunner, agentx_row_fields, aiperf_command
-from .config import (
-    AIPERF_SOURCE_DEFAULT,
-    CONTINUOUS_MODE_DIRS,
-    CONTINUOUS_MODES,
-    AgentXWorkloadConfig,
-    ExperimentConfig,
-    write_config,
-)
+from .benchmark import AIPerfRunner, aiperf_command, workload_row_fields
+from .config import AIPERF_SOURCE_DEFAULT, WORKLOAD_DIR, ExperimentConfig, write_config
 from .telemetry import TelemetrySession
 from .windows import profiling_phase_ns
 
@@ -64,31 +55,6 @@ def environment_check(
     return result
 
 
-def _run_job(
-    config: ExperimentConfig,
-    root: Path,
-    level: Any,
-    job: Callable[[], dict[str, Any]],
-    summary: list[dict[str, Any]],
-) -> None:
-    """Run one benchmark, recording a failure row unless ``fail_fast``."""
-    workload = config.benchmark.workload
-    try:
-        row = job()
-    except Exception as exc:
-        row = {"mode": config.benchmark.mode, "level": level}
-        if isinstance(workload, AgentXWorkloadConfig):
-            row.update(agentx_row_fields(config.benchmark.mode, workload))
-        row["error"] = f"{type(exc).__name__}: {exc}"
-        summary.append(row)
-        write_json(root / "benchmark" / "sweep_summary.json", summary)
-        if config.benchmark.fail_fast:
-            raise
-    else:
-        summary.append(row)
-        write_json(root / "benchmark" / "sweep_summary.json", summary)
-
-
 def lifecycle_record(
     config: ExperimentConfig,
     artifact_dir: Path,
@@ -98,14 +64,13 @@ def lifecycle_record(
     observation_end_ns: int | None = None,
     observation_skipped: str | None = None,
 ) -> dict[str, Any]:
-    """Epoch-ns boundaries of a continuous run's load, drain and idle periods.
+    """Epoch-ns boundaries of a run's load, drain and idle periods.
 
     Load issuance ends ``duration_s`` after profiling starts; AIPerf then
     drains in-flight requests (up to ``grace_period_s``) and exits; the
     harness then observes an idle deployment for ``post_load_observation_s``.
     """
     benchmark = config.benchmark
-    workload = benchmark.workload
     start, phase_end = profiling_phase_ns(artifact_dir)
 
     def offset(seconds: float) -> int | None:
@@ -116,12 +81,8 @@ def lifecycle_record(
         "clock": "epoch_ns",
         "aiperf_launched_ns": aiperf_launched_ns,
         "profiling_start_ns": start,
-        # Fixed AgentX concurrency and request-rate series have no ramp.
-        "ramp_end_ns": (
-            offset(workload.concurrency_ramp_duration_s)
-            if isinstance(workload, AgentXWorkloadConfig)
-            and workload.concurrency_ramp_duration_s is not None else None
-        ),
+        # Kept for readers of the schema; a session curve has no single ramp.
+        "ramp_end_ns": None,
         "load_end_ns": offset(benchmark.duration_s),
         "profiling_phase_end_ns": phase_end,
         "aiperf_exited_ns": aiperf_exited_ns,
@@ -131,79 +92,45 @@ def lifecycle_record(
     }
 
 
-def _run_continuous(
-    config: ExperimentConfig,
-    root: Path,
-    level: Any,
-    job: Callable[[], dict[str, Any]],
-    summary: list[dict[str, Any]],
-    observe: bool,
-) -> None:
-    """Run the single AIPerf process, then observe the idle deployment."""
-    artifact_dir = root / "benchmark" / CONTINUOUS_MODE_DIRS[config.benchmark.mode]
-    path = root / "benchmark" / "lifecycle.json"
-    launched = time.time_ns()
-    try:
-        _run_job(config, root, level, job, summary)
-    finally:
-        # Written even when fail_fast re-raises, which skips the observation.
-        exited = time.time_ns()
-        write_json(path, lifecycle_record(
-            config, artifact_dir, aiperf_launched_ns=launched, aiperf_exited_ns=exited,
-        ))
-    observation_s = config.benchmark.post_load_observation_s
-    if not observation_s:
-        return
-    if not observe:
-        write_json(path, lifecycle_record(
-            config, artifact_dir, aiperf_launched_ns=launched, aiperf_exited_ns=exited,
-            observation_skipped="no telemetry",
-        ))
-        return
-    time.sleep(observation_s)
-    write_json(path, lifecycle_record(
-        config, artifact_dir, aiperf_launched_ns=launched, aiperf_exited_ns=exited,
-        observation_end_ns=time.time_ns(),
-    ))
+def run_benchmark(
+    config: ExperimentConfig, root: Path, telemetry: TelemetrySession
+) -> dict[str, Any]:
+    """Run AIPerf, then observe the idle deployment, collecting telemetry throughout.
 
-
-def run_benchmarks(
-    config: ExperimentConfig, root: Path, telemetry: TelemetrySession | None = None
-) -> list[dict[str, Any]]:
-    """Run the configured benchmarks, collecting ``telemetry`` for their duration.
-
-    For continuous modes, telemetry also spans the post-load observation.
+    Returns AIPerf's summary row and writes it and the lifecycle boundaries
+    under ``benchmark/``. An AIPerf failure is recorded and re-raised.
     """
-    runner = AIPerfRunner(config, root / "benchmark")
-    summary: list[dict[str, Any]] = []
-    workload = config.benchmark.workload
-    jobs: list[tuple[Any, Callable[[], dict[str, Any]]]]
-    # Continuous modes are one AIPerf process, summarized as a single row.
-    if config.benchmark.mode == "request_rate_series":
-        jobs = [("series", runner.run_series)]
-    elif isinstance(workload, AgentXWorkloadConfig):
-        jobs = [(workload.target_concurrency, runner.run_agentx)]
-    else:
-        jobs = [
-            (
-                int(level) if float(level).is_integer() else level,
-                partial(runner.run_point, level),
-            )
-            for level in config.benchmark.levels
-        ]
+    benchmark_root = root / "benchmark"
+    artifact_dir = benchmark_root / WORKLOAD_DIR
+    lifecycle_path = benchmark_root / "lifecycle.json"
+    runner = AIPerfRunner(config, benchmark_root)
     # Collectors stop and flush on success, benchmark failure, or interrupt.
-    with telemetry or nullcontext():
-        if config.benchmark.mode in CONTINUOUS_MODES:
-            (level, job), = jobs
-            _run_continuous(config, root, level, job, summary, observe=telemetry is not None)
-        else:
-            for level, job in jobs:
-                _run_job(config, root, level, job, summary)
-    return summary
+    with telemetry:
+        launched = time.time_ns()
+        try:
+            row = runner.run()
+        except BaseException as exc:  # including Ctrl-C: still record the row
+            row = {**workload_row_fields(config.benchmark.workload),
+                   "error": f"{type(exc).__name__}: {exc}"}
+            raise
+        finally:
+            # Written even on failure, which skips the observation.
+            exited = time.time_ns()
+            write_json(benchmark_root / "sweep_summary.json", [row])
+            write_json(lifecycle_path, lifecycle_record(
+                config, artifact_dir, aiperf_launched_ns=launched, aiperf_exited_ns=exited,
+            ))
+        if config.benchmark.post_load_observation_s:
+            time.sleep(config.benchmark.post_load_observation_s)
+            write_json(lifecycle_path, lifecycle_record(
+                config, artifact_dir, aiperf_launched_ns=launched, aiperf_exited_ns=exited,
+                observation_end_ns=time.time_ns(),
+            ))
+    return row
 
 
 def run_analysis(root: Path) -> dict[str, Any]:
-    """Derive a continuous run's analysis; failures are recorded, never raised."""
+    """Derive a run's analysis; failures are recorded, never raised."""
     from .analysis import analyze_run
 
     try:
@@ -212,31 +139,74 @@ def run_analysis(root: Path) -> dict[str, Any]:
         return {"analysis_error": f"{type(exc).__name__}: {exc}"}
 
 
-def run_manual_benchmark(config: ExperimentConfig, root: Path) -> list[dict[str, Any]]:
-    """Benchmark an existing deployment, with telemetry if Ray is reachable."""
-    (root / "benchmark").mkdir(parents=True, exist_ok=True)
-    if config.benchmark.mode not in CONTINUOUS_MODES:
-        return run_benchmarks(config, root)
-    write_config(config, root / "resolved.yaml")
-    telemetry = None
-    try:
-        RayServeBackend(config).connect()
-        telemetry = TelemetrySession(config, root)
-    except Exception as exc:
-        print(
-            f"WARNING: running without Serve telemetry; could not connect to Ray "
-            f"({type(exc).__name__}: {exc})",
-            file=sys.stderr,
-        )
-    summary = run_benchmarks(config, root, telemetry)
-    for warning in (analysis := run_analysis(root)).get("warnings", []):
-        print(f"WARNING: {warning}", file=sys.stderr)
-    for key in ("analysis_error", "plot_error"):
-        if analysis.get(key):
-            print(f"WARNING: {key}: {analysis[key]}", file=sys.stderr)
-    if calibration := format_slo_calibration(root):
-        print(calibration, file=sys.stderr)
-    return summary
+def trace_directory(config: ExperimentConfig, root: Path) -> Path:
+    """This run's own scheduler-trace directory, created empty."""
+    base = config.analysis.scheduler_trace_dir
+    directory = (base / root.name if base else root / "telemetry" / "scheduler-traces").resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def compile_cache_devices() -> list[str]:
+    """Per-device vLLM compile caches present on this node (``device_<N>``)."""
+    cache = Path.home() / ".cache/vllm/torch_compile_cache/torch_aot_compile"
+    return sorted({path.name for path in cache.glob("*/device_*")})
+
+
+def warm_compile_caches(
+    config: ExperimentConfig, *, replicas: int | None = None, replace: bool = False
+) -> dict[str, Any]:
+    """Start one replica per GPU so every device has a warm vLLM compile cache.
+
+    A replica that lands on a GPU without a compile cache compiles from
+    scratch, which roughly doubles its startup time (on B200: ~112s of engine
+    init against ~32s). A run with only some devices warm gets fast and slow
+    scale-ups mixed together, which skews the result. The cache key is a hash
+    of the engine config, so this deploys the experiment's own deployment
+    (including the tracing scheduler) at a fixed replica count, requires
+    every replica RUNNING, and tears it down.
+    """
+    import tempfile
+
+    warm = config.model_copy(deep=True)
+    warm.deployment.application_name = f"{config.deployment.application_name}-warmup"
+    backend = RayServeBackend(warm, replace=replace)
+    resources = backend.connect()["cluster_resources"]
+    per_replica = warm.deployment.engine.tensor_parallel_size or 1
+    count = replicas or int(resources.get("GPU", 0)) // per_replica
+    if count < 1:
+        raise RuntimeError("the connected Ray cluster does not report any GPUs")
+    autoscaling = warm.deployment.autoscaling
+    autoscaling.min_replicas = autoscaling.initial_replicas = autoscaling.max_replicas = count
+    check_routing_support(warm)
+    check_autoscaling_support(warm)
+    with tempfile.TemporaryDirectory(prefix="autoscale-harness-warmup-") as traces:
+        warm.analysis.scheduler_trace_dir = Path(traces)
+        backend.deploy()
+        try:
+            ready = backend.wait_healthy()
+            # /v1/models answers once one replica is up; wait for all of them.
+            deadline = time.monotonic() + warm.runtime.readiness_timeout_s
+            while True:
+                deployments = backend.status()["applications"][
+                    warm.deployment.application_name]["deployments"]
+                running = {
+                    name: (info.get("replica_states") or {}).get("RUNNING", 0)
+                    for name, info in deployments.items() if name.startswith("LLMServer")
+                }
+                if running and all(value == count for value in running.values()):
+                    break
+                if time.monotonic() > deadline:
+                    raise RuntimeError(f"expected {count} RUNNING replicas, got {running}")
+                time.sleep(warm.runtime.readiness_poll_s)
+        finally:
+            backend.teardown()
+    return {
+        "replicas": count,
+        "running_replicas": running,
+        "cached_devices": compile_cache_devices(),
+        "models": ready["models"],
+    }
 
 
 def run_experiment(
@@ -245,22 +215,27 @@ def run_experiment(
     *,
     replace: bool = False,
     keep_deployment: bool | None = None,
+    warm: bool = False,
 ) -> Path:
+    """Deploy, replay the workload with telemetry, analyze, and tear down.
+
+    With ``warm``, every GPU's compile cache is warmed first (see
+    ``warm_compile_caches``). Returns the run directory.
+    """
     artifacts = RunArtifacts.create(config, config_path)
     deployed = False
     stage = "environment_check"
     keep = config.runtime.keep_deployment if keep_deployment is None else keep_deployment
     try:
-        from .diagnostics.pipeline import prepare_tracing
-
-        config = prepare_tracing(config, artifacts.root)
+        # Each run traces its engines into its own directory.
+        config = config.model_copy(deep=True)
+        config.analysis.scheduler_trace_dir = trace_directory(config, artifacts.root)
+        write_config(config, artifacts.root / "resolved.yaml")
+        artifacts.manifest["scheduler_traces"] = {
+            "directory": str(config.analysis.scheduler_trace_dir),
+        }
+        artifacts.flush_manifest()
         backend = RayServeBackend(config, replace=replace)
-        if config.analysis.scheduler_trace_dir is not None:
-            write_config(config, artifacts.root / "resolved.yaml")
-            artifacts.manifest["scheduler_traces"] = {
-                "directory": str(config.analysis.scheduler_trace_dir),
-            }
-            artifacts.flush_manifest()
         env = environment_check(connect=True, aiperf_source=config.runtime.aiperf_source)
         artifacts.manifest["environment"] = env
         artifacts.flush_manifest()
@@ -279,13 +254,14 @@ def run_experiment(
         artifacts.manifest["autoscaling"] = autoscaling
         artifacts.flush_manifest()
 
-        stage = "shared_kv_preflight"
-        from .shared_kv import check_shared_kv_support
-
-        shared_kv = check_shared_kv_support(config)
-        if shared_kv is not None:
-            artifacts.manifest["shared_kv_cache"] = shared_kv
-            write_json(artifacts.root / "deployment" / "shared_kv_cache.json", shared_kv)
+        if warm:
+            stage = "compile_cache_warmup"
+            artifacts.record_event("compile_cache_warmup_started")
+            warmup = warm_compile_caches(config, replace=replace)
+            write_json(artifacts.root / "deployment" / "compile_cache_warmup.json", warmup)
+            artifacts.manifest["compile_cache_warmup"] = {
+                key: warmup[key] for key in ("replicas", "cached_devices")
+            }
             artifacts.flush_manifest()
 
         stage = "deploy"
@@ -319,28 +295,22 @@ def run_experiment(
         artifacts.flush_manifest()
 
         stage = "benchmark"
-        continuous = config.benchmark.mode in CONTINUOUS_MODES
-        # Start telemetry immediately before AIPerf; static sweeps collect none.
-        telemetry = TelemetrySession(config, artifacts.root) if continuous else None
+        # Start telemetry immediately before AIPerf.
+        telemetry = TelemetrySession(config, artifacts.root)
         try:
-            summary = run_benchmarks(config, artifacts.root, telemetry)
+            run_benchmark(config, artifacts.root, telemetry)
         finally:
-            if telemetry is not None:
-                artifacts.manifest["telemetry"] = telemetry.summary()
-                artifacts.flush_manifest()
-        if continuous:
-            stage = "analysis"
-            artifacts.manifest["analysis"] = run_analysis(artifacts.root)
+            artifacts.manifest["telemetry"] = telemetry.summary()
             artifacts.flush_manifest()
-        if not any(row.get("error") is None for row in summary):
-            raise RuntimeError("all benchmark points failed")
+        stage = "analysis"
+        artifacts.manifest["analysis"] = run_analysis(artifacts.root)
+        artifacts.flush_manifest()
         artifacts.finish("succeeded")
         return artifacts.root
     except Exception as exc:
         # A failed generator can still leave useful requests and traces. Keep
         # its original failure while producing whatever diagnostics are valid.
         if (stage == "benchmark" and "analysis" not in artifacts.manifest
-                and config.benchmark.mode in CONTINUOUS_MODES
                 and any(artifacts.root.glob("benchmark/*/profile_export.jsonl"))):
             artifacts.manifest["analysis"] = run_analysis(artifacts.root)
         artifacts.finish("failed", failure_stage=stage, error=f"{type(exc).__name__}: {exc}")

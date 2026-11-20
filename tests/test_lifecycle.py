@@ -2,42 +2,13 @@ import json
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
+from conftest import short_config
 from serve_llm_autoscaling import runner
 from serve_llm_autoscaling.analysis import analyze_run, lifecycle_periods
 from serve_llm_autoscaling.artifacts import format_run_summary, write_json
-from serve_llm_autoscaling.config import ExperimentConfig, load_config
 from test_analysis import S, T0, make_agentx_run
-from test_runner import _agentx_row, _fake_cluster
-
-
-def _observed(agentx_config, **benchmark):
-    return agentx_config({"concurrency_ramp_duration_s": 120, "target_concurrency": 4,
-                          "unsafe_override": True},
-                         duration_s=200, grace_period_s=30, **benchmark)
-
-
-# --- Config -----------------------------------------------------------------
-
-
-def test_observation_defaults_to_zero():
-    assert load_config("experiments/baseline.yaml").benchmark.post_load_observation_s == 0
-
-
-@pytest.mark.parametrize("mode", ["concurrency", "request_rate"])
-def test_observation_requires_continuous_mode(mode):
-    with pytest.raises(ValidationError, match="post_load_observation_s requires"):
-        ExperimentConfig.model_validate({
-            "name": "x", "deployment": {"model_id": "m"},
-            "benchmark": {"mode": mode, "post_load_observation_s": 30},
-        })
-
-
-def test_observation_accepted_for_agentx(agentx_config):
-    assert _observed(agentx_config, post_load_observation_s=90).benchmark \
-        .post_load_observation_s == 90
-
+from test_runner import ROW
 
 # --- Runner -----------------------------------------------------------------
 
@@ -63,31 +34,27 @@ def _clock(monkeypatch, sleeps):
     return now
 
 
-def test_observation_runs_with_telemetry_after_aiperf(agentx_config, monkeypatch, tmp_path):
-    sessions = _fake_cluster(monkeypatch, tmp_path)
-    config = _observed(agentx_config, post_load_observation_s=90)
-    config.runtime.results_dir = tmp_path / "runs"
+def test_observation_runs_with_telemetry_after_aiperf(fake_cluster, experiment, monkeypatch):
+    config, path = experiment(post_load_observation_s=90)
     sleeps = []
     now = _clock(monkeypatch, sleeps)
     alive_during_sleep = []
 
-    def fake_ramp(self):
+    def aiperf(self):
         _phase_manifest(self.benchmark_root.parent)
         now[0] = T0 + 240 * S  # AIPerf exits after its drain and export
-        return _agentx_row(self)
+        return dict(ROW)
 
-    real_sleep = runner.time.sleep
+    advance = runner.time.sleep
 
     def sleep(seconds):
-        alive_during_sleep.append([c._thread.is_alive() for c in sessions[0].collectors])
-        real_sleep(seconds)
+        alive_during_sleep.append(fake_cluster.collectors_alive())
+        advance(seconds)
 
     monkeypatch.setattr(runner.time, "sleep", sleep)
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", fake_ramp)
+    monkeypatch.setattr(runner.AIPerfRunner, "run", aiperf)
     monkeypatch.setattr(runner, "run_analysis", lambda root: {"warnings": []})
-    input_path = tmp_path / "agentx.yaml"
-    input_path.write_text("name: agentx-ramp\n")
-    root = runner.run_experiment(config, input_path)
+    root = runner.run_experiment(config, path)
 
     assert sleeps == [90]
     assert alive_during_sleep == [[True, True]]
@@ -97,7 +64,7 @@ def test_observation_runs_with_telemetry_after_aiperf(agentx_config, monkeypatch
         "clock": "epoch_ns",
         "aiperf_launched_ns": T0 - 20 * S,
         "profiling_start_ns": T0,
-        "ramp_end_ns": T0 + 120 * S,
+        "ramp_end_ns": None,
         "load_end_ns": T0 + 200 * S,
         "profiling_phase_end_ns": T0 + 225 * S,
         "aiperf_exited_ns": T0 + 240 * S,
@@ -105,90 +72,14 @@ def test_observation_runs_with_telemetry_after_aiperf(agentx_config, monkeypatch
         "observation_end_ns": T0 + 330 * S,
         "observation_skipped": None,
     }
-    routing = json.loads((root / "deployment" / "routing.json").read_text())
-    assert routing["verified"]["topology"] == "openai_ingress"
-    manifest = json.loads((root / "manifest.json").read_text())
-    assert manifest["routing"]["topology"] == "openai_ingress"
 
 
-def test_no_observation_by_default(agentx_config, monkeypatch, tmp_path):
-    sleeps = []
-    _clock(monkeypatch, sleeps)
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", _agentx_row)
-    runner.run_benchmarks(_observed(agentx_config), tmp_path)
-    assert sleeps == []
-    lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())
-    assert lifecycle["observation_end_ns"] is None
-    assert lifecycle["profiling_start_ns"] is None  # AIPerf wrote no manifest
-
-
-def test_fail_fast_skips_observation_but_records_exit(agentx_config, monkeypatch, tmp_path):
-    sleeps = []
-    _clock(monkeypatch, sleeps)
-
-    def fail(self):
-        raise RuntimeError("AIPerf exited 1")
-
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", fail)
-    config = _observed(agentx_config, post_load_observation_s=90)
-    with pytest.raises(RuntimeError, match="exited 1"):
-        runner.run_benchmarks(config, tmp_path)
-    assert sleeps == []
-    lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())
-    assert lifecycle["aiperf_exited_ns"] is not None
-    assert lifecycle["observation_end_ns"] is None
-
-
-def test_failure_without_fail_fast_still_observes(agentx_config, monkeypatch, tmp_path):
-    sleeps = []
-    _clock(monkeypatch, sleeps)
-
-    def fail(self):
-        raise RuntimeError("AIPerf exited 1")
-
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", fail)
-    config = _observed(agentx_config, post_load_observation_s=45, fail_fast=False)
-    summary = runner.run_benchmarks(config, tmp_path, telemetry=_NullTelemetry())
-    assert summary[0]["error"] == "RuntimeError: AIPerf exited 1"
-    assert sleeps == [45]
-
-
-class _NullTelemetry:
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc):
-        return None
-
-
-def test_observation_skipped_without_telemetry(agentx_config, monkeypatch, tmp_path):
-    sleeps = []
-    _clock(monkeypatch, sleeps)
-    monkeypatch.setattr(runner.AIPerfRunner, "run_agentx", _agentx_row)
-    runner.run_benchmarks(_observed(agentx_config, post_load_observation_s=90), tmp_path)
-    assert sleeps == []
-    lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())
-    assert lifecycle["observation_skipped"] == "no telemetry"
-
-
-def test_series_mode_observes_too(monkeypatch, tmp_path):
-    sleeps = []
-    _clock(monkeypatch, sleeps)
-    config = load_config("experiments/smoke_rate_series.yaml")
-    config.benchmark.post_load_observation_s = 20
-    monkeypatch.setattr(runner.AIPerfRunner, "run_series", lambda self: {
-        "mode": "request_rate_series", "level": "series", "error": None})
-    runner.run_benchmarks(config, tmp_path, telemetry=_NullTelemetry())
-    assert sleeps == [20]
-    lifecycle = json.loads((tmp_path / "benchmark" / "lifecycle.json").read_text())
-    assert lifecycle["ramp_end_ns"] is None
-
-
-def test_static_sweep_writes_no_lifecycle(monkeypatch, tmp_path):
-    monkeypatch.setattr(runner.AIPerfRunner, "run_point",
-                        lambda self, level: {"level": level, "error": None})
-    runner.run_benchmarks(load_config("experiments/baseline.yaml"), tmp_path)
-    assert not (tmp_path / "benchmark" / "lifecycle.json").exists()
+def test_lifecycle_record_without_a_phase_manifest(tmp_path: Path):
+    record = runner.lifecycle_record(
+        short_config(), tmp_path, aiperf_launched_ns=1, aiperf_exited_ns=2,
+    )
+    assert (record["aiperf_launched_ns"], record["aiperf_exited_ns"]) == (1, 2)
+    assert record["profiling_start_ns"] is None and record["load_end_ns"] is None
 
 
 # --- Analysis ---------------------------------------------------------------
@@ -197,7 +88,7 @@ def test_static_sweep_writes_no_lifecycle(monkeypatch, tmp_path):
 def _lifecycle(root: Path, **fields):
     record = {
         "schema_version": 1, "clock": "epoch_ns", "aiperf_launched_ns": T0 - 20 * S,
-        "profiling_start_ns": T0, "ramp_end_ns": T0 + 120 * S, "load_end_ns": T0 + 200 * S,
+        "profiling_start_ns": T0, "ramp_end_ns": None, "load_end_ns": T0 + 200 * S,
         "profiling_phase_end_ns": T0 + 225 * S, "aiperf_exited_ns": T0 + 240 * S,
         "post_load_observation_s": 90, "observation_end_ns": T0 + 330 * S,
         "observation_skipped": None, **fields,
@@ -206,8 +97,8 @@ def _lifecycle(root: Path, **fields):
 
 
 @pytest.fixture
-def observed_run(agentx_config, tmp_path: Path):
-    config = _observed(agentx_config, post_load_observation_s=90)
+def observed_run(tmp_path: Path):
+    config = short_config(post_load_observation_s=90)
     root = make_agentx_run(tmp_path / "run", config)
     # AIPerf closed the profiling phase after draining for 25s.
     _phase_manifest(root, end_s=225)
@@ -221,7 +112,7 @@ def test_plot_data_separates_drain_from_idle(observed_run: Path):
     lifecycle = data["lifecycle"]
     assert lifecycle["source"] == "lifecycle.json"
     assert lifecycle["markers"] == {
-        "ramp_end_s": 120, "load_end_s": 200, "drain_end_s": 225.0,
+        "ramp_end_s": None, "load_end_s": 200, "drain_end_s": 225.0,
         "aiperf_exit_s": 240.0, "observation_end_s": 330.0,
     }
     assert lifecycle["periods"] == [
@@ -252,9 +143,8 @@ def test_concurrency_is_zero_after_load_ends(observed_run: Path):
     assert all(w["requests_per_second_per_configured_session"] is None for w in after)
 
 
-def test_lifecycle_falls_back_to_config_without_record(agentx_config):
-    config = _observed(agentx_config)
-    periods = lifecycle_periods(config, T0, T0 + 215 * S, None)
+def test_lifecycle_falls_back_to_config_without_record():
+    periods = lifecycle_periods(short_config(), T0, T0 + 215 * S, None)
     assert periods["source"] == "config"
     assert periods["periods"] == [
         {"name": "load", "start_s": 0.0, "end_s": 200},
@@ -262,10 +152,8 @@ def test_lifecycle_falls_back_to_config_without_record(agentx_config):
     ]
 
 
-def test_observed_plot_renders_and_summary_lists_periods(observed_run: Path):
+def test_summary_lists_observed_periods(observed_run: Path):
     result = analyze_run(observed_run)
-    assert result["plot_error"] is None
-    assert (observed_run / "analysis" / "autoscaling_timeline.png").stat().st_size > 10_000
     write_json(observed_run / "manifest.json",
                {"name": "agentx-ramp", "status": "succeeded", "analysis": result})
     summary = format_run_summary(observed_run)

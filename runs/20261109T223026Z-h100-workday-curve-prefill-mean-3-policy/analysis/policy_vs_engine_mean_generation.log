@@ -1,7 +1,0 @@
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/ray/default/serve-llm-autoscaling-experiment/src/serve_llm_autoscaling/diagnostics/policy_vs_engine_mean.py", line 182, in <module>
-    peak = max(([v for _, v in raw] + [v for _, v in eng_raw]) if a.raw else (pub_v or policy_mean) + engine_mean) if (raw or eng_raw) else 1.0
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ValueError: max() iterable argument is empty

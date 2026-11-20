@@ -1,4 +1,11 @@
-"""Persist vLLM's existing KV-event streams without touching router consumers.
+"""Debug log of each replica's GPU KV-cache block events.
+
+Saved to ``<run>/telemetry/gpu_kv_events.jsonl`` when
+``analysis.record_gpu_kv_events`` is on (the default) and routing is
+``kv_aware``. No scorecard or plot reads it; it is there to answer questions
+such as "was this session's context evicted before it came back?".
+
+Persists vLLM's existing KV-event streams without touching router consumers.
 
 Only this driver-side thread owns the ZMQ sockets. It follows Serve's running
 replicas, replays from sequence zero on discovery and periodically catches up
@@ -79,8 +86,7 @@ class GPUKVEventRecorder:
     """A telemetry collector; dependency/transport failures become audit rows.
 
     Each ZMQ batch is written once, even when live and replay deliveries overlap.
-    A BlockRemoved denotes a prefix index removal, not request preemption or a
-    Mooncake DRAM-pool eviction. For hybrid models, group counts are retained
+    A BlockRemoved denotes a prefix index removal, not request preemption. For hybrid models, group counts are retained
     separately and must not be summed into unique prompt-token counts.
     """
 

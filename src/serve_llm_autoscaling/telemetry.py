@@ -1,5 +1,4 @@
-"""Background collectors for Serve status, Ray's Prometheus exports and the
-SLA policy's controller log.
+"""Background collectors for Serve status and Ray's Prometheus exports.
 
 All collectors poll on a ``time.monotonic()`` schedule but stamp samples with
 ``time.time_ns()`` so they share AIPerf's epoch clock. Collection failures are
@@ -9,11 +8,9 @@ from __future__ import annotations
 
 import json
 import math
-import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -21,76 +18,36 @@ import requests
 
 from .config import ExperimentConfig
 
+# The metric families recorded from each scrape: those the analysis
+# (analysis.METRIC_SERIES) and diagnostics/policy_vs_engine_mean.py read.
 SELECTED_METRICS = (
     "serve_autoscaling_desired_replicas",
     "serve_autoscaling_target_replicas",
-    "serve_autoscaling_total_requests",
-    "serve_router_uncached_prefill_tokens",
-    "serve_autoscaling_target_ongoing_requests",
-    "serve_num_ongoing_requests_at_replicas",
-    "serve_request_router_queue_len",
-    "serve_deployment_queued_queries",
-    "serve_replica_processing_queries",
-    "serve_deployment_replica_healthy",
-    "serve_replica_startup_latency_ms",
-    # Exported only by the experimental SLA autoscaling policy.
-    "serve_sla_autoscaling_recommended_replicas",
-    "serve_sla_autoscaling_model_ready",
-    "serve_sla_autoscaling_training_rows",
-    "serve_sla_autoscaling_training_buckets",
-    "serve_sla_autoscaling_predicted_ttft_ms",
-    "serve_sla_autoscaling_predicted_itl_ms",
-    "serve_sla_autoscaling_fit_duration_ms",
-    "serve_sla_autoscaling_inference_duration_ms",
     # Values a policy publishes under its "__policy_metrics" state key, which
     # the controller exports as one gauge tagged by metric name. The token
     # policy publishes outstanding_effective_prefill_tokens (latest raw
     # snapshot), prefill_required_replicas (lookback mean) and
     # required_replicas.
     "serve_autoscaling_policy_metric",
-    # Each router-owned autoscaling metric aggregated per handle over the
-    # look-back window, as the controller passes it to the policy. The token
-    # policy scales on the max of outstanding_effective_prefill_tokens.
-    "serve_autoscaling_router_metric",
-    # vLLM engine metrics, exported per replica with a ReplicaId label. The
-    # SLA policy learns from the first two, so they show what it sees.
-    "vllm_time_to_first_token_seconds",
-    "vllm_request_time_per_output_token_seconds",
-    "vllm_num_requests_running",
-    "vllm_num_requests_waiting",
-    "vllm_prefix_cache_hits",
-    "vllm_prefix_cache_queries",
-    # Native CPU offload: hits alone do not prove useful reloads. Preserve
-    # byte counters, transfer/lookup latency and computed-prefill histograms.
-    "vllm_external_prefix_cache_hits",
-    "vllm_external_prefix_cache_queries",
-    "vllm_request_prefill_kv_computed_tokens",
-    "vllm_prompt_tokens_by_source",
-    "vllm_request_success",
-    "vllm_kv_offload_store_bytes",
-    "vllm_kv_offload_load_bytes",
-    "vllm_kv_offload_store_time",
-    "vllm_kv_offload_load_time",
-    "vllm_kv_offload_store_size",
-    "vllm_kv_offload_load_size",
-    "vllm_kv_offload_lookup_sync_delay_seconds",
-    "vllm_kv_offload_lookup_async_delay_seconds",
-    "vllm_kv_offload_allocation_failure",
-    "vllm_kv_offload_cpu_cache_usage_perc",
-    "vllm_mooncake_store_operation_time_seconds",
-    "vllm_mooncake_store_operation",
-    "vllm_mooncake_store_operation_keys",
-    "vllm_mooncake_store_operation_bytes",
-    "vllm_mooncake_store_operation_failed_keys",
+    # Custom autoscaling metrics each replica reports, aggregated over the
+    # look-back window. The KV router replicas report
+    # outstanding_effective_prefill_tokens:<server deployment>; the token
+    # policy scales on the max across router replicas.
+    "serve_autoscaling_replica_metric",
 )
-SCRAPE_TIMEOUT_S = 2.0
-
-# Logged by the SLA policy whenever its decision state changes.
-SLA_POLICY_LOG_PATTERN = re.compile(
-    r"(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}).*"
-    r"SLA autoscaling policy for (?P<deployment>.+?) changed state to "
-    r"(?P<reason>\w+) \(recommended=(?P<recommended>[\d.]+), "
-    r"advisory=(?P<advisory>True|False)\)"
+# Ray renders the whole metrics page before sending the first byte, and the
+# page keeps series for every replica the cluster has ever run, so on a
+# long-lived cluster a scrape can take seconds. Wait for it rather than lose
+# the sample; ``scrape_duration_s`` and ``cycle_overran`` record the cost.
+SCRAPE_TIMEOUT_S = 20.0
+SCRAPE_CONNECT_TIMEOUT_S = 5.0
+# Line prefixes of the selected metrics, with and without Ray's ``ray_``
+# prefix, as they start a sample line or follow ``# TYPE `` / ``# HELP ``.
+_SELECTED_PREFIXES = tuple(
+    lead + prefix + name.encode()
+    for name in SELECTED_METRICS
+    for prefix in (b"ray_", b"")
+    for lead in (b"", b"# TYPE ", b"# HELP ")
 )
 
 
@@ -284,20 +241,14 @@ def discover_endpoints(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return list(endpoints.values())
 
 
-def parse_metrics(text: str) -> tuple[list[dict[str, Any]], list[str]]:
-    """Selected samples plus the names of every Serve metric family present."""
+def parse_metrics(text: str) -> list[dict[str, Any]]:
+    """The samples of the selected metric families in a metrics page."""
     from prometheus_client.parser import text_string_to_metric_families
 
-    # Ray exports ~2MB per node; parse only lines that can be selected.
-    serve_lines = "\n".join(
-        line for line in text.splitlines() if "serve_" in line or "vllm_" in line
-    )
+    serve_lines = "\n".join(line for line in text.splitlines() if "serve_" in line)
     samples: list[dict[str, Any]] = []
-    families: set[str] = set()
     for family in text_string_to_metric_families(serve_lines + "\n"):
         normalized = normalize_metric_name(family.name)
-        if normalized.startswith("serve_"):
-            families.add(normalized)
         if normalized not in SELECTED_METRICS:
             continue
         for sample in family.samples:
@@ -309,14 +260,25 @@ def parse_metrics(text: str) -> tuple[list[dict[str, Any]], list[str]]:
                 "labels": dict(sample.labels),
                 "value": value if math.isfinite(value) else None,
             })
-    return samples, sorted(families)
+    return samples
 
 
 def fetch_metrics_text(url: str) -> str:
-    # Ray's exporter ignores Prometheus' ``name[]`` filter, so this is the full export.
-    response = requests.get(url, timeout=SCRAPE_TIMEOUT_S)
-    response.raise_for_status()
-    return response.text
+    """The selected metrics' lines of a node's metrics page.
+
+    Ray's exporter ignores Prometheus' ``name[]`` filter, so the full export
+    is downloaded; it is filtered while streaming because parsing all of it
+    (tens of MB on a long-lived cluster) takes longer than the scrape interval.
+    """
+    kept: list[bytes] = []
+    with requests.get(
+        url, timeout=(SCRAPE_CONNECT_TIMEOUT_S, SCRAPE_TIMEOUT_S), stream=True
+    ) as response:
+        response.raise_for_status()
+        for line in response.iter_lines(chunk_size=1 << 20):
+            if line.startswith(_SELECTED_PREFIXES):
+                kept.append(line)
+    return b"\n".join(kept).decode("utf-8", "replace") + "\n"
 
 
 class _PrometheusSampler:
@@ -326,7 +288,6 @@ class _PrometheusSampler:
         self._fetch = fetch
         self._interval_s = interval_s
         self._pool = ThreadPoolExecutor(max_workers=8, thread_name_prefix="metrics-scrape")
-        self._families: dict[str, list[str]] = {}
 
     def _scrape(self, endpoint: dict[str, Any]) -> dict[str, Any]:
         url = endpoint["endpoint"]
@@ -335,18 +296,13 @@ class _PrometheusSampler:
         try:
             text = self._fetch(url)
             record["bytes"] = len(text)
-            record["samples"], families = parse_metrics(text)
+            record["samples"] = parse_metrics(text)
         except Exception as exc:
             record["error"] = _error(exc)
-            families = None
         # A gauge is read once the response arrives, so align on completion.
         finished = time.time_ns()
         record.update(scrape_finished_at_ns=finished, timestamp_ns=finished,
                       scrape_duration_s=(finished - started) / 1e9)
-        # The full Serve metric list is only written when it changes.
-        if families is not None and self._families.get(url) != families:
-            self._families[url] = families
-            record["available_serve_metrics"] = families
         return record
 
     def __call__(self, timestamp_ns: int, tick: int) -> list[dict[str, Any]]:
@@ -385,109 +341,9 @@ def prometheus_collector(
     )
 
 
-def mooncake_metrics_collector(
-    path: Path, interval_s: float, endpoints: dict[str, str],
-    fetch: Callable[[str], str] = fetch_metrics_text,
-) -> JsonlCollector:
-    """Keep external pool occupancy/evictions separate from replica counters."""
-    def sample(timestamp_ns: int, tick: int) -> list[dict[str, Any]]:
-        from prometheus_client.parser import text_string_to_metric_families
-
-        records = []
-        for component, endpoint in endpoints.items():
-            record = {"timestamp_ns": timestamp_ns, "component": component,
-                      "endpoint": endpoint, "samples": [], "error": None}
-            try:
-                text = fetch(endpoint)
-                record["bytes"] = len(text)
-                for family in text_string_to_metric_families(text):
-                    for point in family.samples:
-                        record["samples"].append({
-                            "name": point.name, "labels": dict(point.labels),
-                            "value": point.value if math.isfinite(point.value) else None,
-                        })
-            except Exception as exc:
-                record["error"] = _error(exc)
-            record["scrape_finished_at_ns"] = time.time_ns()
-            records.append(record)
-        return records
-
-    return JsonlCollector(path, interval_s, sample,
-        lambda ts, error: {"timestamp_ns": ts, "samples": [], "error": error},
-        name="mooncake-metrics-collector")
-
-
-# --- SLA policy log ---------------------------------------------------------
-
-
-def serve_logs_dir() -> Path:
-    from ray.serve._private.logging_utils import get_serve_logs_dir
-
-    return Path(get_serve_logs_dir())
-
-
-def parse_sla_policy_event(line: str) -> dict[str, Any] | None:
-    """The state transition on one controller log line, if it carries one.
-
-    Serve's text log format stamps local time to the millisecond; it is
-    converted to the epoch clock the other collectors use.
-    """
-    match = SLA_POLICY_LOG_PATTERN.search(line)
-    if match is None:
-        return None
-    logged = datetime.strptime(match["time"], "%Y-%m-%d %H:%M:%S,%f")
-    return {
-        "logged_at_ns": round(logged.timestamp() * 1e9),
-        "deployment": match["deployment"],
-        "reason": match["reason"],
-        "recommended_replicas": float(match["recommended"]),
-        "advisory": match["advisory"] == "True",
-    }
-
-
-class _ControllerLogTail:
-    """Reads lines appended to the controller logs since the previous tick.
-
-    The first tick reads each log from the start, so transitions logged
-    between deployment and the start of telemetry are kept.
-    """
-
-    def __init__(self, logs_dir: Callable[[], Path]):
-        self._logs_dir = logs_dir
-        self._offsets: dict[Path, int] = {}
-
-    def __call__(self, timestamp_ns: int, tick: int) -> list[dict[str, Any]]:
-        records = []
-        for path in sorted(self._logs_dir().glob("controller_*.log")):
-            with path.open() as fh:
-                fh.seek(self._offsets.get(path, 0))
-                lines = fh.readlines()
-                self._offsets[path] = fh.tell()
-            for line in lines:
-                event = parse_sla_policy_event(line)
-                if event is not None:
-                    records.append({"timestamp_ns": timestamp_ns, "error": None, **event})
-        return records
-
-
-def sla_policy_log_collector(
-    path: Path, interval_s: float, logs_dir: Callable[[], Path] = serve_logs_dir
-) -> JsonlCollector:
-    return JsonlCollector(
-        path,
-        interval_s,
-        _ControllerLogTail(logs_dir),
-        lambda ts, error: {"timestamp_ns": ts, "error": error},
-        name="sla-policy-log-collector",
-    )
-
-
 class TelemetrySession:
-    """Runs the collectors for the lifetime of a block.
-
-    Serve status and Prometheus metrics are always collected; the SLA policy
-    log only when that policy is configured.
-    """
+    """Runs the collectors for the lifetime of a block: Serve status, metrics
+    and, with kv_aware routing, the GPU KV-event debug log."""
 
     def __init__(
         self,
@@ -497,7 +353,6 @@ class TelemetrySession:
         status_fetch: Callable[[], dict[str, Any]] = fetch_serve_status,
         discover: Callable[[], list[dict[str, Any]]] = ray_nodes,
         fetch_metrics: Callable[[str], str] = fetch_metrics_text,
-        logs_dir: Callable[[], Path] = serve_logs_dir,
         kv_event_discover: Callable[[], list[dict[str, Any]]] | None = None,
     ):
         analysis = config.analysis
@@ -509,39 +364,22 @@ class TelemetrySession:
                 config.deployment.application_name,
                 analysis.status_interval_s,
                 status_fetch,
-            )
-        ]
-        if analysis.record_gpu_kv_events and config.deployment.routing.policy == "kv_aware":
-            from .kv_event_recorder import GPUKVEventRecorder
-
-            self.collectors.append(GPUKVEventRecorder(
-                telemetry_dir / "gpu_kv_events.jsonl",
-                config.deployment.application_name,
-                discover=kv_event_discover,
-            ))
-        if analysis.prometheus_enabled:
-            self.collectors.append(prometheus_collector(
+            ),
+            prometheus_collector(
                 telemetry_dir / "serve_metrics.jsonl",
                 analysis.metrics_interval_s,
                 discover,
                 fetch_metrics,
-            ))
-            shared = getattr(config.deployment.engine, "shared_kv_cache", None)
-            if shared is not None and shared.enabled:
-                endpoints = {name: url for name, url in {
-                    "master": shared.master_metrics_url,
-                    "client": shared.client_metrics_url,
-                }.items() if url}
-                if endpoints:
-                    self.collectors.append(mooncake_metrics_collector(
-                        telemetry_dir / "mooncake_metrics.jsonl",
-                        analysis.metrics_interval_s, endpoints, fetch_metrics,
-                    ))
-        if config.deployment.autoscaling.policy.name == "sla":
-            self.collectors.append(sla_policy_log_collector(
-                telemetry_dir / "sla_policy_events.jsonl",
-                analysis.status_interval_s,
-                logs_dir,
+            ),
+        ]
+        if analysis.record_gpu_kv_events and config.deployment.routing.policy == "kv_aware":
+            from .kv_event_recorder import GPUKVEventRecorder
+
+            # A debug log only; no analysis output depends on it.
+            self.collectors.append(GPUKVEventRecorder(
+                telemetry_dir / "gpu_kv_events.jsonl",
+                config.deployment.application_name,
+                discover=kv_event_discover,
             ))
         self._stop_timeout_s = (
             max(analysis.status_interval_s, analysis.metrics_interval_s) + SCRAPE_TIMEOUT_S + 5

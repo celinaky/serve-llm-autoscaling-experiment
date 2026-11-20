@@ -11,22 +11,20 @@ from typing import Any
 
 from .config import (
     AIPERF_SOURCE_DEFAULT,
-    CONTINUOUS_MODE_DIRS,
     SESSION_HEADER,
-    SESSION_PINNED_ROUTING,
-    AgentXWorkloadConfig,
+    WORKLOAD_DIR,
     ExperimentConfig,
-    SyntheticWorkloadConfig,
+    WorkloadConfig,
 )
 from .windows import profiling_qps_summary
 
-# AIPerf 0.12 needs Python 3.11+, which the Ray image's driver may not have.
-AIPERF_COMMAND = ["uvx", "--python", "3.11", "--from", AIPERF_SOURCE_DEFAULT, "aiperf"]
 AGENTX_SCENARIO = "inferencex-agentx-mvp"
 CONCURRENCY_SERIES_FILE = "concurrency_series.json"
 
 
 def aiperf_command(source: str = AIPERF_SOURCE_DEFAULT) -> list[str]:
+    # AIPerf needs Python 3.11+, which the Ray image's driver may not have,
+    # so it runs in its own uvx-managed environment.
     if shutil.which("uvx") is None:
         raise RuntimeError("uvx not on PATH; install uv to run AIPerf")
     return ["uvx", "--python", "3.11", "--from", source, "aiperf"]
@@ -72,28 +70,29 @@ def normalize_aiperf(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def agentx_row_fields(mode: str, workload: AgentXWorkloadConfig) -> dict[str, Any]:
-    """Summary-row fields describing the configured AgentX load.
-
-    Fixed concurrency has no ramp, so it reports no ramp duration.
-    """
-    fields: dict[str, Any] = {"target_concurrency": workload.target_concurrency}
-    if workload.concurrency_series is not None:
-        fields["concurrency_series"] = [p.model_dump() for p in workload.concurrency_series]
-    elif mode == "agentx_concurrency_ramp":
-        fields["ramp_duration_s"] = workload.concurrency_ramp_duration_s
-    return fields
+def workload_row_fields(workload: WorkloadConfig) -> dict[str, Any]:
+    """Summary-row fields describing the configured session curve."""
+    return {
+        "target_concurrency": workload.target_concurrency,
+        "concurrency_series": [p.model_dump() for p in workload.concurrency_series],
+    }
 
 
 @dataclass
 class AIPerfRunner:
+    """Replays the AgentX session curve against the deployment with AIPerf."""
+
     config: ExperimentConfig
     benchmark_root: Path
 
-    def _common_args(self, artifact_dir: Path) -> list[str]:
-        """Arguments shared by every workload: target, duration and exports."""
+    def build_command(self, artifact_dir: Path) -> list[str]:
+        """AgentX replay following the session-concurrency curve.
+
+        The scenario owns ignore_eos, cache busting and warmup.
+        """
         benchmark = self.config.benchmark
         deployment = self.config.deployment
+        workload = benchmark.workload
         cmd = [
             *aiperf_command(self.config.runtime.aiperf_source),
             "profile",
@@ -106,91 +105,21 @@ class AIPerfRunner:
             "--artifact-dir", str(artifact_dir),
             "--export-level", "records",
             "--ui", "none",
+            "--streaming",
+            "--use-server-token-count",
         ]
-        if benchmark.streaming:
-            cmd.append("--streaming")
-        if benchmark.use_server_token_count:
-            cmd.append("--use-server-token-count")
-        if deployment.routing.policy in SESSION_PINNED_ROUTING:
-            # AIPerf sends one ID per session. consistent_hash hashes it to a
-            # replica; kv_aware scores the first turn on prompt overlap and
-            # load, then pins the session's later turns to that replica.
+        if deployment.routing.policy == "kv_aware":
+            # AIPerf sends one ID per session. The router scores the first
+            # turn on prompt overlap and load, then pins the session's later
+            # turns to that replica.
             cmd.extend(["--session-header", SESSION_HEADER])
-        return cmd
-
-    def _arrival_args(self) -> list[str]:
-        benchmark = self.config.benchmark
-        args = ["--arrival-pattern", benchmark.arrival_pattern]
-        if benchmark.arrival_smoothness is not None:
-            args.extend(["--arrival-smoothness", str(benchmark.arrival_smoothness)])
-        return args
-
-    def build_synthetic_command(
-        self, load_args: list[str], artifact_dir: Path
-    ) -> list[str]:
-        benchmark = self.config.benchmark
-        workload = benchmark.workload
-        if not isinstance(workload, SyntheticWorkloadConfig):
-            raise TypeError("build_synthetic_command requires a synthetic workload")
-        cmd = self._common_args(artifact_dir)
-        cmd.extend([
-            "--isl", str(workload.input_tokens),
-            "--isl-stddev", str(workload.input_tokens_stddev),
-            "--osl", str(workload.output_tokens),
-            "--osl-stddev", str(workload.output_tokens_stddev),
-            "--random-seed", str(workload.seed),
-        ])
-        if workload.ignore_eos:
-            cmd.extend(["--extra-inputs", "ignore_eos:true"])
-        if benchmark.warmup.enabled:
-            cmd.extend(["--warmup-duration", str(benchmark.warmup.duration_s)])
-        cmd.extend(load_args)
-        cmd.extend(benchmark.extra_args)
-        return cmd
-
-    def build_command(self, level: float, artifact_dir: Path) -> list[str]:
-        if self.config.benchmark.mode == "concurrency":
-            load_args = ["--concurrency", str(int(level))]
-        else:
-            load_args = ["--request-rate", str(level), *self._arrival_args()]
-        return self.build_synthetic_command(load_args, artifact_dir)
-
-    def build_series_command(self, series_path: Path, artifact_dir: Path) -> list[str]:
-        # AIPerf refuses series paths with symlinked components; resolve them.
-        return self.build_synthetic_command(
-            ["--request-rate-series", str(series_path.resolve()), *self._arrival_args()],
-            artifact_dir,
-        )
-
-    def build_agentx_command(self, artifact_dir: Path) -> list[str]:
-        """AgentX replay at a session-tree concurrency.
-
-        A ramp rises from 1 to the target over the ramp duration; fixed
-        concurrency holds the target for the whole profiling duration. The
-        scenario owns ignore_eos, cache busting and warmup, so none of the
-        synthetic or request-rate options are passed.
-        """
-        benchmark = self.config.benchmark
-        workload = benchmark.workload
-        if not isinstance(workload, AgentXWorkloadConfig):
-            raise TypeError("build_agentx_command requires an agentx workload")
-        cmd = self._common_args(artifact_dir)
         cmd.extend([
             "--scenario", AGENTX_SCENARIO,
             "--public-dataset", workload.public_dataset,
             "--concurrency", str(workload.target_concurrency),
-        ])
-        if workload.concurrency_series is not None:
             # AIPerf refuses series paths with symlinked components; resolve them.
-            cmd.extend([
-                "--concurrency-series",
-                str((artifact_dir / CONCURRENCY_SERIES_FILE).resolve()),
-            ])
-        elif benchmark.mode == "agentx_concurrency_ramp":
-            cmd.extend([
-                "--concurrency-ramp-duration", str(workload.concurrency_ramp_duration_s)
-            ])
-        cmd.extend([
+            "--concurrency-series",
+            str((artifact_dir / CONCURRENCY_SERIES_FILE).resolve()),
             "--trajectory-start-min-ratio", str(workload.trajectory_start_min_ratio),
             "--trajectory-start-max-ratio", str(workload.trajectory_start_max_ratio),
             "--random-seed", str(workload.seed),
@@ -201,57 +130,23 @@ class AIPerfRunner:
         return cmd
 
     def write_concurrency_series(self, path: Path) -> None:
-        """The AgentX session curve in the JSON shape AIPerf's flag reads."""
-        workload = self.config.benchmark.workload
-        assert isinstance(workload, AgentXWorkloadConfig)
+        """The session curve in the JSON shape AIPerf's flag reads."""
         points = [
             {"time_s": p.time_s, "concurrency": p.sessions}
-            for p in workload.concurrency_series or []
+            for p in self.config.benchmark.workload.concurrency_series
         ]
         with path.open("w") as fh:
             json.dump({"points": points}, fh, indent=2)
             fh.write("\n")
 
-    def write_rate_series(self, path: Path) -> None:
-        points = self.config.benchmark.rate_series or []
-        with path.open("w") as fh:
-            json.dump({"points": [point.model_dump() for point in points]}, fh, indent=2)
-            fh.write("\n")
-
-    def run_point(self, level: float) -> dict[str, Any]:
-        mode = self.config.benchmark.mode
-        label_value = (
-            str(int(level))
-            if float(level).is_integer()
-            else str(level).replace(".", "p")
-        )
-        point_dir = self.benchmark_root / f"{mode}-{label_value}"
-        point_dir.mkdir(parents=True, exist_ok=False)
-        cmd = self.build_command(level, point_dir)
-        return self._execute(
-            cmd, point_dir, int(level) if float(level).is_integer() else level
-        )
-
-    def run_series(self) -> dict[str, Any]:
-        series_dir = self.benchmark_root / CONTINUOUS_MODE_DIRS["request_rate_series"]
-        series_dir.mkdir(parents=True, exist_ok=False)
-        series_path = series_dir / "rate_series.json"
-        self.write_rate_series(series_path)
-        cmd = self.build_series_command(series_path, series_dir)
-        return self._execute(cmd, series_dir, "series")
-
-    def run_agentx(self) -> dict[str, Any]:
+    def run(self) -> dict[str, Any]:
         benchmark = self.config.benchmark
         workload = benchmark.workload
-        assert isinstance(workload, AgentXWorkloadConfig)
-        run_dir = self.benchmark_root / CONTINUOUS_MODE_DIRS[benchmark.mode]
+        run_dir = self.benchmark_root / WORKLOAD_DIR
         run_dir.mkdir(parents=True, exist_ok=False)
-        if workload.concurrency_series is not None:
-            self.write_concurrency_series(run_dir / CONCURRENCY_SERIES_FILE)
-        row = self._execute(
-            self.build_agentx_command(run_dir), run_dir, workload.target_concurrency
-        )
-        row.update(agentx_row_fields(benchmark.mode, workload))
+        self.write_concurrency_series(run_dir / CONCURRENCY_SERIES_FILE)
+        row = self._execute(self.build_command(run_dir), run_dir)
+        row.update(workload_row_fields(workload))
         # Kept distinct from the harness-derived rates below.
         row["aiperf_request_throughput"] = row["request_throughput"]
         try:
@@ -265,7 +160,7 @@ class AIPerfRunner:
             )})
         return row
 
-    def _execute(self, cmd: list[str], point_dir: Path, level: Any) -> dict[str, Any]:
+    def _execute(self, cmd: list[str], point_dir: Path) -> dict[str, Any]:
         with (point_dir / "command.json").open("w") as fh:
             json.dump({"argv": cmd, "display": shlex.join(cmd)}, fh, indent=2)
             fh.write("\n")
@@ -295,8 +190,9 @@ class AIPerfRunner:
         normalized = normalize_aiperf(raw)
         normalized.update(
             {
-                "mode": self.config.benchmark.mode,
-                "level": level,
+                # Kept for readers of pre-cleanup summaries.
+                "mode": "agentx_concurrency_ramp",
+                "level": self.config.benchmark.workload.target_concurrency,
                 "elapsed_s": elapsed,
                 "artifact_dir": str(point_dir),
                 "error": None,

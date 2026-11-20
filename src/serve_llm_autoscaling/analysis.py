@@ -1,4 +1,4 @@
-"""Offline analysis of a continuous (request-rate-series or AgentX) run directory.
+"""Offline analysis of an AgentX session-curve run directory.
 
 Everything here reads saved artifacts only, so it runs without Ray or a GPU
 and can be repeated with different windows after the experiment.
@@ -10,28 +10,23 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterator
 
-import yaml
-
 from .artifacts import write_json
 from .config import (
-    CONTINUOUS_MODE_DIRS,
-    AgentXWorkloadConfig,
+    WORKLOAD_DIR,
     AnalysisConfig,
     ExperimentConfig,
+    WorkloadConfig,
+    load_saved_config,
 )
 from .evaluation import evaluate_run
-from .telemetry import SELECTED_METRICS, normalize_metric_name
+from .telemetry import normalize_metric_name
 from .windows import (
-    configured_concurrency_at,
     configured_series_concurrency_at,
     profiling_requests,
     request_timeseries,
-    slo_calibration,
 )
 
-# 2: ``request_rate_curve`` became the dimension-tagged ``configured_load``.
-# 3: added ``lifecycle`` (load, drain and idle observation periods).
-# 4: added SLA policy and vLLM series, ``sla_policy_events`` and the ITL SLO.
+# Written into plot_data.json and concurrency_qps.json.
 SCHEMA_VERSION = 4
 
 # key -> (normalized sample name, aggregation, identity labels[, label match])
@@ -41,35 +36,15 @@ SCHEMA_VERSION = 4
 # family, serve_autoscaling_policy_metric, told apart by its metric label.
 #
 # A series is identified by application, deployment and the identity labels:
-# the replica for replica metrics, the handle or router actor for router
-# metrics, nothing more for controller gauges. Copies of one series exported by
-# several nodes are deduplicated; samples missing an identity label are
-# excluded, since they cannot be told apart. vLLM metrics carry no deployment
-# labels; they are attributed through their ReplicaId instead.
+# the handle for router metrics, nothing more for controller gauges. Copies of
+# one series exported by several nodes are deduplicated; samples missing an
+# identity label are excluded, since they cannot be told apart.
 METRIC_SERIES = {
-    "ongoing_requests": ("serve_replica_processing_queries", "sum", ("replica",)),
-    "handle_ongoing_requests": (
-        "serve_num_ongoing_requests_at_replicas", "sum", ("handle", "actor_id")
-    ),
-    "router_queue": (
-        "serve_request_router_queue_len", "sum", ("actor_id", "handle_source", "replica_id")
-    ),
-    "queued_queries": ("serve_deployment_queued_queries", "sum", ("handle", "actor_id")),
-    "healthy_replicas": ("serve_deployment_replica_healthy", "healthy", ("replica",)),
     "desired_replicas": ("serve_autoscaling_desired_replicas", "sum", ()),
     "target_replicas": ("serve_autoscaling_target_replicas", "sum", ()),
-    "autoscaling_total_requests": ("serve_autoscaling_total_requests", "sum", ()),
-    "target_ongoing_requests": ("serve_autoscaling_target_ongoing_requests", "sum", ()),
-    "replica_startups": ("serve_replica_startup_latency_ms_count", "counter_delta", ()),
-    "sla_recommended_replicas": ("serve_sla_autoscaling_recommended_replicas", "sum", ()),
-    "sla_model_ready": ("serve_sla_autoscaling_model_ready", "sum", ()),
-    "sla_training_rows": ("serve_sla_autoscaling_training_rows", "sum", ()),
-    "sla_training_buckets": ("serve_sla_autoscaling_training_buckets", "sum", ()),
-    "sla_predicted_ttft_ms": ("serve_sla_autoscaling_predicted_ttft_ms", "sum", ()),
-    "sla_predicted_itl_ms": ("serve_sla_autoscaling_predicted_itl_ms", "sum", ()),
-    # The token policy publishes its raw prefill backlog snapshot, the
-    # lookback-mean prefill required replicas and the required replicas. The
-    # decode series are kept so runs from the two-term policy still load.
+    # The token policy publishes its raw prefill backlog snapshot and the
+    # lookback-mean prefill required replicas. The decode series are kept so
+    # runs from the two-term policy still load.
     "token_prefill_backlog": (
         "serve_autoscaling_policy_metric", "sum", (), {"metric": "outstanding_effective_prefill_tokens"}
     ),
@@ -82,45 +57,44 @@ METRIC_SERIES = {
     "token_decode_replicas": (
         "serve_autoscaling_policy_metric", "sum", (), {"metric": "decode_required_replicas"}
     ),
-    "token_desired_replicas": (
-        "serve_autoscaling_policy_metric", "sum", (), {"metric": "required_replicas"}
-    ),
-    # The controller exports each KV router's look-back mean of outstanding
-    # uncached prefill tokens, one series per handle. The token policy scales
-    # on the max across handles; metric_series divides it by the target to
-    # rebuild token_prefill_replicas when the policy metric gauge is absent.
+    # The look-back mean of outstanding uncached prefill tokens each KV router
+    # reports, one series per router (see ``router_report``). The token policy
+    # scales on the max across routers; metric_series divides it by the
+    # target to rebuild token_prefill_replicas when the policy metric gauge
+    # is absent.
     "token_router_prefill_mean": (
         "serve_autoscaling_router_metric", "max", ("handle",),
         {"metric": "outstanding_effective_prefill_tokens"},
     ),
-    # The arrival-p95 policy publishes the p95 of uncached prefill tokens that
-    # were ahead of each request on its selected replica, over its lookback.
-    "token_arrival_p95": (
-        "serve_autoscaling_policy_metric", "sum", (), {"metric": "prefill_arrival_p95_tokens"}
-    ),
-    "token_arrival_samples": (
-        "serve_autoscaling_policy_metric", "sum", (), {"metric": "prefill_arrival_samples"}
-    ),
-    "vllm_running_requests": ("vllm_num_requests_running", "sum", ("ReplicaId",)),
-    "vllm_waiting_requests": ("vllm_num_requests_waiting", "sum", ("ReplicaId",)),
 }
 
-# key -> (numerator counter, denominator counter, scale). Each point is the
-# ratio of the counters' increases over the preceding ``tail_window_s``,
-# summed across replicas: the means the SLA policy reads from Prometheus.
-WINDOWED_RATIOS = {
-    "vllm_mean_ttft_ms": (
-        "vllm_time_to_first_token_seconds_sum",
-        "vllm_time_to_first_token_seconds_count", 1000.0,
-    ),
-    "vllm_mean_itl_ms": (
-        "vllm_request_time_per_output_token_seconds_sum",
-        "vllm_request_time_per_output_token_seconds_count", 1000.0,
-    ),
-    "vllm_prefix_cache_hit_rate": (
-        "vllm_prefix_cache_hits_total", "vllm_prefix_cache_queries_total", 1.0,
-    ),
-}
+
+ROUTER_PREFILL_METRIC = "outstanding_effective_prefill_tokens"
+
+
+def router_report(sample: dict[str, Any]) -> dict[str, Any]:
+    """Present the router's reported prefill load in one shape across Ray versions.
+
+    Current Ray exports ``serve_autoscaling_replica_metric`` on the LLMRouter
+    deployment, one series per router replica, with the server it is bound to
+    in the metric label (``outstanding_effective_prefill_tokens:<server>``).
+    Earlier branches exported ``serve_autoscaling_router_metric`` on the
+    server deployment, one series per handle. A current sample is returned
+    in the earlier shape; anything else is returned unchanged.
+    """
+    labels = sample.get("labels") or {}
+    metric = labels.get("metric", "")
+    if (normalize_metric_name(sample["name"]) != "serve_autoscaling_replica_metric"
+            or not metric.startswith(ROUTER_PREFILL_METRIC + ":")):
+        return sample
+    converted = {
+        **labels,
+        "deployment": metric[len(ROUTER_PREFILL_METRIC) + 1:],
+        "metric": ROUTER_PREFILL_METRIC,
+    }
+    if "replica" in labels:  # without it the series cannot be told apart
+        converted["handle"] = labels["replica"]
+    return {**sample, "name": "ray_serve_autoscaling_router_metric", "labels": converted}
 
 
 def read_jsonl(path: Path) -> Iterator[dict[str, Any]]:
@@ -135,16 +109,12 @@ def read_jsonl(path: Path) -> Iterator[dict[str, Any]]:
 
 
 def load_run_config(root: Path) -> ExperimentConfig:
-    with (root / "resolved.yaml").open() as fh:
-        return ExperimentConfig.model_validate(yaml.safe_load(fh))
+    return load_saved_config(root / "resolved.yaml")
 
 
 def workload_artifact_dir(root: Path, config: ExperimentConfig) -> Path:
-    """The raw AIPerf artifact directory of a continuous run."""
-    mode = config.benchmark.mode
-    if mode not in CONTINUOUS_MODE_DIRS:
-        raise ValueError(f"mode {mode!r} is not a continuous workload; nothing to analyze")
-    return root / "benchmark" / CONTINUOUS_MODE_DIRS[mode]
+    """The run's raw AIPerf artifact directory."""
+    return root / "benchmark" / WORKLOAD_DIR
 
 
 # --- Lifecycle ----------------------------------------------------------------
@@ -178,7 +148,6 @@ def lifecycle_periods(
     the harness is observing recovery.
     """
     benchmark = config.benchmark
-    workload = benchmark.workload
 
     def rel(ns: int | None) -> float | None:
         return None if ns is None else (ns - t0) / 1e9
@@ -191,10 +160,7 @@ def lifecycle_periods(
         drain_end = aiperf_exit
     observation_end = rel(lifecycle.get("observation_end_ns"))
     markers = {
-        "ramp_end_s": (
-            workload.concurrency_ramp_duration_s
-            if isinstance(workload, AgentXWorkloadConfig) else None
-        ),
+        "ramp_end_s": None,
         "load_end_s": load_end,
         "drain_end_s": drain_end,
         "aiperf_exit_s": aiperf_exit,
@@ -221,74 +187,38 @@ def lifecycle_periods(
 def configured_load(config: ExperimentConfig, artifact_dir: Path) -> dict[str, Any]:
     """The load the harness asked for, tagged with what it measures.
 
-    For AgentX this is session-tree concurrency, not a request rate: the
-    request rate it produces is an observed outcome.
+    This is session-tree concurrency, not a request rate: the request rate
+    it produces is an observed outcome.
     """
     benchmark = config.benchmark
     workload = benchmark.workload
-    if isinstance(workload, AgentXWorkloadConfig) and benchmark.mode == "agentx_fixed_concurrency":
-        # Held at the target from the profiling start until load issuance ends.
-        target = float(workload.target_concurrency)
-        return {"dimension": "session_concurrency", "unit": "session trees",
-                "label": "configured session concurrency",
-                "points": [{"time_s": 0.0, "value": target},
-                           {"time_s": benchmark.duration_s, "value": target},
-                           {"time_s": benchmark.duration_s, "value": 0.0}],
-                "markers": []}
-    if isinstance(workload, AgentXWorkloadConfig) and workload.concurrency_series is not None:
-        # The curve's control points, held at the last value until load ends.
-        curve = workload.concurrency_series
-        points = [{"time_s": p.time_s, "value": float(p.sessions)} for p in curve]
-        if benchmark.duration_s > curve[-1].time_s:
-            points.append({"time_s": benchmark.duration_s, "value": float(curve[-1].sessions)})
-        return {"dimension": "session_concurrency", "unit": "session trees",
-                "label": "configured session concurrency", "points": points,
-                "markers": [p.time_s for p in curve[1:]]}
-    if isinstance(workload, AgentXWorkloadConfig):
-        ramp = workload.concurrency_ramp_duration_s
-        points = [{"time_s": 0.0, "value": 1.0},
-                  {"time_s": ramp, "value": float(workload.target_concurrency)}]
-        if benchmark.duration_s > ramp:
-            points.append({"time_s": benchmark.duration_s,
-                           "value": float(workload.target_concurrency)})
-        return {"dimension": "session_concurrency", "unit": "session trees",
-                "label": "configured session concurrency", "points": points,
-                "markers": [ramp]}
-    try:
-        curve = json.loads((artifact_dir / "rate_series.json").read_text())["points"]
-    except (OSError, ValueError, KeyError):
-        curve = [p.model_dump() for p in benchmark.rate_series or []]
-    return {"dimension": "request_rate", "unit": "requests/s", "label": "configured QPS",
-            "points": [{"time_s": p["time_s"], "value": p["qps"]} for p in curve],
-            "markers": [p["time_s"] for p in curve[1:]]}
+    # The curve's control points, held at the last value until load ends.
+    curve = workload.concurrency_series
+    points = [{"time_s": p.time_s, "value": float(p.sessions)} for p in curve]
+    if benchmark.duration_s > curve[-1].time_s:
+        points.append({"time_s": benchmark.duration_s, "value": float(curve[-1].sessions)})
+    return {"dimension": "session_concurrency", "unit": "session trees",
+            "label": "configured session concurrency", "points": points,
+            "markers": [p.time_s for p in curve[1:]]}
 
 
 def concurrency_qps(
-    workload: AgentXWorkloadConfig, timeseries: dict[str, Any], duration_s: float
+    workload: WorkloadConfig, timeseries: dict[str, Any], duration_s: float
 ) -> dict[str, Any]:
     """Configured session concurrency beside the request rates it generated.
 
-    Concurrency is the configured load at each window's midpoint: the ramp,
-    or the target throughout for fixed concurrency. The live session count can
+    Concurrency is the configured curve at each window's midpoint. The live session count can
     briefly differ because of scheduling and tree turnover. No sessions are
     configured once load issuance ends at ``duration_s``.
     """
-    ramp = workload.concurrency_ramp_duration_s
-    curve = (
-        [(p.time_s, float(p.sessions)) for p in workload.concurrency_series]
-        if workload.concurrency_series is not None else None
-    )
+    curve = [(p.time_s, float(p.sessions)) for p in workload.concurrency_series]
     rows = []
     for w in timeseries["windows"]:
         mid = (w["window_start_s"] + w["window_end_s"]) / 2
         if mid >= duration_s:
             sessions = 0.0
-        elif curve is not None:
-            sessions = configured_series_concurrency_at(mid, curve)
-        elif ramp is None:
-            sessions = float(workload.target_concurrency)
         else:
-            sessions = configured_concurrency_at(mid, workload.target_concurrency, ramp)
+            sessions = configured_series_concurrency_at(mid, curve)
         row = {
             "window_start_s": w["window_start_s"],
             "window_end_s": w["window_end_s"],
@@ -313,80 +243,13 @@ def concurrency_qps(
     result: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "target_concurrency": workload.target_concurrency,
+        "concurrency_series": [p.model_dump() for p in workload.concurrency_series],
     }
-    if workload.concurrency_series is not None:
-        result["concurrency_series"] = [p.model_dump() for p in workload.concurrency_series]
-    elif ramp is not None:
-        result["ramp_duration_s"] = ramp
     return {
         **result,
         "window_s": timeseries["window_s"],
         "summary": timeseries["summary"],
         "windows": rows,
-    }
-
-
-# --- Metrics inventory ------------------------------------------------------
-
-
-def build_metrics_inventory(metrics_path: Path) -> dict[str, Any]:
-    metrics: dict[str, dict[str, Any]] = {}
-    other: set[str] = set()
-    endpoints: set[str] = set()
-    scrapes = errors = 0
-    durations: list[float] = []
-    sizes: list[int] = []
-    overran: set[Any] = set()
-    if metrics_path.exists():
-        for record in read_jsonl(metrics_path):
-            scrapes += 1
-            if record.get("endpoint"):
-                endpoints.add(record["endpoint"])
-            if record.get("error"):
-                errors += 1
-            if record.get("scrape_duration_s") is not None:
-                durations.append(record["scrape_duration_s"])
-            if record.get("bytes") is not None:
-                sizes.append(record["bytes"])
-            if record.get("cycle_overran"):
-                overran.add(record.get("tick"))
-            other.update(record.get("available_serve_metrics") or [])
-            ts = record.get("timestamp_ns")
-            for sample in record.get("samples") or []:
-                entry = metrics.setdefault(sample["normalized_name"], {
-                    "original_names": set(), "sample_names": set(), "types": set(),
-                    "labels": set(), "source_nodes": set(), "sample_count": 0,
-                    "first_timestamp_ns": ts, "last_timestamp_ns": ts,
-                })
-                family = sample["name"]
-                if sample.get("type") in ("histogram", "summary", "counter"):
-                    family = family.removesuffix("_bucket").removesuffix("_count")
-                    family = family.removesuffix("_sum").removesuffix("_total")
-                entry["original_names"].add(family)
-                entry["sample_names"].add(sample["name"])
-                entry["types"].add(sample.get("type"))
-                entry["labels"].update(sample.get("labels") or {})
-                entry["source_nodes"].add(record.get("node_id"))
-                entry["sample_count"] += 1
-                entry["first_timestamp_ns"] = min(entry["first_timestamp_ns"], ts)
-                entry["last_timestamp_ns"] = max(entry["last_timestamp_ns"], ts)
-    for entry in metrics.values():
-        for key, value in entry.items():
-            if isinstance(value, set):
-                entry[key] = sorted(v for v in value if v is not None)
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "collected": metrics_path.exists(),
-        "scrape_records": scrapes,
-        "scrape_errors": errors,
-        "endpoints": sorted(endpoints),
-        # Collector overhead, to check that scraping did not perturb the run.
-        "max_scrape_duration_s": max(durations, default=None),
-        "max_scrape_bytes": max(sizes, default=None),
-        "overran_cycles": len(overran),
-        "metrics": dict(sorted(metrics.items())),
-        "missing_recommended_metrics": [m for m in SELECTED_METRICS if m not in metrics],
-        "other_available_serve_metrics": sorted(other - set(SELECTED_METRICS)),
     }
 
 
@@ -442,10 +305,6 @@ def status_samples(
 # --- Prometheus aggregation -------------------------------------------------
 
 
-def _label_key(labels: dict[str, str]) -> tuple:
-    return tuple(sorted(labels.items()))
-
-
 def aggregate_metric(
     ticks: list[tuple[int, list[tuple[str | None, dict[str, Any]]]]],
     aggregation: str,
@@ -461,11 +320,10 @@ def aggregate_metric(
     which copies of one series disagree is omitted rather than guessed.
     """
     points = []
-    previous: dict[tuple, float] = {}
     unidentified = conflicting = 0
     for timestamp_ns, samples in ticks:
         series: dict[tuple, set[float]] = defaultdict(set)
-        for node_id, sample in samples:
+        for _, sample in samples:
             labels = sample["labels"]
             if sample.get("value") is None:
                 continue
@@ -474,34 +332,17 @@ def aggregate_metric(
                 continue
             key = (labels.get("application"), labels.get("deployment"),
                    *(labels[k] for k in identity))
-            if aggregation == "counter_delta":
-                # Counters are node-local; deltas are taken per node series.
-                key = (node_id, _label_key(labels))
             series[key].add(sample["value"])
         if any(len(values) > 1 for values in series.values()):
             conflicting += 1
             continue
         current = {key: values.pop() for key, values in series.items()}
-        value: float
-        if aggregation == "counter_delta":
-            # A drop means the counter reset.
-            delta, seen = 0.0, False
-            for key, v in current.items():
-                if key in previous:
-                    delta += v - previous[key] if v >= previous[key] else v
-                    seen = True
-                previous[key] = v
-            if not seen:
-                continue
-            value = delta
-        elif not current:
+        if not current:
             continue
-        elif aggregation == "sum":
+        if aggregation == "sum":
             value = sum(current.values())
         elif aggregation == "max":
             value = max(current.values())
-        elif aggregation == "healthy":
-            value = sum(1 for v in current.values() if v >= 1)
         else:
             raise ValueError(f"unknown aggregation {aggregation!r}")
         points.append({
@@ -521,60 +362,6 @@ def aggregate_metric(
     return points
 
 
-def _replica_values(
-    samples: list[tuple[str | None, dict[str, Any]]]
-) -> dict[str, float]:
-    """One value per ReplicaId; a replica whose copies disagree is dropped."""
-    values: dict[str, set[float]] = defaultdict(set)
-    for _, sample in samples:
-        replica = sample["labels"].get("ReplicaId")
-        if replica and sample.get("value") is not None:
-            values[replica].add(sample["value"])
-    return {replica: v.pop() for replica, v in values.items() if len(v) == 1}
-
-
-def windowed_ratio(
-    numerator_ticks: list[tuple[int, list[tuple[str | None, dict[str, Any]]]]],
-    denominator_ticks: list[tuple[int, list[tuple[str | None, dict[str, Any]]]]],
-    window_s: float,
-    t0: int,
-    scale: float = 1.0,
-) -> list[dict[str, Any]]:
-    """Per tick, the ratio of two counters' increases over the trailing window.
-
-    Increases are taken per replica against its latest sample at or before
-    the window start, or its first sample if it appeared inside the window,
-    then summed over the replicas present at the tick. Ticks with no
-    denominator increase produce no point.
-    """
-    history: dict[str, list[tuple[int, float, float]]] = defaultdict(list)
-    points = []
-    window_ns = round(window_s * 1e9)
-    for (timestamp_ns, numerators), (_, denominators) in zip(numerator_ticks, denominator_ticks):
-        current_num = _replica_values(numerators)
-        current_den = _replica_values(denominators)
-        total_num = total_den = 0.0
-        for replica in current_num.keys() & current_den.keys():
-            samples = history[replica]
-            baseline = samples[0] if samples else None
-            for sample in reversed(samples):
-                if sample[0] <= timestamp_ns - window_ns:
-                    baseline = sample
-                    break
-            samples.append((timestamp_ns, current_num[replica], current_den[replica]))
-            if baseline is None:
-                continue
-            total_num += current_num[replica] - baseline[1]
-            total_den += current_den[replica] - baseline[2]
-        if total_den > 0:
-            points.append({
-                "relative_time_s": (timestamp_ns - t0) / 1e9,
-                "value": total_num / total_den * scale,
-                "series_count": len(current_num.keys() & current_den.keys()),
-            })
-    return points
-
-
 def metric_series(
     records: list[dict[str, Any]],
     application: str,
@@ -582,7 +369,6 @@ def metric_series(
     interval_s: float,
     t0: int,
     warnings: list[str],
-    window_s: float = 30.0,
     target_prefill_tokens_per_replica: float | None = None,
 ) -> dict[str, dict[str, Any]]:
     ticks: dict[Any, list[dict[str, Any]]] = defaultdict(list)
@@ -600,32 +386,21 @@ def metric_series(
             and labels.get("deployment") in deployments
         )
 
-    # vLLM samples belong to the deployment when their ReplicaId is one of its
-    # replicas; without any replica-labeled Serve sample, every one is kept.
-    replica_ids = {
-        s["labels"]["replica"]
-        for r in records for s in r.get("samples") or []
-        if "replica" in (s.get("labels") or {}) and attributed(s["labels"])
-    }
-
     unlabeled: dict[str, int] = defaultdict(int)
-    wanted = {spec[0] for spec in METRIC_SERIES.values()}
-    wanted |= {name for pair in WINDOWED_RATIOS.values() for name in pair[:2]}
-    by_metric: dict[str, list] = {name: [] for name in wanted}
+    # Other recorded families (older runs kept many more) are ignored.
+    by_metric: dict[str, list] = {spec[0]: [] for spec in METRIC_SERIES.values()}
     for tick in sorted(ticks):
         tick_records = ticks[tick]
         timestamp_ns = max(r["timestamp_ns"] for r in tick_records)
         selected: dict[str, list] = defaultdict(list)
         for record in tick_records:
             for sample in record.get("samples") or []:
+                sample = router_report(sample)
                 name = normalize_metric_name(sample["name"])
                 if name not in by_metric:
                     continue
                 labels = sample.get("labels") or {}
-                if name.startswith("vllm_"):
-                    if replica_ids and labels.get("ReplicaId") not in replica_ids:
-                        continue
-                elif "application" not in labels or "deployment" not in labels:
+                if "application" not in labels or "deployment" not in labels:
                     unlabeled[name] += 1  # cannot be attributed to the deployment
                     continue
                 elif not attributed(labels):
@@ -652,11 +427,6 @@ def metric_series(
         points = aggregate_metric(ticks_for_key, aggregation, identity, t0, warnings, label)
         if points:
             result[key] = {"metric": name, "aggregation": aggregation, "points": points}
-    for key, (numerator, denominator, scale) in WINDOWED_RATIOS.items():
-        points = windowed_ratio(by_metric[numerator], by_metric[denominator], window_s, t0, scale)
-        if points:
-            result[key] = {"metric": f"{numerator} / {denominator}",
-                           "aggregation": f"windowed_ratio_{window_s:g}s", "points": points}
     # Runs without the policy metric gauge: the policy's prefill required
     # replicas is the controller's max per-handle look-back mean over the target.
     mean = result.get("token_router_prefill_mean")
@@ -670,27 +440,6 @@ def metric_series(
             ],
         }
     return result
-
-
-# --- SLA policy events ------------------------------------------------------
-
-
-def read_sla_policy_events(root: Path, application: str, t0: int) -> list[dict[str, Any]]:
-    """The SLA policy's logged state transitions, on the profiling clock."""
-    path = root / "telemetry" / "sla_policy_events.jsonl"
-    if not path.exists():
-        return []
-    events = [
-        {
-            "relative_time_s": (record["logged_at_ns"] - t0) / 1e9,
-            "reason": record["reason"],
-            "recommended_replicas": record["recommended_replicas"],
-            "advisory": record["advisory"],
-        }
-        for record in read_jsonl(path)
-        if not record.get("error") and application in record.get("deployment", "")
-    ]
-    return sorted(events, key=lambda e: e["relative_time_s"])
 
 
 # --- Plot data --------------------------------------------------------------
@@ -732,34 +481,37 @@ def build_plot_data(
 
     status = status_samples(status_records, deployments, t0)
     if not status_path.exists():
-        warnings.append("Serve status telemetry was not collected; replica panel is empty")
+        warnings.append("Serve status telemetry was not collected; replica counts are missing")
     elif not any(s.get("error") is None for s in status):
-        warnings.append("every Serve status sample failed; replica panel is empty")
+        warnings.append("every Serve status sample failed; replica counts are missing")
     elif errors := sum(1 for s in status if s.get("error")):
         warnings.append(f"{errors} of {len(status)} Serve status samples failed")
 
     if not metrics_path.exists():
         warnings.append("Prometheus metrics were not collected; Serve-side signals are omitted")
+    elif metric_records:
+        failed = sum(1 for record in metric_records if record.get("error"))
+        if failed > 0.1 * len(metric_records):
+            warnings.append(
+                f"{failed} of {len(metric_records)} metrics scrapes failed: the policy "
+                "signal and other Serve-side series have gaps (see the error field in "
+                "telemetry/serve_metrics.jsonl; a slow metrics page on a long-lived "
+                "cluster is the usual cause)"
+            )
     series = metric_series(
         metric_records, application, deployments, analysis.metrics_interval_s, t0, warnings,
-        window_s=analysis.tail_window_s,
         target_prefill_tokens_per_replica=config.deployment.autoscaling.policy.kwargs.get(
             "target_prefill_tokens_per_replica"
         ),
     )
-    if metrics_path.exists():
-        for key in ("ongoing_requests", "router_queue", "desired_replicas"):
-            if key not in series:
-                warnings.append(f"{METRIC_SERIES[key][0]} was not exported; omitted from the plot")
+    if metrics_path.exists() and "desired_replicas" not in series:
+        warnings.append(
+            f"{METRIC_SERIES['desired_replicas'][0]} was not exported; scale events "
+            "fall back to the target replica count"
+        )
     autoscaling = config.deployment.autoscaling
-    sla_events = read_sla_policy_events(root, application, t0)
     if autoscaling.policy.name == "token" and "token_prefill_replicas" not in series:
-        warnings.append("token policy gauges were not exported; policy panel is empty")
-    if autoscaling.policy.name == "sla":
-        if "sla_recommended_replicas" not in series:
-            warnings.append("SLA policy gauges were not exported; policy panel is empty")
-        if not sla_events:
-            warnings.append("no SLA policy state transitions were found in the controller log")
+        warnings.append("token policy gauges were not exported; its evaluation is omitted")
 
     manifest_end = None
     try:
@@ -802,7 +554,7 @@ def build_plot_data(
             "slo_percentile": analysis.slo_percentile,
             "warmup_s": analysis.warmup_s,
             "gpus_per_replica": config.deployment.engine.tensor_parallel_size or 1,
-            "mode": config.benchmark.mode,
+            "mode": "agentx_concurrency_ramp",
         },
         "time_origin": {
             "profiling_start_ns": t0,
@@ -814,18 +566,11 @@ def build_plot_data(
         "request_windows": timeseries["windows"],
         "serve_status_samples": status,
         "serve_metric_series": series,
-        "sla_policy_events": sla_events,
         "availability": {
             "replica_status": any(s.get("error") is None for s in status),
-            "router_queue": "router_queue" in series,
-            "ongoing_requests": "ongoing_requests" in series or "handle_ongoing_requests" in series,
             "desired_replicas": "desired_replicas" in series,
             "target_replicas_metric": "target_replicas" in series,
-            "healthy_replicas": "healthy_replicas" in series,
-            "sla_policy_metrics": "sla_recommended_replicas" in series,
             "token_policy_metrics": "token_prefill_replicas" in series,
-            "sla_policy_events": bool(sla_events),
-            "vllm_latency": "vllm_mean_ttft_ms" in series,
         },
         "warnings": warnings,
     }
@@ -858,34 +603,21 @@ def analyze_run(
         horizon_s=lifecycle_horizon_s(lifecycle),
     )
     write_json(out / "request_timeseries.json", timeseries)
-    if isinstance(config.benchmark.workload, AgentXWorkloadConfig):
-        write_json(out / "concurrency_qps.json", concurrency_qps(
-            config.benchmark.workload, timeseries, config.benchmark.duration_s
-        ))
-    if config.benchmark.mode == "agentx_fixed_concurrency":
-        write_json(out / "slo_calibration.json",
-                   slo_calibration(workload_artifact_dir(root, config)))
-    write_json(
-        out / "metrics_inventory.json",
-        build_metrics_inventory(root / "telemetry" / "serve_metrics.jsonl"),
-    )
+    write_json(out / "concurrency_qps.json", concurrency_qps(
+        config.benchmark.workload, timeseries, config.benchmark.duration_s
+    ))
     plot_data = build_plot_data(root, config, analysis, timeseries, lifecycle)
     write_json(out / "plot_data.json", plot_data)
     requests, _ = profiling_requests(artifact_dir)
     write_json(out / "autoscaling_evaluation.json", evaluate_run(plot_data, requests))
 
+    # ``plot_error`` is always None: plot failures are reported per plot in
+    # ``diagnostic_plots``. The key remains for the CLI and saved manifests.
     result: dict[str, Any] = {"warnings": plot_data["warnings"], "plot_error": None}
-    if analysis.generate_plots if plot is None else plot:
-        try:
-            from .plotting import plot_timeline
+    if plot is None or plot:
+        from .diagnostics.pipeline import generate_diagnostics
 
-            plot_timeline(out / "plot_data.json", out / "autoscaling_timeline.png")
-        except Exception as exc:  # raw and derived data stay valid without the figure
-            result["plot_error"] = f"{type(exc).__name__}: {exc}"
-        if getattr(analysis, "diagnostic_plots", True) and isinstance(config.benchmark.workload, AgentXWorkloadConfig):
-            from .diagnostics.pipeline import generate_diagnostics
-
-            diagnostics = generate_diagnostics(root, config, traces_dir=traces_dir)
-            result["diagnostic_plots"] = diagnostics
-            result["warnings"].extend(diagnostics["warnings"])
+        diagnostics = generate_diagnostics(root, config, traces_dir=traces_dir)
+        result["diagnostic_plots"] = diagnostics
+        result["warnings"].extend(diagnostics["warnings"])
     return result

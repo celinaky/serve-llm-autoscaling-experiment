@@ -1,5 +1,0 @@
-replicas: 1=pid 579840 (first request 0s), 2=pid 592591 (first request 345s), 3=pid 610472 (first request 893s)
-lane source: recorded initial lane IDs
-Bar ends are last observed request ends, not verified session completion.
-wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/analysis/session_lanes_0_1050.png
-wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261104T230453Z-h100-16-sessions-mooncake-no-decay-audit-scale-down-400s/analysis/session_lanes.csv

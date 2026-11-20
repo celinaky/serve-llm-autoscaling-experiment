@@ -1,25 +1,55 @@
-name: qwen-smoke
-
+# Ten-minute end-to-end check of the harness: deploy, ramp 1 -> 8 -> 2
+# sessions, trace, analyze and plot. Not a policy evaluation: the run is too
+# short for the scaling delays below to mean anything.
+name: smoke
 deployment:
-  model_id: Qwen/Qwen3-0.6B-FP8
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  routing:
+    policy: kv_aware
+    haproxy_request_buffer_bytes: 8388608
   engine:
-    max_model_len: 2048
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    kv_offloading_backend: native
+    kv_offloading_size: 192
+    kv_cache_dtype: fp8
+    language_model_only: true
   autoscaling:
+    policy:
+      name: token
+      kwargs:
+        target_prefill_tokens_per_replica: 20000
+        post_downscale_cooldown_s: 30
     min_replicas: 1
     initial_replicas: 1
-    max_replicas: 1
-
+    max_replicas: 3
+    target_ongoing_requests: 8
+    upscale_delay_s: 10
+    downscale_delay_s: 60
+    metrics_interval_s: 2
+    look_back_period_s: 30
+    upscaling_factor: 1.0
+    downscaling_factor: 1.0
 benchmark:
-  mode: concurrency
-  levels: [1]
-  duration_s: 20
-  grace_period_s: 10
-  warmup:
-    enabled: false
+  duration_s: 480
+  grace_period_s: 60
+  post_load_observation_s: 60
   workload:
-    input_tokens: 256
-    output_tokens: 32
-  fail_fast: true
-
-runtime:
-  readiness_timeout_s: 600
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 180, sessions: 8}
+      - {time_s: 300, sessions: 8}
+      - {time_s: 480, sessions: 2}
+    seed: 42
+    # Allows a run shorter than the scenario's 900s minimum.
+    unsafe_override: true
+analysis:
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  warmup_s: 0

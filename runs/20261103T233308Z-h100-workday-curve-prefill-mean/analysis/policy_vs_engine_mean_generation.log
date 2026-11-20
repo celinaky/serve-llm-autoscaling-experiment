@@ -1,4 +1,0 @@
-wrote runs/20261103T233308Z-h100-workday-curve-prefill-mean/analysis/policy_vs_engine_mean60_0_1050.png
-  policy mean / engine mean where engine mean >= 1K: median 1.81, p10 0.26, p90 3.17 (n=506)
-  time-average over the load phase: policy 14.6K, engine 8.0K
-  published policy mean vs recomputed from the gauge: max abs diff 15.7K

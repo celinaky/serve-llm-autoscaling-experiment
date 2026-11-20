@@ -1,0 +1,8 @@
+# Keep Ray's runtime_env package under its 512 MiB limit. Run telemetry is
+# stored compressed (*.jsonl.zst, see /home/ray/default/decompress-runs.sh);
+# .gitignore only ignores the uncompressed names, so without this the
+# compressed traces (~1.3 GB) get uploaded with every deployment.
+runs/**/*.zst
+runs/*/telemetry/
+runs/*/benchmark/*/profile_export.jsonl
+runs/*/benchmark/*/gpu_telemetry_export.jsonl

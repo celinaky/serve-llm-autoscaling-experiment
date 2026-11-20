@@ -54,30 +54,10 @@ def test_summary_failed_run(tmp_path: Path):
     assert "Error:     RuntimeError: Deploying application failed" in text
 
 
-def test_summary_prints_recommended_ttft_slo(tmp_path: Path):
-    root = _make_run(tmp_path, "succeeded", [
-        {"mode": "agentx_fixed_concurrency", "level": 8, "request_count": 100,
-         "failed_requests": 0, "error": None},
-    ])
-    write_json(root / "analysis" / "slo_calibration.json", {
-        "recommended_ttft_slo_ms": 2412.3, "ttft_sample_count": 100,
-        "failed_request_count": 0,
-    })
-    text = format_run_summary(root)
-    assert "recommended 2412.3ms" in text
-    assert "analysis.ttft_slo_ms: 2412" in text
-    assert "agentx_fixed_concurrency" in text
-
-
-def test_summary_omits_slo_without_calibration(tmp_path: Path):
-    root = _make_run(tmp_path, "succeeded", [])
-    assert "TTFT SLO" not in format_run_summary(root)
-
-
 def test_summary_prints_autoscaling_evaluation(tmp_path: Path):
     root = _make_run(tmp_path, "succeeded", [])
     write_json(root / "analysis" / "autoscaling_evaluation.json", {
-        "autoscaling_policy": "sla",
+        "autoscaling_policy": "token",
         "slo": {"ttft_ms": 3000, "itl_ms": 50, "percentile": 0.95},
         "periods": {"steady": {"start_s": 150, "end_s": 700}},
         "slo_attainment": {"steady": {
@@ -94,21 +74,15 @@ def test_summary_prints_autoscaling_evaluation(tmp_path: Path):
                           "gpu_hours": 0.57}},
         "scaling": {"upscales": 3, "downscales": 1, "first_upscale_at_s": 67.0,
                     "mean_upscale_lag_s": 98.0, "max_upscale_lag_s": 120.0},
-        "sla_policy": {"model_ready_at_s": 912.0, "first_capacity_decision_at_s": 940.0,
-                       "prediction": {"ttft": {
-                           "predicted_vs_server": {"bias_ms": 210.0, "samples": 40},
-                           "client_vs_server": {"bias_ms": 340.0}}}},
     })
     text = format_run_summary(root)
-    assert "policy sla, steady state 150-700s, 400 requests (2 failed): SLO FAIL" in text
+    assert "policy token, steady state 150-700s, 400 requests (2 failed): SLO FAIL" in text
     assert "TTFT: p95 4100ms vs SLO 3000ms: FAIL · 84% of requests within · mean 1820ms" in text
     assert "ITL : p95 48ms vs SLO 50ms: PASS · 96% of requests within" in text
     assert "within SLO 93% of the time (40s over)" in text
     assert ("GPU time: 0.57 GPU-h during load · 1840 replica-s running (mean 2.6, max 4), "
             "210 replica-s starting") in text
     assert "Scaling: 3 up / 1 down · first up at 67s · upscale lag mean 98s, max 120s" in text
-    assert "model ready at 912s · first capacity decision at 940s" in text
-    assert "TTFT predicted-server bias +210ms (n=40) · client-server +340ms" in text
 
 
 def test_summary_omits_evaluation_without_artifact(tmp_path: Path):

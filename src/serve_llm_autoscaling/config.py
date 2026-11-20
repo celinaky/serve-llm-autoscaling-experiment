@@ -1,56 +1,39 @@
+"""Experiment configuration: a Ray Serve LLM application plus an AgentX workload.
+
+An experiment YAML has four sections:
+
+``deployment``  the Serve LLM application: model, engine, routing, autoscaling
+``benchmark``   the AgentX session-concurrency curve AIPerf replays against it
+``runtime``     endpoint, AIPerf build, timeouts, results directory
+``analysis``    sampling intervals and the SLO targets the run is scored against
+"""
 from __future__ import annotations
 
+import sys
 from pathlib import Path
-from typing import Annotated, Any, Literal, Union
+from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Discriminator, Field, Tag, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-# Modes that run one uninterrupted load-generator process with telemetry,
-# mapped to their artifact directory below ``benchmark/``.
-CONTINUOUS_MODE_DIRS = {
-    "request_rate_series": "request-rate-series",
-    "agentx_concurrency_ramp": "agentx-concurrency-ramp",
-    "agentx_fixed_concurrency": "agentx-fixed-concurrency",
-}
-CONTINUOUS_MODES = tuple(CONTINUOUS_MODE_DIRS)
-# Modes that replay AgentX traces; both require an agentx workload.
-AGENTX_MODES = ("agentx_concurrency_ramp", "agentx_fixed_concurrency")
+# AIPerf's artifact directory below ``<run>/benchmark/``.
+WORKLOAD_DIR = "agentx-concurrency-ramp"
 
 # The inferencex-agentx-mvp scenario rejects shorter runs unless overridden.
 AGENTX_MIN_DURATION_S = 900
 
 # Options the harness always sets on the AIPerf command line.
-COMMON_OWNED_ARGS = {
+OWNED_ARGS = {
     "--model", "--model-names", "--tokenizer", "--url", "--streaming",
-    "--isl", "--osl", "--random-seed", "--benchmark-duration",
+    "--random-seed", "--benchmark-duration", "--benchmark-grace-period",
     "--artifact-dir", "--output-artifact-dir", "--concurrency",
-    "--request-rate", "--arrival-pattern", "--warmup-duration",
-    "--request-rate-series", "--arrival-smoothness",
-}
-AGENTX_OWNED_ARGS = {
-    "--scenario", "--public-dataset", "--concurrency-ramp-duration", "--concurrency-series",
+    "--scenario", "--public-dataset", "--concurrency-series",
     "--trajectory-start-min-ratio", "--trajectory-start-max-ratio",
-    "--unsafe-override",
+    "--unsafe-override", "--session-header",
 }
 
-
-class SharedKVCacheConfig(BaseModel):
-    """Standalone Mooncake pool; the allocation is owned outside Serve."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    enabled: bool = True
-    config_path: Path
-    cache_prefix: str = Field(min_length=1)
-    # Set to null for an image that already contains the compatible package.
-    package: str | None = "mooncake-transfer-engine-cuda13==0.3.14"
-    load_async: bool = True
-    save_decode_cache: bool = True
-    load_failure_policy: Literal["recompute", "fail"] = "recompute"
-    health_url: str | None = None
-    master_metrics_url: str | None = None
-    client_metrics_url: str | None = None
+# HTTP header that carries session affinity; Serve's default session-id header.
+SESSION_HEADER = "X-Session-ID"
 
 
 class EngineConfig(BaseModel):
@@ -58,7 +41,8 @@ class EngineConfig(BaseModel):
 
     Only keys the experiment sets are forwarded; anything left unset takes
     vLLM's own default (which for ``max_num_seqs`` and
-    ``max_num_batched_tokens`` depends on the GPU).
+    ``max_num_batched_tokens`` depends on the GPU). Keys not listed here are
+    forwarded unchanged.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -73,7 +57,6 @@ class EngineConfig(BaseModel):
     # offloading; this is independent of GPU type and HBM capacity.
     kv_offloading_size: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     kv_offloading_backend: Literal["native", "lmcache"] | None = None
-    shared_kv_cache: SharedKVCacheConfig | None = None
     # Reports usage.prompt_tokens_details.cached_tokens so AIPerf can record
     # prefix-cache hits. vLLM only computes the count with prefix caching on.
     enable_prompt_tokens_details: bool = True
@@ -81,14 +64,6 @@ class EngineConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_kv_offloading(self) -> "EngineConfig":
-        shared = self.shared_kv_cache
-        if shared is not None and shared.enabled:
-            if self.enable_prefix_caching is not True:
-                raise ValueError("shared KV caching requires enable_prefix_caching: true")
-            if self.kv_offloading_size is not None or self.kv_offloading_backend is not None:
-                raise ValueError("shared_kv_cache replaces the native/LMCache offloading settings; remove kv_offloading_size and kv_offloading_backend")
-            if (self.model_extra or {}).get("kv_transfer_config") is not None:
-                raise ValueError("shared_kv_cache cannot be combined with an explicit kv_transfer_config")
         if self.kv_offloading_size is None:
             return self
         if (self.model_extra or {}).get("kv_transfer_config") is not None:
@@ -104,17 +79,20 @@ class EngineConfig(BaseModel):
         return self
 
 
-# Autoscaling policy -> Ray Serve policy_function. Every policy is passed
-# explicitly so the deployed config names the policy that decided the run.
+# Built-in autoscaling policies -> (Ray Serve policy_function, scope). The
+# policy is always passed explicitly so the deployed config names what
+# decided the run.
 AUTOSCALING_POLICIES = {
-    "default": "ray.serve.autoscaling_policy:default_autoscaling_policy",
-    "sla": "ray.serve.experimental.llm_sla_autoscaling_policy:SLAOnlineAutoscalingPolicy",
-    "token": "ray.serve.experimental.llm_token_autoscaling_policy:LLMTokenAutoscalingPolicy",
+    "default": ("ray.serve.autoscaling_policy:default_autoscaling_policy", "deployment"),
+    "token": (
+        "ray.llm._internal.serve.routing_policies.kv_aware.autoscaling_policy"
+        ":LLMTokenAutoscalingPolicy",
+        "application",
+    ),
 }
-# kwargs each policy's constructor requires.
+# kwargs each built-in policy's constructor requires.
 REQUIRED_POLICY_KWARGS = {
     "default": set(),
-    "sla": {"ttft_ms", "itl_ms"},
     "token": {"target_prefill_tokens_per_replica"},
 }
 
@@ -122,34 +100,54 @@ REQUIRED_POLICY_KWARGS = {
 class AutoscalingPolicyConfig(BaseModel):
     """The Serve autoscaling policy that decides the replica count.
 
-    ``kwargs`` go to the policy unchanged, except that ``sla`` defaults
-    ``advisory`` to false: an advisory SLA policy only reports its
-    recommendation and scales exactly like ``default``. ``token`` scales on
-    the lookback mean of the KV-aware router's outstanding uncached prefill
-    tokens, so it requires ``routing.policy: kv_aware``.
+    ``default`` is Serve's ongoing-requests policy. ``token`` scales the LLM
+    server on the look-back mean of outstanding uncached prefill tokens that
+    the KV-aware router replicas report, so it requires
+    ``routing.policy: kv_aware``.
+
+    To evaluate a new policy, set ``policy_function`` to its
+    ``module:attribute`` import path (it must be importable by the Serve
+    controller); ``name`` is then only a label. ``scope`` says how Serve
+    calls it: a ``deployment`` policy receives the LLM server's
+    ``AutoscalingContext``; an ``application`` policy receives every
+    deployment's context (including the router's reported metrics) and
+    returns a replica count per deployment. ``kwargs`` go to the policy
+    unchanged. Serve applies the delays and replica bounds under
+    ``autoscaling`` to either kind.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    name: Literal["default", "sla", "token"] = "default"
+    name: str = "default"
+    policy_function: str | None = None
+    scope: Literal["deployment", "application"] | None = None
     kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_kwargs(self) -> "AutoscalingPolicyConfig":
-        if self.name == "default" and self.kwargs:
+    def validate_policy(self) -> "AutoscalingPolicyConfig":
+        builtin = AUTOSCALING_POLICIES.get(self.name)
+        if self.policy_function is None:
+            if builtin is None:
+                raise ValueError(
+                    f"unknown autoscaling policy {self.name!r}; use one of "
+                    f"{sorted(AUTOSCALING_POLICIES)} or set policy_function"
+                )
+            self.policy_function = builtin[0]
+        elif ":" not in self.policy_function:
+            raise ValueError("policy_function must be a 'module:attribute' import path")
+        is_builtin = builtin is not None and self.policy_function == builtin[0]
+        if self.scope is None:
+            self.scope = builtin[1] if is_builtin else "deployment"
+        elif is_builtin and self.scope != builtin[1]:
+            raise ValueError(f"autoscaling policy {self.name} is a {builtin[1]}-scope policy")
+        if is_builtin and self.name == "default" and self.kwargs:
             raise ValueError("autoscaling policy default takes no kwargs")
-        missing = REQUIRED_POLICY_KWARGS[self.name] - set(self.kwargs)
-        if missing:
+        missing = REQUIRED_POLICY_KWARGS.get(self.name, set()) - set(self.kwargs)
+        if missing and is_builtin:
             raise ValueError(
                 f"autoscaling policy {self.name} requires kwargs {sorted(missing)}"
             )
-        if self.name == "sla":
-            self.kwargs.setdefault("advisory", False)
         return self
-
-    @property
-    def policy_function(self) -> str:
-        return AUTOSCALING_POLICIES[self.name]
 
 
 class AutoscalingConfig(BaseModel):
@@ -157,7 +155,8 @@ class AutoscalingConfig(BaseModel):
 
     Every other key is forwarded only when the experiment sets it, so unset
     keys take Ray Serve's defaults (one replica, ``target_ongoing_requests``
-    from Ray Serve LLM, 30s up / 600s down delays).
+    from Ray Serve LLM, 30s up / 600s down delays). Keys not listed here
+    (``look_back_period_s``, ``upscaling_factor``, ...) are forwarded unchanged.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -185,68 +184,49 @@ class AutoscalingConfig(BaseModel):
         return self
 
 
-# Routing policy -> Ray request router class. With no policy set, no
-# request_router_config is sent and Serve picks its own router (power of two
-# for the ingress topology, round robin under direct streaming).
-ROUTER_CLASSES = {
-    "power_of_two": "ray.serve._private.request_router:PowerOfTwoChoicesRequestRouter",
-    "round_robin": "ray.serve.experimental.round_robin_router.RoundRobinRouter",
-    "consistent_hash": "ray.serve.experimental.consistent_hash_router.ConsistentHashRouter",
-    "prefix_cache_affinity": "ray.serve.llm.request_router.PrefixCacheAffinityRouter",
-    "kv_aware": "ray.serve.llm.request_router.KVAwareRouter",
-}
-# Policies that route on the prompt, so direct streaming must forward the body.
-BODY_AWARE_POLICIES = {"prefix_cache_affinity", "kv_aware"}
-# HTTP header that carries session affinity; Serve's default session-id header.
-SESSION_HEADER = "X-Session-ID"
-# Routers that keep a session on one replica when every turn carries SESSION_HEADER.
-SESSION_PINNED_ROUTING = ("consistent_hash", "kv_aware")
+KV_AWARE_ROUTER = "ray.serve.llm.request_router.KVAwareRouter"
 
 
 class RoutingConfig(BaseModel):
     """Replica selection and the ingress topology in front of LLMServer.
 
-    ``policy: null`` (the default) sends no request router config, so Serve
-    chooses the router. ``None`` for ``direct_streaming`` or
-    ``forward_request_body`` means the policy decides: KV-aware routing needs
-    both, and body-aware policies need the body whenever direct streaming is
-    on.
+    ``policy: kv_aware`` deploys Ray's KVAwareRouter behind HAProxy with
+    direct streaming and request-body forwarding, which it requires.
+    ``policy: null`` sends no router config: Serve picks its own router
+    behind the standard OpenAiIngress.
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    policy: Literal[
-        "power_of_two", "round_robin", "consistent_hash", "prefix_cache_affinity", "kv_aware"
-    ] | None = None
-    direct_streaming: bool | None = None
-    forward_request_body: bool | None = None
+    policy: Literal["kv_aware"] | None = None
     # HAProxy's per-buffer cap on the body forwarded to the router; longer
     # bodies are truncated and the router falls back to load balancing.
     haproxy_request_buffer_bytes: int | None = Field(default=None, ge=1024)
+    # After each HAProxy reload (every replica change), the old HAProxy process
+    # is killed this many seconds later, cutting any stream still open on it.
+    # Serve's default is 120s; raise it when requests can wait minutes.
+    haproxy_hard_stop_after_s: int | None = Field(default=None, ge=1)
     request_router_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def resolve_topology(self) -> "RoutingConfig":
-        kv_aware = self.policy == "kv_aware"
-        if kv_aware and self.direct_streaming is False:
-            raise ValueError("routing policy kv_aware requires direct_streaming: true")
-        if self.direct_streaming is None:
-            self.direct_streaming = kv_aware
-        if not self.direct_streaming:
-            if self.forward_request_body:
-                raise ValueError("forward_request_body requires direct_streaming: true")
-            self.forward_request_body = False
-        elif self.forward_request_body is None:
-            self.forward_request_body = self.policy in BODY_AWARE_POLICIES
-        elif kv_aware and not self.forward_request_body:
-            raise ValueError("routing policy kv_aware requires forward_request_body: true")
-        if self.haproxy_request_buffer_bytes is not None and not self.forward_request_body:
-            raise ValueError("haproxy_request_buffer_bytes requires forward_request_body: true")
+    def validate_haproxy(self) -> "RoutingConfig":
+        if self.policy is None and (
+            self.haproxy_request_buffer_bytes is not None
+            or self.haproxy_hard_stop_after_s is not None
+            or self.request_router_kwargs
+        ):
+            raise ValueError(
+                "haproxy_* settings and request_router_kwargs require policy: kv_aware"
+            )
         return self
 
     @property
+    def direct_streaming(self) -> bool:
+        return self.policy == "kv_aware"
+
+    @property
     def router_class(self) -> str | None:
-        return None if self.policy is None else ROUTER_CLASSES[self.policy]
+        return KV_AWARE_ROUTER if self.policy == "kv_aware" else None
 
     def environment(self) -> dict[str, str]:
         """Ray switches for this topology, needed by the driver and controller."""
@@ -256,13 +236,14 @@ class RoutingConfig(BaseModel):
             "RAY_SERVE_LLM_ENABLE_DIRECT_STREAMING": "1",
             # LLMRouter is an ingress request router, which only HAProxy consults.
             "RAY_SERVE_ENABLE_HA_PROXY": "1",
+            "RAY_SERVE_INGRESS_REQUEST_ROUTER_FORWARD_BODY": "1",
         }
-        if self.forward_request_body:
-            env["RAY_SERVE_INGRESS_REQUEST_ROUTER_FORWARD_BODY"] = "1"
         if self.haproxy_request_buffer_bytes is not None:
             env["RAY_SERVE_HAPROXY_INGRESS_REQUEST_ROUTER_BUFSIZE"] = str(
                 self.haproxy_request_buffer_bytes
             )
+        if self.haproxy_hard_stop_after_s is not None:
+            env["RAY_SERVE_HAPROXY_HARD_STOP_AFTER_S"] = str(self.haproxy_hard_stop_after_s)
         return env
 
 
@@ -294,23 +275,8 @@ class DeploymentConfig(BaseModel):
         return self
 
 
-class WarmupConfig(BaseModel):
-    enabled: bool = True
-    duration_s: float = Field(default=30, gt=0)
-
-
-class SyntheticWorkloadConfig(BaseModel):
-    type: Literal["synthetic"] = "synthetic"
-    input_tokens: int = Field(default=8000, ge=1)
-    output_tokens: int = Field(default=50, ge=1)
-    input_tokens_stddev: float = Field(default=0, ge=0)
-    output_tokens_stddev: float = Field(default=0, ge=0)
-    seed: int = 42
-    ignore_eos: bool = True
-
-
 class ConcurrencyPoint(BaseModel):
-    """One control point of a session-concurrency curve."""
+    """One control point of the session-concurrency curve."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -318,263 +284,128 @@ class ConcurrencyPoint(BaseModel):
     sessions: int = Field(ge=1, strict=True)
 
 
-class AgentXWorkloadConfig(BaseModel):
-    """AgentX trace replay; concurrency counts live session trees, not requests."""
+class WorkloadConfig(BaseModel):
+    """AgentX trace replay; concurrency counts live session trees, not requests.
+
+    ``concurrency_series`` is a piecewise-linear curve of concurrent sessions
+    over time, so one list describes ramp up, hold and ramp down. When the
+    curve falls, AIPerf lowers the session limit and retires live sessions at
+    their next turn boundary.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["agentx"] = "agentx"
     public_dataset: str = "semianalysis_cc_traces_weka_062126_256k"
-    target_concurrency: int = Field(ge=1, strict=True)
-    # agentx_concurrency_ramp takes exactly one of these; agentx_fixed_concurrency
-    # rejects both. The ramp rises linearly from 1 to target_concurrency. The
-    # series is a piecewise-linear curve that can also fall: AIPerf lowers the
-    # session limit and retires live sessions at their next turn boundary, which
-    # needs the workday-curve AIPerf fork (runtime.aiperf_source).
-    concurrency_ramp_duration_s: float | None = Field(default=None, gt=0)
-    concurrency_series: list[ConcurrencyPoint] | None = None
-    # Window of each trace's recorded duration that AIPerf samples a lane's
+    concurrency_series: list[ConcurrencyPoint] = Field(min_length=2)
+    # Window of each trace's recorded duration that AIPerf samples a session's
     # start instant from. Turns before it are replayed as warmup to prime the
-    # KV cache. 0/0 starts every trajectory cold at turn zero; the scenario's
-    # own default is 0/1.
-    trajectory_start_min_ratio: float = Field(default=0, ge=0, le=1)
-    trajectory_start_max_ratio: float = Field(default=0, ge=0, le=1)
+    # KV cache. 0/0 starts every trajectory cold at turn zero.
+    trajectory_start_min_ratio: float = Field(default=0.0, ge=0, le=1)
+    trajectory_start_max_ratio: float = Field(default=0.0, ge=0, le=1)
     seed: int = 42
+    # Allows runs shorter than AGENTX_MIN_DURATION_S (development only).
     unsafe_override: bool = False
 
     @model_validator(mode="after")
-    def validate_trajectory_start_window(self) -> "AgentXWorkloadConfig":
+    def validate_workload(self) -> "WorkloadConfig":
         if self.trajectory_start_min_ratio > self.trajectory_start_max_ratio:
             raise ValueError(
                 "trajectory_start_min_ratio cannot exceed trajectory_start_max_ratio"
             )
+        times = [point.time_s for point in self.concurrency_series]
+        if times[0] != 0:
+            raise ValueError("concurrency_series must start at time_s 0")
+        if any(later <= earlier for earlier, later in zip(times, times[1:])):
+            raise ValueError("concurrency_series time_s values must be strictly increasing")
         return self
 
-
-def _workload_type(value: Any) -> str:
-    # ``type`` predates AgentX, so configs may omit it for synthetic workloads.
-    if isinstance(value, dict):
-        return value.get("type", "synthetic")
-    return getattr(value, "type", "synthetic")
-
-
-WorkloadConfig = Annotated[
-    Union[
-        Annotated[SyntheticWorkloadConfig, Tag("synthetic")],
-        Annotated[AgentXWorkloadConfig, Tag("agentx")],
-    ],
-    Discriminator(_workload_type),
-]
-
-
-class RequestRatePoint(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    time_s: float = Field(ge=0)
-    qps: float = Field(gt=0)
+    @property
+    def target_concurrency(self) -> int:
+        """Peak of the curve; AIPerf's ``--concurrency``."""
+        return max(point.sessions for point in self.concurrency_series)
 
 
 class BenchmarkConfig(BaseModel):
-    generator: Literal["aiperf"] = "aiperf"
-    mode: Literal[
-        "concurrency", "request_rate", "request_rate_series",
-        "agentx_concurrency_ramp", "agentx_fixed_concurrency",
-    ] = "concurrency"
-    # Only used by the static sweep modes; ignored for request_rate_series.
-    levels: list[float] = Field(default_factory=lambda: [1, 2, 4, 8], min_length=1)
-    duration_s: float = Field(default=120, gt=0)
+    model_config = ConfigDict(extra="forbid")
+
+    # How long AIPerf issues load. It then drains in-flight requests for up to
+    # ``grace_period_s`` and exits.
+    duration_s: float = Field(gt=0)
     grace_period_s: float = Field(default=30, ge=0)
     # Idle telemetry after AIPerf exits, to watch recovery and downscaling
-    # with no requests left in flight. Continuous modes only.
+    # with no requests left in flight.
     post_load_observation_s: float = Field(default=0, ge=0)
-    warmup: WarmupConfig = Field(default_factory=WarmupConfig)
-    workload: WorkloadConfig = Field(default_factory=SyntheticWorkloadConfig)
-    streaming: bool = True
-    arrival_pattern: Literal["constant", "poisson", "gamma"] = "poisson"
-    arrival_smoothness: float | None = Field(default=None, gt=0)
-    # AIPerf interpolates linearly between points, so a step needs two points
-    # close together (e.g. 60 -> 60.1).
-    rate_series: list[RequestRatePoint] | None = None
-    fail_fast: bool = False
-    use_server_token_count: bool = True
+    workload: WorkloadConfig
+    # Extra AIPerf command-line arguments, appended verbatim.
     extra_args: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_levels(self) -> "BenchmarkConfig":
-        agentx = isinstance(self.workload, AgentXWorkloadConfig)
-        if self.mode in AGENTX_MODES:
-            self._validate_agentx()
-        elif agentx:
-            raise ValueError("workload type agentx requires mode: " + " or ".join(AGENTX_MODES))
-        elif self.mode == "request_rate_series":
-            self._validate_rate_series()
-        else:
-            if self.rate_series is not None:
-                raise ValueError("rate_series requires mode: request_rate_series")
-            self._validate_static_levels()
-        if self.post_load_observation_s and self.mode not in CONTINUOUS_MODES:
-            raise ValueError(
-                "post_load_observation_s requires a continuous mode: "
-                + ", ".join(CONTINUOUS_MODES)
-            )
-        if self.arrival_smoothness is not None and (
-            self.arrival_pattern != "gamma" or self.mode == "concurrency"
-        ):
-            raise ValueError(
-                "arrival_smoothness requires arrival_pattern: gamma in a "
-                "request-rate mode"
-            )
-        owned = COMMON_OWNED_ARGS | (AGENTX_OWNED_ARGS if agentx else set())
-        conflicts = sorted(set(self.extra_args) & owned)
-        if conflicts:
-            raise ValueError(
-                "extra_args cannot override harness-owned options: "
-                + ", ".join(conflicts)
-            )
-        return self
-
-    def _validate_agentx(self) -> None:
+    def validate_benchmark(self) -> "BenchmarkConfig":
         workload = self.workload
-        if not isinstance(workload, AgentXWorkloadConfig):
-            raise ValueError(f"{self.mode} mode requires workload type: agentx")
-        # The trace replay owns arrivals and warmup; reject settings that would
-        # otherwise be silently ignored. Defaults are accepted so that a
-        # resolved config, which lists every field, still loads.
-        unsupported = sorted(
-            name
-            for name in ("levels", "rate_series", "arrival_pattern",
-                         "arrival_smoothness", "warmup")
-            if getattr(self, name) != type(self).model_fields[name].get_default(
-                call_default_factory=True
-            )
-        )
-        if unsupported:
-            raise ValueError(f"{self.mode} mode does not accept: " + ", ".join(unsupported))
-        if not self.streaming:
-            raise ValueError(f"{self.mode} mode requires streaming: true")
-        ramp = workload.concurrency_ramp_duration_s
-        series = workload.concurrency_series
-        if self.mode == "agentx_fixed_concurrency":
-            if ramp is not None or series is not None:
-                raise ValueError(
-                    "agentx_fixed_concurrency mode does not accept "
-                    "concurrency_ramp_duration_s or concurrency_series; use "
-                    "agentx_concurrency_ramp to vary concurrency"
-                )
-        elif ramp is not None and series is not None:
+        end = workload.concurrency_series[-1].time_s
+        if end > self.duration_s:
             raise ValueError(
-                "concurrency_ramp_duration_s and concurrency_series are mutually exclusive"
-            )
-        elif series is not None:
-            self._validate_concurrency_series(series, workload.target_concurrency)
-        elif ramp is None:
-            raise ValueError(
-                "agentx_concurrency_ramp mode requires concurrency_ramp_duration_s "
-                "or concurrency_series"
-            )
-        elif ramp > self.duration_s:
-            raise ValueError(
-                f"concurrency_ramp_duration_s {ramp} exceeds duration_s {self.duration_s}"
+                f"concurrency_series ends at {end}s, after duration_s {self.duration_s}"
             )
         if self.duration_s < AGENTX_MIN_DURATION_S and not workload.unsafe_override:
             raise ValueError(
                 f"AgentX runs require duration_s >= {AGENTX_MIN_DURATION_S}; set "
                 "workload.unsafe_override: true for a shorter development run"
             )
-
-    def _validate_concurrency_series(
-        self, points: list[ConcurrencyPoint], target: int
-    ) -> None:
-        if len(points) < 2:
-            raise ValueError("concurrency_series requires at least two points")
-        if points[0].time_s != 0:
-            raise ValueError("concurrency_series must start at time_s 0")
-        times = [point.time_s for point in points]
-        if any(later <= earlier for earlier, later in zip(times, times[1:])):
-            raise ValueError("concurrency_series time_s values must be strictly increasing")
-        if times[-1] > self.duration_s:
+        conflicts = sorted(set(self.extra_args) & OWNED_ARGS)
+        if conflicts:
             raise ValueError(
-                f"concurrency_series ends at {times[-1]}s, after duration_s {self.duration_s}"
+                "extra_args cannot override harness-owned options: " + ", ".join(conflicts)
             )
-        peak = max(point.sessions for point in points)
-        if peak != target:
-            raise ValueError(
-                f"target_concurrency {target} must equal the concurrency_series peak {peak}"
-            )
-
-    def _validate_rate_series(self) -> None:
-        points = self.rate_series
-        if not points:
-            raise ValueError("request_rate_series mode requires rate_series")
-        if len(points) < 2:
-            raise ValueError("rate_series requires at least two points")
-        if points[0].time_s != 0:
-            raise ValueError("rate_series must start at time_s 0")
-        times = [point.time_s for point in points]
-        if any(later <= earlier for earlier, later in zip(times, times[1:])):
-            raise ValueError("rate_series time_s values must be strictly increasing")
-        if times[-1] > self.duration_s:
-            raise ValueError(
-                f"rate_series ends at {times[-1]}s, after duration_s {self.duration_s}"
-            )
-
-    def _validate_static_levels(self) -> None:
-        if any(level <= 0 for level in self.levels):
-            raise ValueError("benchmark levels must all be positive")
-        if len(set(self.levels)) != len(self.levels):
-            raise ValueError("benchmark levels must be unique")
-        if self.levels != sorted(self.levels):
-            raise ValueError("benchmark levels must be ordered from low to high")
-        if self.mode == "concurrency" and any(
-            not float(level).is_integer() for level in self.levels
-        ):
-            raise ValueError("concurrency levels must be integers")
+        return self
 
 
-# The AIPerf release the harness runs through ``uvx --from``.
-AIPERF_SOURCE_DEFAULT = "aiperf==0.12.0"
+# The AIPerf build the harness runs through ``uvx --from``: the workday-curve
+# fork, whose ``--concurrency-series`` can lower session concurrency.
+AIPERF_SOURCE_DEFAULT = (
+    "git+https://github.com/celinaky/aiperf@1c61dfbb7644b26c70ce21163f0b4cda893438b0"
+)
 
 
 class RuntimeConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     endpoint_url: str = "http://127.0.0.1:8000"
     # Anything ``uvx --from`` accepts: a pinned release, a local checkout, or
-    # ``git+https://...@<sha>``. A concurrency_series needs the workday-curve fork.
+    # ``git+https://...@<sha>``. It must support ``--concurrency-series``.
     aiperf_source: str = Field(default=AIPERF_SOURCE_DEFAULT, min_length=1)
-    readiness_timeout_s: float = Field(default=1200, gt=0)
+    readiness_timeout_s: float = Field(default=1800, gt=0)
     readiness_poll_s: float = Field(default=2, gt=0)
     keep_deployment: bool = False
     results_dir: Path = Path("runs")
 
 
 class AnalysisConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     window_s: float = Field(default=5, gt=0)
     # Rolling window for tail latency and window-mean SLO attainment; smooths
-    # sparse request windows and matches the SLA policy's observation window.
+    # sparse request windows.
     tail_window_s: float = Field(default=30, gt=0)
     status_interval_s: float = Field(default=1, gt=0)
     metrics_interval_s: float = Field(default=2, gt=0)
-    prometheus_enabled: bool = True
-    generate_plots: bool = True
-    # AgentX reports add scheduler-load and session diagnostics after each run.
-    diagnostic_plots: bool = True
-    # Save the KV-aware router's existing per-replica block store/removal streams.
-    # Uses the advertised ZMQ endpoints; no GPU workload or connector change.
+    # Debug log: save each replica's GPU KV-cache block store/removal events
+    # to telemetry/gpu_kv_events.jsonl (kv_aware routing only). Nothing in
+    # the analysis reads it. Uses the endpoints the KV-aware router already
+    # consumes; no GPU workload or connector change.
     record_gpu_kv_events: bool = True
-    # Per-request router bookings/decay, joined to engine local/external hits.
-    record_router_estimates: bool = True
-    # Base directory for per-run scheduler traces. Use shared storage when
-    # replicas can run on other nodes; otherwise the run directory is used.
+    # Base directory for per-run vLLM scheduler traces. Use shared storage
+    # when replicas can run on other nodes; by default traces are written to
+    # ``<run>/telemetry/scheduler-traces``.
     scheduler_trace_dir: Path | None = None
-    scheduler_trace_backend: Literal["ray", "injected"] = "ray"
-    # Mean-latency targets the run is scored against. With the sla policy
-    # they default to its ttft_ms and itl_ms and must match them.
+    # Latency targets the run is scored against.
     ttft_slo_ms: float | None = Field(default=None, gt=0)
     itl_slo_ms: float | None = Field(default=None, gt=0)
     # The SLO holds when this percentile of requests is within the target:
     # 0.95 means "p95 TTFT <= ttft_slo_ms", i.e. 95% of requests within it.
     slo_percentile: float = Field(default=0.95, gt=0, lt=1)
-    # Seconds of load excluded from the steady-state score; by default the
-    # concurrency ramp, or 120s of a run without one.
+    # Seconds of load excluded from the steady-state score. Use 0 to score
+    # the whole curve; by default the first 120s are excluded.
     warmup_s: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
@@ -585,23 +416,13 @@ class AnalysisConfig(BaseModel):
 
 
 class ExperimentConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str
     deployment: DeploymentConfig
-    benchmark: BenchmarkConfig = Field(default_factory=BenchmarkConfig)
+    benchmark: BenchmarkConfig
     runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
     analysis: AnalysisConfig = Field(default_factory=AnalysisConfig)
-
-    @model_validator(mode="after")
-    def validate_session_header(self) -> "ExperimentConfig":
-        if (
-            self.deployment.routing.policy in SESSION_PINNED_ROUTING
-            and "--session-header" in self.benchmark.extra_args
-        ):
-            raise ValueError(
-                "extra_args cannot override --session-header; "
-                f"{self.deployment.routing.policy} routing sets it to {SESSION_HEADER}"
-            )
-        return self
 
     @model_validator(mode="after")
     def validate_token_policy_routing(self) -> "ExperimentConfig":
@@ -614,49 +435,69 @@ class ExperimentConfig(BaseModel):
             raise ValueError("autoscaling policy token requires routing policy kv_aware")
         return self
 
-    @model_validator(mode="after")
-    def validate_slo_targets(self) -> "ExperimentConfig":
-        """Score the sla policy against the targets it was given."""
-        policy = self.deployment.autoscaling.policy
-        if policy.name != "sla":
-            return self
-        for field in ("ttft_slo_ms", "itl_slo_ms"):
-            target = float(policy.kwargs[field.replace("_slo", "")])
-            configured = getattr(self.analysis, field)
-            if configured is None:
-                setattr(self.analysis, field, target)
-            elif configured != target:
-                raise ValueError(
-                    f"analysis.{field} {configured:g} differs from the sla policy's "
-                    f"{field.replace('_slo', '')} {target:g}"
-                )
-        return self
-
-    @model_validator(mode="after")
-    def validate_context_length(self) -> "ExperimentConfig":
-        workload = self.benchmark.workload
-        if not isinstance(workload, SyntheticWorkloadConfig):
-            return self  # trace lengths come from the dataset, not the config
-        required = workload.input_tokens + workload.output_tokens
-        max_model_len = self.deployment.engine.max_model_len
-        if max_model_len is not None and required > max_model_len:
-            raise ValueError(
-                f"workload requires {required} tokens but max_model_len is "
-                f"{self.deployment.engine.max_model_len}"
-            )
-        return self
-
     def resolved_dict(self) -> dict[str, Any]:
         return self.model_dump(mode="json")
 
 
-def load_config(path: str | Path) -> ExperimentConfig:
-    config_path = Path(path)
-    with config_path.open() as fh:
+def _read_yaml(path: Path) -> dict[str, Any]:
+    with path.open() as fh:
         raw = yaml.safe_load(fh)
     if not isinstance(raw, dict):
-        raise ValueError(f"{config_path} must contain a YAML mapping")
-    return ExperimentConfig.model_validate(raw)
+        raise ValueError(f"{path} must contain a YAML mapping")
+    return raw
+
+
+def load_config(path: str | Path) -> ExperimentConfig:
+    """Load an experiment YAML strictly: unknown keys are errors."""
+    return ExperimentConfig.model_validate(_read_yaml(Path(path)))
+
+
+def _drop_unknown(model: type[BaseModel], raw: Any, where: str, dropped: list[str]) -> Any:
+    """Remove keys ``model`` does not declare, recursing into nested models."""
+    if not isinstance(raw, dict):
+        return raw
+    allow_extra = model.model_config.get("extra") == "allow"
+    result = {}
+    for key, value in raw.items():
+        field = model.model_fields.get(key)
+        if field is None:
+            if allow_extra:
+                result[key] = value
+            else:
+                dropped.append(f"{where}{key}")
+            continue
+        nested = field.annotation
+        if isinstance(nested, type) and issubclass(nested, BaseModel):
+            value = _drop_unknown(nested, value, f"{where}{key}.", dropped)
+        result[key] = value
+    return result
+
+
+def load_saved_config(path: str | Path) -> ExperimentConfig:
+    """Load a run directory's ``resolved.yaml``, tolerating retired options.
+
+    Runs recorded before the harness was reduced to AgentX session curves
+    list options that no longer exist. They are dropped with a note so those
+    runs can still be re-analyzed; a run of a retired workload is an error.
+    """
+    path = Path(path)
+    raw = _read_yaml(path)
+    benchmark = raw.get("benchmark") or {}
+    mode = benchmark.get("mode", "agentx_concurrency_ramp")
+    workload = benchmark.get("workload") or {}
+    if mode != "agentx_concurrency_ramp" or not workload.get("concurrency_series"):
+        raise ValueError(
+            f"{path} records a {mode!r} run without a concurrency_series; only "
+            "AgentX session-curve runs can be analyzed by this harness version"
+        )
+    dropped: list[str] = []
+    config = ExperimentConfig.model_validate(
+        _drop_unknown(ExperimentConfig, raw, "", dropped)
+    )
+    if dropped:
+        print(f"note: {path} predates the current config schema; ignored "
+              f"{len(dropped)} retired keys", file=sys.stderr)
+    return config
 
 
 def write_config(config: ExperimentConfig, path: Path) -> None:

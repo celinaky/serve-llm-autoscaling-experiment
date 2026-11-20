@@ -23,22 +23,15 @@ COLUMNS: list[tuple[str, int, Any]] = [
     ("up/down", 8, lambda e: f"{e['scaling']['upscales']}/{e['scaling']['downscales']}"),
     ("1st up", 7, lambda e: _fmt(e["scaling"]["first_upscale_at_s"], ".0f", "s")),
     ("lag", 6, lambda e: _fmt(e["scaling"]["mean_upscale_lag_s"], ".0f", "s")),
-    ("model ready", 12, lambda e: _fmt((e.get("sla_policy") or {}).get("model_ready_at_s"), ".0f", "s")),
 ]
 
 
 def _policy(evaluation: dict[str, Any]) -> str:
-    name = evaluation["autoscaling_policy"]
-    kwargs = evaluation.get("autoscaling_policy_kwargs") or {}
-    return f"{name} (advisory)" if kwargs.get("advisory") else name
+    return evaluation["autoscaling_policy"]
 
 
 def _requests(evaluation: dict[str, Any]) -> dict[str, Any]:
     return evaluation["slo_attainment"]["steady"]["requests"]
-
-
-def _windows(evaluation: dict[str, Any]) -> dict[str, Any]:
-    return evaluation["slo_attainment"]["steady"]["windows"]
 
 
 def _load(evaluation: dict[str, Any]) -> dict[str, Any]:
@@ -79,3 +72,26 @@ def format_comparison(roots: list[Path]) -> str:
     elif slos:
         lines.append("WARNING: runs were scored against different SLOs")
     return "\n".join(lines)
+
+
+def plot_comparison(roots: list[Path], extra_args: list[str]) -> int:
+    """Draw the runs' arrival statistics on one grid; returns the exit code.
+
+    See ``diagnostics/arrival_stats_compare.py`` for the options passed
+    through in ``extra_args``.
+    """
+    import subprocess
+    import sys
+
+    missing = [str(root) for root in roots
+               if not (root / "analysis" / "load_requests.csv").is_file()]
+    if missing:
+        print("comparison plot skipped; no analysis/load_requests.csv in: "
+              + ", ".join(missing) + " (run `autoscale-harness analyze` on them)",
+              file=sys.stderr)
+        return 1
+    return subprocess.run(
+        [sys.executable, "-m", "serve_llm_autoscaling.diagnostics.arrival_stats_compare",
+         *map(str, roots), *extra_args],
+        check=False,
+    ).returncode

@@ -7,8 +7,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from .config import ExperimentConfig, write_config
 
 
@@ -76,22 +74,6 @@ def _teardown_state(root: Path) -> str:
         elif event["event"] == "teardown_failed":
             state = f"FAILED ({event.get('error')})"
     return state
-
-
-def format_slo_calibration(root: Path) -> str | None:
-    """The recommended TTFT SLO of a fixed-concurrency baseline, if any."""
-    calibration = _read_json(root / "analysis" / "slo_calibration.json")
-    if not calibration:
-        return None
-    slo = calibration.get("recommended_ttft_slo_ms")
-    if slo is None:
-        return "TTFT SLO:  no successful requests with TTFT; no recommendation"
-    return (
-        f"TTFT SLO:  recommended {slo:.1f}ms (p90 of "
-        f"{calibration.get('ttft_sample_count')} successful requests; "
-        f"{calibration.get('failed_request_count')} failed). "
-        f"Copy into analysis.ttft_slo_ms: {slo:.0f}"
-    )
 
 
 def _pct(value: Any) -> str:
@@ -175,15 +157,6 @@ def format_evaluation(root: Path) -> str | None:
             + _fmt(strength["decodes_vs_itl"]["spearman"], "+.2f")
             + f" (n={strength['decodes_vs_itl']['samples']})"
         )
-    if sla := evaluation.get("sla_policy"):
-        ttft = sla["prediction"]["ttft"]
-        lines.append(
-            f"SLA policy: model ready at {_fmt(sla['model_ready_at_s'], '.0f', 's')} · "
-            f"first capacity decision at {_fmt(sla['first_capacity_decision_at_s'], '.0f', 's')} · "
-            f"TTFT predicted-server bias {_fmt(ttft['predicted_vs_server']['bias_ms'], '+.0f', 'ms')} "
-            f"(n={ttft['predicted_vs_server']['samples']}) · "
-            f"client-server {_fmt(ttft['client_vs_server']['bias_ms'], '+.0f', 'ms')}"
-        )
     return "\n".join(lines)
 
 
@@ -224,8 +197,6 @@ def format_run_summary(root: Path) -> str:
         lines.append(f"Error:     {manifest['error']}")
     if autoscaling := manifest.get("autoscaling"):
         policy = autoscaling.get("policy")
-        if "advisory" in (autoscaling.get("policy_kwargs") or {}):
-            policy += f" (advisory={autoscaling['policy_kwargs']['advisory']})"
         if "verified_deployments" not in autoscaling:
             policy += " (not verified on the deployment)"
         lines.append(f"Autoscale: {policy}")
@@ -268,9 +239,6 @@ def format_run_summary(root: Path) -> str:
                 f"{_fmt(w['p50_ttft_ms'], '.0f', 'ms'):>11}"
                 f"{_fmt(w['p99_ttft_ms'], '.0f', 'ms'):>11}"
             )
-    calibration_line = format_slo_calibration(root)
-    if calibration_line:
-        lines += ["", calibration_line]
     if evaluation := format_evaluation(root):
         lines += ["", evaluation]
     analysis = manifest.get("analysis") or {}
@@ -287,9 +255,6 @@ def format_run_summary(root: Path) -> str:
             lines.append("Lifecycle: " + " · ".join(
                 f"{p['name']} {p['start_s']:.0f}-{p['end_s']:.0f}s" for p in periods
             ))
-        timeline = root / "analysis" / "autoscaling_timeline.png"
-        if timeline.exists():
-            lines.append(f"Timeline:  {timeline}")
         diagnostics = analysis.get("diagnostic_plots") or {}
         if diagnostics:
             lines.append(f"Diagnostic plots: {diagnostics.get('status', 'unknown')}")

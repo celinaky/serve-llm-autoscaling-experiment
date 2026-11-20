@@ -1,9 +1,18 @@
-from pathlib import Path
-
 import pytest
+import yaml
 from pydantic import ValidationError
 
-from serve_llm_autoscaling.config import EngineConfig, ExperimentConfig, load_config
+from conftest import EXPERIMENTS, KV_AWARE, REPO, TOKEN_POLICY, raw_config, series
+from serve_llm_autoscaling.config import (
+    AIPERF_SOURCE_DEFAULT,
+    EngineConfig,
+    ExperimentConfig,
+    load_config,
+    load_saved_config,
+    write_config,
+)
+
+# --- Engine -----------------------------------------------------------------
 
 
 @pytest.mark.parametrize("backend", [None, "native"])
@@ -21,554 +30,313 @@ def test_rejects_invalid_offload_capacity(size):
         EngineConfig(kv_offloading_size=size, enable_prefix_caching=True)
 
 
-@pytest.mark.parametrize("connector", ["MooncakeStoreConnector", "MultiConnector", "OffloadingConnector"])
-def test_rejects_offload_shortcut_overwriting_connector(connector):
+def test_rejects_offload_shortcut_overwriting_connector():
     with pytest.raises(ValidationError, match="overwrite the selected connector"):
         EngineConfig(kv_offloading_size=64, enable_prefix_caching=True,
-                     kv_transfer_config={"kv_connector": connector, "kv_role": "kv_both"})
+                     kv_transfer_config={"kv_connector": "MultiConnector"})
 
 
 def test_disabled_offloading_allows_prefix_cache_disabled_and_explicit_connectors():
     config = EngineConfig(enable_prefix_caching=False, kv_offloading_backend="native")
     assert config.kv_offloading_size is None
-    EngineConfig(kv_transfer_config={"kv_connector": "MooncakeStoreConnector"})
+    EngineConfig(kv_transfer_config={"kv_connector": "MultiConnector"})
 
 
-def test_native_offloading_example_has_fixed_two_replicas():
-    config = load_config("experiments/h100_native_cpu_offload.yaml")
-    assert config.deployment.engine.kv_offloading_size == 64
-    assert config.deployment.engine.kv_offloading_backend == "native"
-    assert config.deployment.routing.policy == "kv_aware"
-    scaling = config.deployment.autoscaling
-    assert scaling.min_replicas == scaling.initial_replicas == scaling.max_replicas == 2
+# --- Deployment -------------------------------------------------------------
 
 
-def test_baseline_config_is_valid():
-    config = load_config(Path("experiments/baseline.yaml"))
-    assert config.deployment.model_id == "Qwen/Qwen3-0.6B-FP8"
-    assert config.benchmark.levels == [1.0, 2.0, 4.0, 8.0]
-    assert config.deployment.model_source == config.deployment.model_id
+def test_deployment_defaults(agentx_config):
+    deployment = agentx_config().deployment
+    assert deployment.model_source == deployment.tokenizer == "long-context-model"
+    assert deployment.routing.policy is None
+    assert deployment.autoscaling.policy.name == "default"
+    assert deployment.max_ongoing_requests is None
 
 
-def test_rejects_bad_replica_bounds():
-    with pytest.raises(ValidationError, match="min_replicas"):
-        ExperimentConfig.model_validate(
-            {
-                "name": "bad",
-                "deployment": {
-                    "model_id": "model",
-                    "autoscaling": {"min_replicas": 3, "max_replicas": 2},
-                },
-            }
-        )
-
-
-def test_rejects_fractional_concurrency():
-    with pytest.raises(ValidationError, match="concurrency levels must be integers"):
-        ExperimentConfig.model_validate(
-            {
-                "name": "bad",
-                "deployment": {"model_id": "model"},
-                "benchmark": {"mode": "concurrency", "levels": [1.5]},
-            }
-        )
-
-
-def test_rejects_workload_larger_than_context():
-    with pytest.raises(ValidationError, match="workload requires"):
-        ExperimentConfig.model_validate(
-            {
-                "name": "bad",
-                "deployment": {
-                    "model_id": "model",
-                    "engine": {"max_model_len": 100},
-                },
-                "benchmark": {
-                    "workload": {"input_tokens": 90, "output_tokens": 20}
-                },
-            }
-        )
-
-
-
-SERIES = [
-    {"time_s": 0, "qps": 1},
-    {"time_s": 10, "qps": 2},
-    {"time_s": 20, "qps": 1},
-]
-
-
-def _benchmark(**benchmark):
-    return ExperimentConfig.model_validate(
-        {"name": "series", "deployment": {"model_id": "model"}, "benchmark": benchmark}
-    )
-
-
-@pytest.mark.parametrize(
-    "path",
-    [
-        "experiments/baseline.yaml",
-        "experiments/baseline_rate.yaml",
-        "experiments/smoke.yaml",
-        "experiments/step_rate.yaml",
-        "experiments/step_rate_autoscaling.yaml",
-        "experiments/smoke_rate_series.yaml",
-        "experiments/b200_sla_smoke.yaml",
-        "experiments/b200_workday_ramp_default.yaml",
-        "experiments/b200_workday_ramp_sla.yaml",
-        "experiments/b200_workday_ramp_sla_advisory.yaml",
-        "experiments/b200_workday_ramp_token.yaml",
-        "experiments/b200_workday_ramp_token_dampen.yaml",
-    ],
-)
-def test_checked_in_experiments_are_valid(path):
-    load_config(Path(path))
-
-
-def test_valid_request_rate_series():
-    config = _benchmark(mode="request_rate_series", duration_s=20, rate_series=SERIES)
-    assert [point.qps for point in config.benchmark.rate_series] == [1, 2, 1]
-
-
-def test_step_rate_experiment():
-    config = load_config(Path("experiments/step_rate.yaml"))
-    assert config.benchmark.mode == "request_rate_series"
-    assert config.benchmark.rate_series[-1].time_s == config.benchmark.duration_s
-
-
-@pytest.mark.parametrize(
-    ("rate_series", "match"),
-    [
-        (None, "requires rate_series"),
-        ([], "requires rate_series"),
-        ([{"time_s": 0, "qps": 1}], "at least two points"),
-        ([{"time_s": 1, "qps": 1}, {"time_s": 2, "qps": 1}], "start at time_s 0"),
-        (
-            [{"time_s": 0, "qps": 1}, {"time_s": 5, "qps": 1}, {"time_s": 5, "qps": 2}],
-            "strictly increasing",
-        ),
-        (
-            [{"time_s": 0, "qps": 1}, {"time_s": 5, "qps": 1}, {"time_s": 4, "qps": 2}],
-            "strictly increasing",
-        ),
-        ([{"time_s": 0, "qps": 1}, {"time_s": 30, "qps": 1}], "after duration_s"),
-        ([{"time_s": 0, "qps": 0}, {"time_s": 5, "qps": 1}], "greater than 0"),
-        ([{"time_s": 0, "qps": -1}, {"time_s": 5, "qps": 1}], "greater than 0"),
-    ],
-)
-def test_rejects_bad_rate_series(rate_series, match):
+@pytest.mark.parametrize("autoscaling, match", [
+    ({"min_replicas": 3, "max_replicas": 2}, "min_replicas must be <= max_replicas"),
+    ({"min_replicas": 1, "initial_replicas": 5, "max_replicas": 4}, "initial_replicas"),
+    ({"min_replicas": 2, "initial_replicas": 1}, "initial_replicas"),
+])
+def test_rejects_bad_replica_bounds(agentx_config, autoscaling, match):
     with pytest.raises(ValidationError, match=match):
-        _benchmark(mode="request_rate_series", duration_s=20, rate_series=rate_series)
+        agentx_config(deployment={"autoscaling": autoscaling})
 
 
-@pytest.mark.parametrize("mode", ["concurrency", "request_rate"])
-def test_rejects_rate_series_in_static_mode(mode):
-    with pytest.raises(ValidationError, match="requires mode: request_rate_series"):
-        _benchmark(mode=mode, rate_series=SERIES)
-
-
-def test_rejects_smoothness_without_gamma():
-    with pytest.raises(ValidationError, match="arrival_smoothness requires"):
-        _benchmark(
-            mode="request_rate_series",
-            duration_s=20,
-            rate_series=SERIES,
-            arrival_pattern="poisson",
-            arrival_smoothness=0.5,
-        )
-
-
-def test_rejects_smoothness_in_concurrency_mode():
-    with pytest.raises(ValidationError, match="arrival_smoothness requires"):
-        _benchmark(mode="concurrency", arrival_pattern="gamma", arrival_smoothness=0.5)
-
-
-def test_accepts_gamma_smoothness():
-    config = _benchmark(
-        mode="request_rate_series",
-        duration_s=20,
-        rate_series=SERIES,
-        arrival_pattern="gamma",
-        arrival_smoothness=0.5,
-    )
-    assert config.benchmark.arrival_smoothness == 0.5
-
-
-@pytest.mark.parametrize("flag", ["--request-rate-series", "--arrival-smoothness"])
-def test_rejects_series_flags_in_extra_args(flag):
-    with pytest.raises(ValidationError, match="harness-owned"):
-        _benchmark(
-            mode="request_rate_series",
-            duration_s=20,
-            rate_series=SERIES,
-            extra_args=[flag, "x"],
-        )
-
-
-def test_analysis_defaults():
-    analysis = load_config(Path("experiments/step_rate.yaml")).analysis
-    assert (analysis.window_s, analysis.tail_window_s) == (5, 30)
-    assert (analysis.status_interval_s, analysis.metrics_interval_s) == (1, 2)
-    assert analysis.prometheus_enabled and analysis.generate_plots
-    assert (analysis.ttft_slo_ms, analysis.itl_slo_ms, analysis.warmup_s) == (None, None, None)
-
-
-def _sla(analysis=None, **kwargs):
-    return ExperimentConfig.model_validate({
-        "name": "sla", "deployment": {
-            "model_id": "model",
-            "autoscaling": {"policy": {"name": "sla", "kwargs": {"ttft_ms": 3000, "itl_ms": 50, **kwargs}}},
-        },
-        **({"analysis": analysis} if analysis else {}),
+def test_unlisted_engine_and_autoscaling_keys_are_kept(agentx_config):
+    config = agentx_config(deployment={
+        "engine": {"language_model_only": True},
+        "autoscaling": {"look_back_period_s": 60},
     })
+    assert config.deployment.engine.model_extra == {"language_model_only": True}
+    assert config.deployment.autoscaling.model_extra == {"look_back_period_s": 60}
 
 
-def test_sla_policy_fills_slo_targets():
-    analysis = _sla().analysis
-    assert (analysis.ttft_slo_ms, analysis.itl_slo_ms) == (3000.0, 50.0)
-    assert _sla({"ttft_slo_ms": 3000, "itl_slo_ms": 50}).analysis.itl_slo_ms == 50
+# --- Session curve ----------------------------------------------------------
 
 
-def test_sla_policy_rejects_mismatched_slo_targets():
-    with pytest.raises(ValidationError, match="analysis.itl_slo_ms 40 differs from the sla policy's itl_ms 50"):
-        _sla({"itl_slo_ms": 40})
+def test_concurrency_series_parses(agentx_config):
+    workload = agentx_config(
+        {"concurrency_series": series((0, 1), (600, 16), (1200, 4))}
+    ).benchmark.workload
+    assert [(p.time_s, p.sessions) for p in workload.concurrency_series] == [
+        (0, 1), (600, 16), (1200, 4)
+    ]
+    # AIPerf's --concurrency is the peak of the curve, not a separate setting.
+    assert workload.target_concurrency == 16
+    assert (workload.seed, workload.unsafe_override) == (42, False)
 
 
-def test_b200_workday_ramp_experiments_differ_only_in_policy():
-    default = load_config(Path("experiments/b200_workday_ramp_default.yaml"))
-    token = load_config(Path("experiments/b200_workday_ramp_token.yaml"))
-    assert default.deployment.autoscaling.policy.name == "default"
-    assert token.deployment.autoscaling.policy.name == "token"
-    assert default.benchmark == token.benchmark
-    assert default.analysis == token.analysis
-    assert (token.analysis.ttft_slo_ms, token.analysis.itl_slo_ms) == (5000, 50)
-    assert token.analysis.warmup_s == 0
-    workload = token.benchmark.workload
-    assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0, 0)
+@pytest.mark.parametrize("points, match", [
+    (series((0, 1)), "at least 2 items"),
+    (series((10, 1), (600, 16)), "start at time_s 0"),
+    (series((0, 1), (600, 16), (600, 4)), "strictly increasing"),
+    (series((0, 1), (1801, 16)), "after duration_s"),
+    (series((0, 1), (600, 0)), "sessions"),
+    (series((0, 1), (600, 16.0)), "sessions"),
+    (series((0, 1), (-5, 2)), "time_s"),
+    ([{"time_s": 0, "sessions": 1}, {"time_s": 60, "qps": 8}], "qps"),
+])
+def test_rejects_bad_concurrency_series(agentx_config, points, match):
+    with pytest.raises(ValidationError, match=match):
+        agentx_config({"concurrency_series": points})
 
-    active = load_config(Path("experiments/b200_workday_ramp_sla.yaml"))
-    advisory = load_config(Path("experiments/b200_workday_ramp_sla_advisory.yaml"))
-    assert active.deployment.autoscaling.policy.kwargs["advisory"] is False
-    assert advisory.deployment.autoscaling.policy.kwargs["advisory"] is True
-    assert active.benchmark == advisory.benchmark
-    assert active.analysis == advisory.analysis
 
+def test_series_may_end_exactly_at_duration(agentx_config):
+    agentx_config({"concurrency_series": series((0, 1), (1800, 16))})
 
-def test_b200_workday_ramp_dampen_pair_differs_only_in_policy():
-    default = load_config(Path("experiments/b200_workday_ramp_default.yaml"))
-    token = load_config(Path("experiments/b200_workday_ramp_token_dampen.yaml"))
-    assert default.deployment.autoscaling.policy.name == "default"
-    assert token.deployment.autoscaling.policy.name == "token"
-    assert default.benchmark == token.benchmark
-    assert default.analysis == token.analysis
-    assert default.deployment.engine == token.deployment.engine
-    assert default.deployment.routing == token.deployment.routing
-    scaling_default, scaling_token = default.deployment.autoscaling, token.deployment.autoscaling
-    assert (scaling_default.upscale_delay_s, scaling_default.downscale_delay_s) == (10, 300)
-    assert (scaling_token.upscale_delay_s, scaling_token.downscale_delay_s) == (10, 300)
-    assert "upscale_lookback_s" not in scaling_token.policy.kwargs
-    assert scaling_token.model_extra["look_back_period_s"] == 30
 
-
-def test_rejects_tail_window_shorter_than_window():
-    with pytest.raises(ValidationError, match="tail_window_s must be >= window_s"):
-        ExperimentConfig.model_validate({
-            "name": "bad", "deployment": {"model_id": "model"},
-            "analysis": {"window_s": 10, "tail_window_s": 5},
-        })
-
-
-def test_autoscaling_experiment_matches_control_load():
-    control = load_config(Path("experiments/step_rate.yaml"))
-    autoscaled = load_config(Path("experiments/step_rate_autoscaling.yaml"))
-    assert autoscaled.benchmark == control.benchmark
-    assert autoscaled.deployment.model_id == control.deployment.model_id
-    assert control.deployment.autoscaling.max_replicas == 1
-    scaling = autoscaled.deployment.autoscaling
-    assert (scaling.min_replicas, scaling.initial_replicas, scaling.max_replicas) == (1, 1, 4)
-    assert (scaling.target_ongoing_requests, scaling.upscale_delay_s,
-            scaling.downscale_delay_s) == (4, 30, 120)
-
-
-# --- AgentX concurrency ramp ------------------------------------------------
-
-
-def test_agentx_config_parses(agentx_config):
-    config = agentx_config()
-    workload = config.benchmark.workload
-    assert config.benchmark.mode == "agentx_concurrency_ramp"
-    assert workload.type == "agentx"
-    assert workload.public_dataset == "semianalysis_cc_traces_weka_062126_256k"
-    assert (workload.target_concurrency, workload.concurrency_ramp_duration_s) == (16, 1200)
-    assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0, 0)
-    assert not workload.unsafe_override
-
-
-def test_workload_type_defaults_to_synthetic():
-    config = _benchmark(workload={"input_tokens": 100})
-    assert config.benchmark.workload.type == "synthetic"
-
-
-def test_rejects_ramp_longer_than_duration(agentx_config):
-    with pytest.raises(ValidationError, match="exceeds duration_s"):
-        agentx_config({"concurrency_ramp_duration_s": 1801})
-
-
-def test_accepts_ramp_equal_to_duration(agentx_config):
-    agentx_config({"concurrency_ramp_duration_s": 1800})
-
-
-def test_agentx_mode_rejects_synthetic_workload():
-    with pytest.raises(ValidationError, match="requires workload type: agentx"):
-        _benchmark(mode="agentx_concurrency_ramp", duration_s=1800,
-                   workload={"type": "synthetic"})
-
-
-@pytest.mark.parametrize("mode", ["concurrency", "request_rate", "request_rate_series"])
-def test_agentx_workload_requires_agentx_mode(agentx_config, mode):
-    with pytest.raises(ValidationError, match="requires mode: agentx_concurrency_ramp"):
-        agentx_config(mode=mode)
-
-
-@pytest.mark.parametrize("value", [0, -1, 2.5, "4"])
-def test_rejects_bad_target_concurrency(agentx_config, value):
-    with pytest.raises(ValidationError, match="target_concurrency"):
-        agentx_config({"target_concurrency": value})
-
-
-@pytest.mark.parametrize(
-    "setting",
-    [
-        {"levels": [1, 2]},
-        {"rate_series": SERIES},
-        {"arrival_pattern": "constant"},
-        {"arrival_pattern": "gamma", "arrival_smoothness": 0.5},
-        {"warmup": {"enabled": True, "duration_s": 60}},
-        {"warmup": {"enabled": False}},
-    ],
-)
-def test_agentx_rejects_synthetic_load_settings(agentx_config, setting):
-    with pytest.raises(ValidationError, match="does not accept"):
-        agentx_config(**setting)
-
-
-def test_agentx_skips_synthetic_context_validation(agentx_config):
-    config = agentx_config()
-    config = ExperimentConfig.model_validate(
-        {**config.resolved_dict(),
-         "deployment": {"model_id": "m", "engine": {"max_model_len": 100}}}
-    )
-    assert config.deployment.engine.max_model_len == 100
-
-
-def test_rejects_short_strict_agentx_run(agentx_config):
-    with pytest.raises(ValidationError, match="duration_s >= 900"):
-        agentx_config({"concurrency_ramp_duration_s": 60}, duration_s=120)
-
-
-def test_accepts_short_agentx_run_with_unsafe_override(agentx_config):
-    config = agentx_config(
-        {"concurrency_ramp_duration_s": 60, "unsafe_override": True}, duration_s=120
-    )
-    assert config.benchmark.duration_s == 120
-
-
-@pytest.mark.parametrize(
-    "flag",
-    [
-        "--scenario", "--public-dataset", "--concurrency-ramp-duration",
-        "--trajectory-start-min-ratio", "--trajectory-start-max-ratio",
-        "--unsafe-override", "--concurrency", "--isl",
-    ],
-)
-def test_agentx_rejects_owned_flags_in_extra_args(agentx_config, flag):
-    with pytest.raises(ValidationError, match="harness-owned"):
-        agentx_config(extra_args=[flag, "x"])
-
-
-def test_agentx_rejects_unknown_workload_fields(agentx_config):
-    with pytest.raises(ValidationError, match="input_tokens"):
-        agentx_config({"input_tokens": 100})
-
-
-def test_agentx_resolved_config_round_trips(agentx_config):
-    config = agentx_config()
-    assert ExperimentConfig.model_validate(config.resolved_dict()) == config
-
-
-# --- AgentX fixed concurrency -----------------------------------------------
-
-
-def test_agentx_fixed_config_parses(agentx_fixed_config):
-    config = agentx_fixed_config()
-    workload = config.benchmark.workload
-    assert config.benchmark.mode == "agentx_fixed_concurrency"
-    assert workload.type == "agentx"
-    assert workload.target_concurrency == 8
-    assert workload.concurrency_ramp_duration_s is None
-
-
-def test_agentx_fixed_rejects_ramp_duration(agentx_fixed_config):
-    with pytest.raises(ValidationError, match="does not accept concurrency_ramp_duration_s"):
-        agentx_fixed_config({"concurrency_ramp_duration_s": 60})
-
-
-def test_agentx_ramp_requires_ramp_duration(agentx_fixed_config):
-    with pytest.raises(ValidationError, match="requires concurrency_ramp_duration_s"):
-        agentx_fixed_config(mode="agentx_concurrency_ramp")
-
-
-def test_agentx_fixed_requires_agentx_workload():
-    with pytest.raises(ValidationError, match="agentx_fixed_concurrency mode requires "
-                                              "workload type: agentx"):
-        _benchmark(mode="agentx_fixed_concurrency", duration_s=900,
-                   workload={"type": "synthetic"})
-
-
-def test_agentx_fixed_requires_streaming(agentx_fixed_config):
-    with pytest.raises(ValidationError, match="requires streaming: true"):
-        agentx_fixed_config(streaming=False)
-
-
-def test_agentx_fixed_enforces_minimum_duration(agentx_fixed_config):
-    with pytest.raises(ValidationError, match="duration_s >= 900"):
-        agentx_fixed_config(duration_s=600)
-    assert agentx_fixed_config({"unsafe_override": True}, duration_s=600) \
-        .benchmark.duration_s == 600
-
-
-@pytest.mark.parametrize(
-    "setting",
-    [
-        {"levels": [1, 2]},
-        {"rate_series": SERIES},
-        {"arrival_pattern": "constant"},
-        {"warmup": {"enabled": False}},
-    ],
-)
-def test_agentx_fixed_rejects_synthetic_load_settings(agentx_fixed_config, setting):
-    with pytest.raises(ValidationError, match="agentx_fixed_concurrency mode does not accept"):
-        agentx_fixed_config(**setting)
-
-
-def test_agentx_fixed_rejects_ramp_flag_in_extra_args(agentx_fixed_config):
-    with pytest.raises(ValidationError, match="harness-owned"):
-        agentx_fixed_config(extra_args=["--concurrency-ramp-duration", "60"])
-
-
-def test_agentx_fixed_resolved_config_round_trips(agentx_fixed_config):
-    config = agentx_fixed_config()
-    resolved = config.resolved_dict()
-    assert resolved["benchmark"]["workload"]["concurrency_ramp_duration_s"] is None
-    assert ExperimentConfig.model_validate(resolved) == config
-
-
-def test_agentx_slo_baseline_experiment():
-    config = load_config("experiments/agentx_slo_baseline.yaml")
-    reference = load_config("experiments/agentx_kv_aware_autoscaling.yaml")
-    deployment = config.deployment
-    for field in ("model_id", "model_source", "tokenizer", "accelerator_type",
-                  "routing", "engine", "max_ongoing_requests"):
-        assert getattr(deployment, field) == getattr(reference.deployment, field)
-    scaling = deployment.autoscaling
-    assert (scaling.min_replicas, scaling.initial_replicas, scaling.max_replicas) == (1, 1, 1)
-    benchmark = config.benchmark
-    assert benchmark.mode == "agentx_fixed_concurrency"
-    assert (benchmark.duration_s, benchmark.grace_period_s,
-            benchmark.post_load_observation_s) == (900, 300, 0)
-    assert benchmark.streaming and benchmark.fail_fast and benchmark.use_server_token_count
-    workload = benchmark.workload
-    assert workload.public_dataset == reference.benchmark.workload.public_dataset
-    assert (workload.target_concurrency, workload.trajectory_start_min_ratio,
-            workload.trajectory_start_max_ratio, workload.seed,
-            workload.unsafe_override) == (8, 0, 0, 42, False)
-    assert workload.concurrency_ramp_duration_s is None
-    assert config.analysis.ttft_slo_ms is None  # this run produces the SLO
-
-
-def test_agentx_trajectory_start_window(agentx_config):
-    workload = agentx_config(workload={
+def test_trajectory_start_window(agentx_config):
+    workload = agentx_config({
         "trajectory_start_min_ratio": 0.25, "trajectory_start_max_ratio": 1,
     }).benchmark.workload
     assert (workload.trajectory_start_min_ratio, workload.trajectory_start_max_ratio) == (0.25, 1)
     with pytest.raises(ValidationError, match="cannot exceed"):
-        agentx_config(workload={
-            "trajectory_start_min_ratio": 0.5, "trajectory_start_max_ratio": 0.25,
-        })
-    with pytest.raises(ValidationError, match="trajectory_start_ratio"):
-        agentx_config(workload={"trajectory_start_ratio": 0})
+        agentx_config({"trajectory_start_min_ratio": 0.5, "trajectory_start_max_ratio": 0.25})
 
 
-# --- AgentX concurrency series ----------------------------------------------
-
-CURVE = [
-    {"time_s": 0, "sessions": 1},
-    {"time_s": 600, "sessions": 16},
-    {"time_s": 1200, "sessions": 4},
-]
+# --- Benchmark --------------------------------------------------------------
 
 
-def _curve_config(agentx_config, points=CURVE, **benchmark):
-    return agentx_config(
-        {"concurrency_ramp_duration_s": None, "concurrency_series": points}, **benchmark
+def test_short_run_requires_unsafe_override(agentx_config):
+    curve = {"concurrency_series": series((0, 1), (60, 4))}
+    with pytest.raises(ValidationError, match="duration_s >= 900"):
+        agentx_config(curve, duration_s=899)
+    agentx_config(curve, duration_s=900)
+    assert agentx_config({**curve, "unsafe_override": True}, duration_s=120)
+
+
+@pytest.mark.parametrize("flag", [
+    "--concurrency", "--concurrency-series", "--scenario", "--public-dataset",
+    "--session-header", "--benchmark-duration", "--artifact-dir", "--random-seed",
+])
+def test_rejects_owned_flags_in_extra_args(agentx_config, flag):
+    with pytest.raises(ValidationError, match=f"harness-owned options: {flag}"):
+        agentx_config(extra_args=[flag, "x"])
+    assert agentx_config(extra_args=["--request-timeout-seconds", "600"])
+
+
+@pytest.mark.parametrize("section, key", [
+    ("benchmark", "duration_s"), ("benchmark", "workload"), ("deployment", "model_id"),
+])
+def test_required_settings(section, key):
+    raw = raw_config()
+    del raw[section][key]
+    with pytest.raises(ValidationError, match=key):
+        ExperimentConfig.model_validate(raw)
+    del raw[section]
+    with pytest.raises(ValidationError, match=section):
+        ExperimentConfig.model_validate(raw)
+
+
+# --- Runtime and analysis ---------------------------------------------------
+
+
+def test_runtime_and_analysis_defaults(agentx_config):
+    config = agentx_config()
+    assert config.runtime.aiperf_source == AIPERF_SOURCE_DEFAULT
+    assert "@" in AIPERF_SOURCE_DEFAULT  # pinned to a revision
+    analysis = config.analysis
+    assert (analysis.window_s, analysis.tail_window_s) == (5, 30)
+    assert (analysis.status_interval_s, analysis.metrics_interval_s) == (1, 2)
+    assert analysis.scheduler_trace_dir is None
+    assert (analysis.ttft_slo_ms, analysis.itl_slo_ms, analysis.warmup_s) == (None, None, None)
+    assert analysis.slo_percentile == 0.95
+
+
+def test_rejects_bad_runtime_and_analysis(agentx_config):
+    with pytest.raises(ValidationError, match="tail_window_s must be >= window_s"):
+        agentx_config(analysis={"window_s": 10, "tail_window_s": 5})
+    with pytest.raises(ValidationError, match="aiperf_source"):
+        agentx_config(runtime={"aiperf_source": ""})
+    assert agentx_config(
+        runtime={"aiperf_source": "git+https://example.com/aiperf@abc123"}
+    ).runtime.aiperf_source.endswith("@abc123")
+
+
+# --- Strictness: options the harness no longer has --------------------------
+
+
+@pytest.mark.parametrize("path, key, value", [
+    ((), "notes", "x"),
+    (("benchmark",), "mode", "agentx_concurrency_ramp"),
+    (("benchmark",), "levels", [1, 2]),
+    (("benchmark",), "rate_series", [{"time_s": 0, "qps": 8}]),
+    (("benchmark",), "warmup", {"enabled": True}),
+    (("benchmark",), "fail_fast", True),
+    (("benchmark", "workload"), "type", "agentx"),
+    (("benchmark", "workload"), "target_concurrency", 16),
+    (("benchmark", "workload"), "concurrency_ramp_duration_s", 1200),
+    (("benchmark", "workload"), "input_tokens", 8000),
+    (("deployment",), "direct_streaming", True),
+    (("deployment", "routing"), "direct_streaming", False),
+    (("deployment", "routing"), "forward_request_body", True),
+    (("deployment", "autoscaling", "policy"), "advisory", True),
+    (("runtime",), "generator", "aiperf"),
+    (("analysis",), "prometheus_enabled", True),
+    (("analysis",), "generate_plots", True),
+    (("analysis",), "scheduler_trace_backend", "injected"),
+])
+def test_unknown_keys_are_errors(path, key, value):
+    raw = raw_config(deployment={"routing": {}}, analysis={}, runtime={})
+    raw["deployment"]["autoscaling"]["policy"] = {}
+    section = raw
+    for name in path:
+        section = section[name]
+    section[key] = value
+    with pytest.raises(ValidationError, match=key):
+        ExperimentConfig.model_validate(raw)
+
+
+# --- Files ------------------------------------------------------------------
+
+
+def test_load_config_is_strict_and_wants_a_mapping(tmp_path):
+    path = tmp_path / "experiment.yaml"
+    path.write_text(yaml.safe_dump(raw_config()))
+    assert load_config(path) == ExperimentConfig.model_validate(raw_config())
+    path.write_text(yaml.safe_dump(raw_config(fail_fast=True)))
+    with pytest.raises(ValidationError, match="fail_fast"):
+        load_config(path)
+    path.write_text("- not\n- a mapping\n")
+    with pytest.raises(ValueError, match="must contain a YAML mapping"):
+        load_config(path)
+
+
+def test_resolved_config_round_trips(agentx_config, tmp_path):
+    config = agentx_config(deployment=TOKEN_POLICY, extra_args=["--request-timeout-seconds", "600"])
+    assert ExperimentConfig.model_validate(config.resolved_dict()) == config
+    write_config(config, tmp_path / "resolved.yaml")
+    assert load_config(tmp_path / "resolved.yaml") == config
+    assert load_saved_config(tmp_path / "resolved.yaml") == config
+
+
+def _saved(tmp_path, raw):
+    path = tmp_path / "resolved.yaml"
+    path.write_text(yaml.safe_dump(raw))
+    return path
+
+
+def test_saved_config_drops_retired_keys(tmp_path, capsys):
+    """A resolved.yaml written before the harness was reduced still loads."""
+    raw = raw_config(
+        deployment={**KV_AWARE, "engine": {"max_model_len": 262_144, "language_model_only": True}},
+        analysis={"window_s": 10, "prometheus_enabled": True, "generate_plots": True,
+                  "diagnostic_plots": True, "record_router_estimates": True},
+        runtime={"generator": "aiperf"},
+        mode="agentx_concurrency_ramp", fail_fast=True, streaming=True,
+        use_server_token_count=True, warmup={"enabled": False},
     )
+    raw["benchmark"]["workload"].update(
+        {"type": "agentx", "target_concurrency": 16, "concurrency_ramp_duration_s": None})
+    raw["deployment"]["routing"].update({"direct_streaming": True, "forward_request_body": True})
+    raw["deployment"]["autoscaling"]["look_back_period_s"] = 60
+    config = load_saved_config(_saved(tmp_path, raw))
+    assert "ignored 15 retired keys" in capsys.readouterr().err
+    assert config.benchmark.workload.target_concurrency == 16
+    assert config.deployment.routing.direct_streaming
+    assert config.analysis.window_s == 10
+    # Sections that forward unlisted keys keep them.
+    assert config.deployment.engine.model_extra == {"language_model_only": True}
+    assert config.deployment.autoscaling.model_extra == {"look_back_period_s": 60}
+
+    capsys.readouterr()
+    load_saved_config(_saved(tmp_path, raw_config()))
+    assert capsys.readouterr().err == ""
 
 
-def test_agentx_concurrency_series_parses(agentx_config):
-    workload = _curve_config(agentx_config).benchmark.workload
-    assert workload.concurrency_ramp_duration_s is None
-    assert [(p.time_s, p.sessions) for p in workload.concurrency_series] == [
-        (0, 1), (600, 16), (1200, 4)
+@pytest.mark.parametrize("benchmark, workload", [
+    ({"mode": "request_rate_series", "rate_series": [{"time_s": 0, "qps": 8}]},
+     {"type": "synthetic", "input_tokens": 8000}),
+    ({"mode": "concurrency", "levels": [1, 2]}, {"type": "synthetic"}),
+    ({"mode": "agentx_fixed_concurrency"}, {"target_concurrency": 8}),
+    # A linear ramp recorded without a curve.
+    ({"mode": "agentx_concurrency_ramp"},
+     {"target_concurrency": 16, "concurrency_ramp_duration_s": 1200}),
+])
+def test_saved_config_rejects_other_workloads(tmp_path, benchmark, workload):
+    raw = raw_config(**benchmark)
+    raw["benchmark"]["workload"] = workload
+    with pytest.raises(ValueError, match="only AgentX session-curve runs"):
+        load_saved_config(_saved(tmp_path, raw))
+
+
+def test_saved_config_still_validates_what_it_keeps(tmp_path):
+    raw = raw_config({"concurrency_series": series((0, 1), (5000, 16))})
+    with pytest.raises(ValidationError, match="after duration_s"):
+        load_saved_config(_saved(tmp_path, raw))
+
+
+# --- Checked-in experiments -------------------------------------------------
+
+
+def test_expected_experiments_are_checked_in():
+    assert [path.stem for path in EXPERIMENTS] == [
+        "b200_default_target12_64_sessions", "b200_default_target32_64_sessions",
+        "b200_token_100_sessions", "b200_token_32_sessions", "b200_token_64_sessions",
+        "smoke",
     ]
 
 
-def test_agentx_ramp_requires_ramp_or_series(agentx_config):
-    with pytest.raises(ValidationError, match="requires concurrency_ramp_duration_s or"):
-        agentx_config({"concurrency_ramp_duration_s": None})
+@pytest.mark.parametrize("path", EXPERIMENTS, ids=lambda path: path.stem)
+def test_checked_in_experiments_are_valid(path):
+    config = load_config(path)
+    assert config.deployment.routing.policy == "kv_aware"
+    assert config.deployment.autoscaling.policy.name in ("default", "token")
+    curve = config.benchmark.workload.concurrency_series
+    # Each curve spans the whole load period and ramps back down.
+    assert curve[-1].time_s == config.benchmark.duration_s
+    assert curve[-1].sessions < config.benchmark.workload.target_concurrency
+    assert config.analysis.ttft_slo_ms and config.analysis.itl_slo_ms
 
 
-def test_agentx_rejects_ramp_with_series(agentx_config):
-    with pytest.raises(ValidationError, match="mutually exclusive"):
-        agentx_config({"concurrency_series": CURVE})
+def _without(config: ExperimentConfig, *paths: str) -> dict:
+    resolved = config.resolved_dict()
+    for path in paths:
+        *parents, leaf = path.split(".")
+        section = resolved
+        for name in parents:
+            section = section[name]
+        del section[leaf]
+    return resolved
 
 
-@pytest.mark.parametrize(
-    ("points", "message"),
-    [
-        (CURVE[:1], "at least two points"),
-        ([{"time_s": 10, "sessions": 1}, {"time_s": 600, "sessions": 16}], "start at time_s 0"),
-        ([CURVE[0], {"time_s": 600, "sessions": 16}, {"time_s": 600, "sessions": 4}],
-         "strictly increasing"),
-        ([CURVE[0], {"time_s": 1801, "sessions": 16}], "after duration_s"),
-        ([CURVE[0], {"time_s": 600, "sessions": 8}], "must equal the concurrency_series peak"),
-        ([CURVE[0], {"time_s": 600, "sessions": 0}], "sessions"),
-        ([CURVE[0], {"time_s": 600, "sessions": 16.0}], "sessions"),
-    ],
-)
-def test_agentx_rejects_bad_concurrency_series(agentx_config, points, message):
-    with pytest.raises(ValidationError, match=message):
-        _curve_config(agentx_config, points)
+@pytest.mark.parametrize("other", ["b200_default_target12_64_sessions",
+                                   "b200_default_target32_64_sessions"])
+def test_policy_comparison_differs_only_in_autoscaling(other):
+    """The default-policy runs replay the token run's workload on its engine."""
+    token = load_config(REPO / "experiments/b200_token_64_sessions.yaml")
+    default = load_config(REPO / f"experiments/{other}.yaml")
+    ignored = ("name", "deployment.autoscaling.policy",
+               "deployment.autoscaling.target_ongoing_requests")
+    assert _without(default, *ignored) == _without(token, *ignored)
+    assert default.deployment.autoscaling.policy.name == "default"
 
 
-def test_agentx_fixed_rejects_concurrency_series(agentx_fixed_config):
-    with pytest.raises(ValidationError, match="does not accept"):
-        agentx_fixed_config({"concurrency_series": [CURVE[0], {"time_s": 60, "sessions": 8}]})
-
-
-def test_agentx_rejects_series_flag_in_extra_args(agentx_config):
-    with pytest.raises(ValidationError, match="--concurrency-series"):
-        _curve_config(agentx_config, extra_args=["--concurrency-series", "x.json"])
-
-
-def test_aiperf_source_defaults_to_pinned_release(agentx_config):
-    assert agentx_config().runtime.aiperf_source == "aiperf==0.12.0"
-
-
-def test_aiperf_source_accepts_fork(agentx_config):
-    raw = agentx_config().resolved_dict()
-    raw["runtime"]["aiperf_source"] = "git+https://example.com/aiperf@abc123"
-    config = ExperimentConfig.model_validate(raw)
-    assert config.runtime.aiperf_source == "git+https://example.com/aiperf@abc123"
-    raw["runtime"]["aiperf_source"] = ""
-    with pytest.raises(ValidationError, match="aiperf_source"):
-        ExperimentConfig.model_validate(raw)
+@pytest.mark.parametrize("sessions", [32, 100])
+def test_token_runs_differ_only_in_the_curve(sessions):
+    base = load_config(REPO / "experiments/b200_token_64_sessions.yaml")
+    other = load_config(REPO / f"experiments/b200_token_{sessions}_sessions.yaml")
+    ignored = ("name", "benchmark.duration_s", "benchmark.workload.concurrency_series")
+    assert _without(other, *ignored) == _without(base, *ignored)
+    assert other.benchmark.workload.target_concurrency == sessions

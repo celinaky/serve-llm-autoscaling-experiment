@@ -6,18 +6,16 @@ import pytest
 from serve_llm_autoscaling.analysis import (
     aggregate_metric,
     analyze_run,
-    build_metrics_inventory,
     build_plot_data,
     load_run_config,
     metric_series,
-    read_sla_policy_events,
-    windowed_ratio,
+    router_report,
     workload_artifact_dir,
 )
 from serve_llm_autoscaling.artifacts import write_json
 from serve_llm_autoscaling.cli import main
-from serve_llm_autoscaling.config import CONTINUOUS_MODE_DIRS, load_config, write_config
-from serve_llm_autoscaling.plotting import primary_points
+from conftest import build_config, series, short_config
+from serve_llm_autoscaling.config import WORKLOAD_DIR, write_config
 from serve_llm_autoscaling.windows import request_timeseries
 
 S = 1_000_000_000
@@ -69,18 +67,21 @@ def _jsonl(path: Path, records):
 
 
 def make_run(root: Path, *, status=True, metrics=True) -> Path:
-    config = load_config("experiments/step_rate_autoscaling.yaml")
+    """A 300s run (1 -> 4 -> 1 sessions) with status and Prometheus telemetry."""
+    config = build_config(
+        {"concurrency_series": series((0, 1), (60, 4), (180, 4), (300, 1)),
+         "unsafe_override": True},
+        deployment={"model_id": "Qwen/Qwen3-0.6B-FP8"}, duration_s=300, grace_period_s=120,
+    )
     root.mkdir(parents=True, exist_ok=True)
     write_config(config, root / "resolved.yaml")
-    series = root / "benchmark" / "request-rate-series"
-    series.mkdir(parents=True)
-    write_json(series / "rate_series.json",
-               {"points": [p.model_dump() for p in config.benchmark.rate_series]})
-    write_json(series / "phase_manifest.json", {"phases": [
+    artifacts = root / "benchmark" / WORKLOAD_DIR
+    artifacts.mkdir(parents=True)
+    write_json(artifacts / "phase_manifest.json", {"phases": [
         {"phase_kind": "warmup", "start_ns": T0 - 30 * S, "end_ns": T0},
         {"phase_kind": "profiling", "start_ns": T0, "end_ns": T0 + 300 * S},
     ]})
-    _jsonl(series / "profile_export.jsonl",
+    _jsonl(artifacts / "profile_export.jsonl",
            [_request(t, t + 0.5, ttft=100 + t) for t in range(0, 300, 2)])
     if status:
         _jsonl(root / "telemetry" / "serve_status.jsonl", [
@@ -94,13 +95,12 @@ def make_run(root: Path, *, status=True, metrics=True) -> Path:
         labels = {"application": APP, "deployment": LLM}
         _jsonl(root / "telemetry" / "serve_metrics.jsonl", [
             _scrape(t, i, [
+                # Families that older runs recorded and analysis no longer reads.
                 _sample("ray_serve_replica_processing_queries", 4, replica="r0", **labels),
-                _sample("ray_serve_replica_processing_queries", 3, replica="r1", **labels),
-                _sample("ray_serve_replica_processing_queries", 9, replica="x",
-                        application=APP, deployment=INGRESS),
-                _sample("ray_serve_request_router_queue_len", 2, replica_id="r0",
-                        actor_id="router", handle_source="REPLICA", **labels),
+                _sample("ray_vllm_num_requests_running", 2, ReplicaId="r0"),
                 _sample("ray_serve_autoscaling_desired_replicas", 1 + (t >= 90) * 2, **labels),
+                _sample("ray_serve_autoscaling_desired_replicas", 9,
+                        application=APP, deployment=INGRESS),
                 _sample("ray_serve_autoscaling_target_replicas", 1 + (t >= 90) * 2, **labels),
             ])
             for i, t in enumerate(range(-5, 200, 5))
@@ -117,12 +117,12 @@ def test_plot_data_aligns_epoch_timestamps(tmp_path: Path):
                                    "profiling_end_s": 300.0}
     times = [s["relative_time_s"] for s in data["serve_status_samples"]]
     assert times == [-10.0, 2.0, 3.0, 90.0, 150.0]
-    points = data["serve_metric_series"]["ongoing_requests"]["points"]
+    points = data["serve_metric_series"]["desired_replicas"]["points"]
     assert points[0]["relative_time_s"] == -5.0 and points[1]["relative_time_s"] == 0.0
     load = data["configured_load"]
-    assert (load["dimension"], load["unit"]) == ("request_rate", "requests/s")
-    assert load["points"][2] == {"time_s": 60.1, "value": 18.0}
-    assert load["markers"] == [60.0, 60.1, 180.0, 180.1, 300.0]
+    assert (load["dimension"], load["unit"]) == ("session_concurrency", "session trees")
+    assert load["points"][1] == {"time_s": 60.0, "value": 4.0}
+    assert load["markers"] == [60.0, 180.0, 300.0]
     assert data["request_windows"][0]["ttft_sample_count"] == 3
     assert data["experiment"]["deployments"] == [LLM]
 
@@ -162,28 +162,18 @@ def test_old_status_records_are_read():
     assert status_samples([old], {LLM}, T0)[0]["running_replicas"] == 2
 
 
-def test_primary_plot_excludes_pre_profile_samples():
-    points = [{"relative_time_s": -10, "v": 1}, {"relative_time_s": 5, "v": 3},
-              {"relative_time_s": 9, "v": None}, {"relative_time_s": 12, "v": 2}]
-    assert primary_points(points, "v") == ([5, 12], [3, 2])
-    # A step series starts at t=0 with the state carried from before profiling.
-    assert primary_points(points, "v", step=True) == ([0.0, 5, 12], [1, 3, 2])
-
-
-def test_metric_filters_and_sums_replicas(tmp_path: Path):
+def test_metrics_are_filtered_to_the_llm_deployment(tmp_path: Path):
     root = make_run(tmp_path / "run")
-    analyze_run(root, plot=False)
+    result = analyze_run(root, plot=False)
     data = json.loads((root / "analysis" / "plot_data.json").read_text())
     series = data["serve_metric_series"]
-    assert series["ongoing_requests"]["points"][1]["value"] == 7  # ingress excluded
-    assert series["router_queue"]["points"][0]["value"] == 2
+    # The ingress sample is excluded; unread families produce no series or warning.
+    assert set(series) == {"desired_replicas", "target_replicas"}
     assert [p["value"] for p in series["desired_replicas"]["points"]][18:20] == [1, 3]
-    assert data["availability"] == {
-        "replica_status": True, "router_queue": True, "ongoing_requests": True,
-        "desired_replicas": True, "target_replicas_metric": True, "healthy_replicas": False,
-        "sla_policy_metrics": False, "sla_policy_events": False, "vllm_latency": False,
-        "token_policy_metrics": False,
-    }
+    assert data["availability"] == {"replica_status": True, "desired_replicas": True,
+                                    "target_replicas_metric": True,
+                                    "token_policy_metrics": False}
+    assert result["warnings"] == ["1 of 5 Serve status samples failed"]
 
 
 def test_duplicate_controller_metrics_are_not_summed():
@@ -210,120 +200,72 @@ def test_conflicting_controller_metrics_are_omitted():
 
 def test_additive_metrics_without_identity_are_excluded():
     labels = {"application": APP, "deployment": LLM}
-    samples = [("n1", _sample("serve_replica_processing_queries", 4, **labels)),
-               ("n2", _sample("serve_replica_processing_queries", 4, **labels))]
+    samples = [("n1", _sample("serve_autoscaling_router_metric", 4, **labels)),
+               ("n2", _sample("serve_autoscaling_router_metric", 4, **labels))]
     warnings = []
-    assert aggregate_metric([(T0, samples)], "sum", ("replica",), T0, warnings, "q") == []
-    assert "missing identity labels ['replica']" in warnings[0]
+    assert aggregate_metric([(T0, samples)], "sum", ("handle",), T0, warnings, "q") == []
+    assert "missing identity labels ['handle']" in warnings[0]
 
 
-def test_per_replica_summation():
+def test_per_handle_aggregation():
     labels = {"application": APP, "deployment": LLM}
-    samples = [("n1", _sample("serve_replica_processing_queries", 4, replica="a", **labels)),
-               ("n2", _sample("serve_replica_processing_queries", 5, replica="b", **labels)),
-               ("n1", _sample("serve_replica_processing_queries", None, replica="c", **labels))]
-    points = aggregate_metric([(T0, samples), (T0 + S, [])], "sum", ("replica",), T0, [],
-                              "ongoing")
+    samples = [("n1", _sample("serve_autoscaling_router_metric", 4, handle="a", **labels)),
+               ("n2", _sample("serve_autoscaling_router_metric", 5, handle="b", **labels)),
+               ("n1", _sample("serve_autoscaling_router_metric", None, handle="c", **labels))]
+    ticks = [(T0, samples), (T0 + S, [])]
+    points = aggregate_metric(ticks, "sum", ("handle",), T0, [], "router")
     assert points == [{"relative_time_s": 0.0, "value": 9, "series_count": 2}]  # no zero gap
-
-
-def test_healthy_replica_count():
-    per_replica = [("n1", _sample("serve_deployment_replica_healthy", v, replica=r,
-                                  application=APP, deployment=LLM))
-                   for r, v in (("a", 1), ("b", 0), ("c", 1))]
-    points = aggregate_metric([(T0, per_replica)], "healthy", ("replica",), T0, [], "h")
-    assert points[0]["value"] == 2
-
-
-def test_counter_deltas_are_node_local():
-    def tick(t, a, b):
-        return (T0 + t * S, [
-            ("n1", _sample("serve_replica_startup_latency_ms_count", a, deployment=LLM)),
-            ("n2", _sample("serve_replica_startup_latency_ms_count", b, deployment=LLM)),
-        ])
-
-    # n2 resets from 7 to 1 between the second and third scrape.
-    points = aggregate_metric(
-        [tick(0, 2, 5), tick(1, 3, 7), tick(2, 3, 1)], "counter_delta", (), T0, [], "c"
-    )
-    assert [(p["relative_time_s"], p["value"]) for p in points] == [(1.0, 3), (2.0, 1)]
+    assert aggregate_metric(ticks, "max", ("handle",), T0, [], "router")[0]["value"] == 5
 
 
 def test_unlabeled_series_are_excluded_with_warning():
-    records = [_scrape(0, 0, [_sample("ray_serve_replica_processing_queries", 2)])]
+    records = [_scrape(0, 0, [_sample("ray_serve_autoscaling_desired_replicas", 2)])]
     warnings = []
     assert metric_series(records, APP, {LLM}, 1, T0, warnings) == {}
     assert "excluded 1 samples without application/deployment labels" in warnings[0]
 
 
-def test_metrics_inventory(tmp_path: Path):
-    root = make_run(tmp_path / "run")
-    inventory = build_metrics_inventory(root / "telemetry" / "serve_metrics.jsonl")
-    entry = inventory["metrics"]["serve_replica_processing_queries"]
-    assert entry["original_names"] == ["ray_serve_replica_processing_queries"]
-    assert entry["labels"] == ["application", "deployment", "replica"]
-    assert entry["source_nodes"] == ["n1"]
-    assert entry["sample_count"] == 41 * 3
-    assert entry["first_timestamp_ns"] == T0 - 5 * S
-    assert entry["last_timestamp_ns"] == T0 + 195 * S
-    assert "serve_deployment_replica_healthy" in inventory["missing_recommended_metrics"]
-    assert "serve_autoscaling_desired_replicas" not in inventory["missing_recommended_metrics"]
-    assert inventory["scrape_errors"] == 1
-
-
-def test_plot_with_all_metrics(tmp_path: Path):
+def test_analysis_with_all_telemetry(tmp_path: Path):
     root = make_run(tmp_path / "run")
     result = analyze_run(root)
     assert result["plot_error"] is None
-    assert (root / "analysis" / "autoscaling_timeline.png").stat().st_size > 10_000
-    for name in ("request_timeseries.json", "metrics_inventory.json", "plot_data.json"):
-        assert (root / "analysis" / name).exists()
+    # No scheduler traces: the diagnostic plots are skipped, the gallery still written.
+    assert result["diagnostic_plots"]["status"] == "skipped"
+    assert sorted(p.name for p in (root / "analysis").iterdir() if p.is_file()) == [
+        "autoscaling_evaluation.json", "concurrency_qps.json", "diagnostic_plots.json",
+        "index.html", "plot_data.json", "request_timeseries.json",
+        "scheduler_trace_inputs.json",
+    ]
 
 
-def test_plot_without_prometheus(tmp_path: Path):
+def test_analysis_without_prometheus(tmp_path: Path):
     root = make_run(tmp_path / "run", metrics=False)
     result = analyze_run(root)
-    assert result["plot_error"] is None
     assert any("Prometheus metrics were not collected" in w for w in result["warnings"])
     data = json.loads((root / "analysis" / "plot_data.json").read_text())
     assert data["serve_metric_series"] == {}
     assert data["availability"]["replica_status"] is True
-    inventory = json.loads((root / "analysis" / "metrics_inventory.json").read_text())
-    assert inventory["collected"] is False
-    assert (root / "analysis" / "autoscaling_timeline.png").exists()
+    evaluation = json.loads((root / "analysis" / "autoscaling_evaluation.json").read_text())
+    assert evaluation["scale_events"] == []
 
 
-def test_plot_with_only_status_telemetry(tmp_path: Path):
+def test_analysis_with_only_status_telemetry(tmp_path: Path):
     root = make_run(tmp_path / "run", metrics=False)
     _jsonl(root / "telemetry" / "serve_metrics.jsonl",
            [_scrape(0, 0, []), _scrape(1, 1, [])])
     result = analyze_run(root)
-    assert result["plot_error"] is None
     # Missing Serve metrics are warnings, not zero-valued series.
-    assert any("serve_request_router_queue_len was not exported" in w
+    assert any("serve_autoscaling_desired_replicas was not exported" in w
                for w in result["warnings"])
     data = json.loads((root / "analysis" / "plot_data.json").read_text())
     assert data["serve_metric_series"] == {}
-    assert data["availability"]["router_queue"] is False
+    assert data["availability"]["desired_replicas"] is False
 
 
-def test_plot_without_any_telemetry(tmp_path: Path):
+def test_analysis_without_any_telemetry(tmp_path: Path):
     root = make_run(tmp_path / "run", status=False, metrics=False)
     result = analyze_run(root)
-    assert result["plot_error"] is None
     assert any("Serve status telemetry was not collected" in w for w in result["warnings"])
-
-
-def test_plot_error_keeps_derived_data(tmp_path: Path, monkeypatch):
-    root = make_run(tmp_path / "run")
-
-    def broken(*args):
-        raise RuntimeError("no display")
-
-    monkeypatch.setattr("serve_llm_autoscaling.plotting.plot_timeline", broken)
-    result = analyze_run(root)
-    assert result["plot_error"] == "RuntimeError: no display"
-    assert (root / "analysis" / "plot_data.json").exists()
 
 
 def test_analyze_command_regenerates_with_new_window(tmp_path: Path, capsys):
@@ -334,14 +276,14 @@ def test_analyze_command_regenerates_with_new_window(tmp_path: Path, capsys):
     assert timeseries["windows"][1]["window_start_s"] == 10
     data = json.loads((root / "analysis" / "plot_data.json").read_text())
     assert data["experiment"]["window_s"] == 10
-    assert (root / "analysis" / "autoscaling_timeline.png").exists()
+    assert (root / "analysis" / "index.html").exists()
 
 
 def test_analyze_command_no_plot(tmp_path: Path):
     root = make_run(tmp_path / "run")
     assert main(["analyze", str(root), "--no-plot"]) == 0
     assert (root / "analysis" / "plot_data.json").exists()
-    assert not (root / "analysis" / "autoscaling_timeline.png").exists()
+    assert not (root / "analysis" / "index.html").exists()
 
 
 def test_analyze_command_rejects_short_tail_window(tmp_path: Path, capsys):
@@ -359,15 +301,15 @@ def test_old_runs_without_analysis_config_load(tmp_path: Path):
 
 def test_build_plot_data_requires_time_origin(tmp_path: Path):
     root = make_run(tmp_path / "run")
-    series = root / "benchmark" / "request-rate-series"
-    (series / "phase_manifest.json").unlink()
-    (series / "profile_export.jsonl").write_text("")
+    artifacts = root / "benchmark" / WORKLOAD_DIR
+    (artifacts / "phase_manifest.json").unlink()
+    (artifacts / "profile_export.jsonl").write_text("")
     config = load_run_config(root)
     with pytest.raises(ValueError, match="cannot align"):
-        build_plot_data(root, config, config.analysis, request_timeseries(series))
+        build_plot_data(root, config, config.analysis, request_timeseries(artifacts))
 
 
-# --- AgentX concurrency ramp ------------------------------------------------
+# --- Session concurrency ----------------------------------------------------
 
 
 def _agentx_request(credit_s, end_s, depth):
@@ -379,7 +321,7 @@ def _agentx_request(credit_s, end_s, depth):
 def make_agentx_run(root: Path, config) -> Path:
     root.mkdir(parents=True, exist_ok=True)
     write_config(config, root / "resolved.yaml")
-    ramp = root / "benchmark" / CONTINUOUS_MODE_DIRS[config.benchmark.mode]
+    ramp = root / "benchmark" / WORKLOAD_DIR
     ramp.mkdir(parents=True)
     duration = config.benchmark.duration_s
     write_json(ramp / "phase_manifest.json", {"phases": [
@@ -397,24 +339,14 @@ def make_agentx_run(root: Path, config) -> Path:
 
 
 @pytest.fixture
-def agentx_run(agentx_config, tmp_path: Path):
-    config = agentx_config(
-        {"concurrency_ramp_duration_s": 120, "target_concurrency": 4, "unsafe_override": True},
-        duration_s=200, grace_period_s=30,
-    )
-    return make_agentx_run(tmp_path / "run", config)
+def agentx_run(tmp_path: Path):
+    return make_agentx_run(tmp_path / "run", short_config())
 
 
 def test_workload_artifact_dir(agentx_config, tmp_path: Path):
     assert workload_artifact_dir(tmp_path, agentx_config()) == (
         tmp_path / "benchmark" / "agentx-concurrency-ramp"
     )
-    series = load_config("experiments/step_rate.yaml")
-    assert workload_artifact_dir(tmp_path, series) == (
-        tmp_path / "benchmark" / "request-rate-series"
-    )
-    with pytest.raises(ValueError, match="not a continuous workload"):
-        workload_artifact_dir(tmp_path, load_config("experiments/baseline.yaml"))
 
 
 def test_agentx_analysis_reads_ramp_artifacts(agentx_run: Path):
@@ -443,7 +375,9 @@ def test_agentx_plot_data_uses_session_concurrency(agentx_run: Path):
 def test_agentx_concurrency_qps_artifact(agentx_run: Path):
     analyze_run(agentx_run, plot=False)
     result = json.loads((agentx_run / "analysis" / "concurrency_qps.json").read_text())
-    assert (result["target_concurrency"], result["ramp_duration_s"]) == (4, 120)
+    assert result["target_concurrency"] == 4
+    assert result["concurrency_series"] == [{"time_s": 0.0, "sessions": 1},
+                                            {"time_s": 120.0, "sessions": 4}]
     first, *_ = windows = result["windows"]
     # Midpoint 2.5s of a 1 -> 4 ramp over 120s.
     assert first["configured_session_concurrency"] == pytest.approx(1 + 3 * 2.5 / 120)
@@ -459,151 +393,7 @@ def test_agentx_concurrency_qps_artifact(agentx_run: Path):
     assert result["summary"]["mean_offered_qps"] == pytest.approx(75 / 200)
 
 
-def test_agentx_plot_renders(agentx_run: Path):
-    result = analyze_run(agentx_run)
-    assert result["plot_error"] is None
-    assert (agentx_run / "analysis" / "autoscaling_timeline.png").stat().st_size > 10_000
-
-
-def test_series_run_writes_no_concurrency_artifact(tmp_path: Path):
-    root = make_run(tmp_path / "run")
-    analyze_run(root, plot=False)
-    assert not (root / "analysis" / "concurrency_qps.json").exists()
-
-
-def test_ramp_run_writes_no_slo_calibration(agentx_run: Path):
-    analyze_run(agentx_run, plot=False)
-    assert not (agentx_run / "analysis" / "slo_calibration.json").exists()
-
-
-# --- AgentX fixed concurrency -----------------------------------------------
-
-
-@pytest.fixture
-def agentx_fixed_run(agentx_fixed_config, tmp_path: Path):
-    config = agentx_fixed_config({"unsafe_override": True}, duration_s=200, grace_period_s=30)
-    root = make_agentx_run(tmp_path / "run", config)
-    # AIPerf exits 30s after load ends, so windows extend past duration_s.
-    write_json(root / "benchmark" / "lifecycle.json",
-               {"profiling_start_ns": T0, "aiperf_exited_ns": T0 + 230 * S})
-    return root
-
-
-def test_agentx_fixed_workload_artifact_dir(agentx_fixed_config, tmp_path: Path):
-    assert workload_artifact_dir(tmp_path, agentx_fixed_config()) == (
-        tmp_path / "benchmark" / "agentx-fixed-concurrency"
-    )
-
-
-def test_agentx_fixed_configured_load_holds_then_stops(agentx_fixed_run: Path):
-    analyze_run(agentx_fixed_run, plot=False)
-    data = json.loads((agentx_fixed_run / "analysis" / "plot_data.json").read_text())
-    load = data["configured_load"]
-    assert load["dimension"] == "session_concurrency"
-    assert load["points"] == [{"time_s": 0.0, "value": 8.0},
-                              {"time_s": 200.0, "value": 8.0},
-                              {"time_s": 200.0, "value": 0.0}]
-    assert load["markers"] == []  # no ramp
-    assert data["lifecycle"]["markers"]["ramp_end_s"] is None
-    assert data["experiment"]["mode"] == "agentx_fixed_concurrency"
-
-
-def test_agentx_fixed_concurrency_qps_artifact(agentx_fixed_run: Path):
-    analyze_run(agentx_fixed_run, plot=False)
-    result = json.loads((agentx_fixed_run / "analysis" / "concurrency_qps.json").read_text())
-    assert result["target_concurrency"] == 8
-    assert "ramp_duration_s" not in result
-    windows = result["windows"]
-    during = [w for w in windows if w["window_end_s"] <= 200]
-    after = [w for w in windows if w["window_start_s"] >= 200]
-    assert during and after
-    assert {w["configured_session_concurrency"] for w in during} == {8.0}
-    assert {w["configured_session_concurrency"] for w in after} == {0.0}
-    assert windows[0]["requests_per_second_per_configured_session"] == pytest.approx(0.6 / 8)
-
-
-def test_agentx_fixed_writes_slo_calibration(agentx_fixed_run: Path):
-    analyze_run(agentx_fixed_run, plot=False)
-    calibration = json.loads(
-        (agentx_fixed_run / "analysis" / "slo_calibration.json").read_text()
-    )
-    # 50 root + 25 subagent profiling requests; the warmup record is excluded.
-    assert calibration["successful_request_count"] == 75
-    assert calibration["failed_request_count"] == 0
-    assert calibration["recommended_ttft_slo_ms"] == calibration["p90_ttft_ms"] == 100.0
-
-
-def test_agentx_fixed_plot_renders(agentx_fixed_run: Path):
-    result = analyze_run(agentx_fixed_run)
-    assert result["plot_error"] is None
-    assert (agentx_fixed_run / "analysis" / "autoscaling_timeline.png").stat().st_size > 10_000
-
-
-def test_analyze_cli_prints_slo_recommendation(agentx_fixed_run: Path, capsys):
-    assert main(["analyze", str(agentx_fixed_run), "--no-plot"]) == 0
-    assert "analysis.ttft_slo_ms: 100" in capsys.readouterr().out
-
-
-# --- vLLM and SLA policy series ----------------------------------------------
-
-
-def _vllm(name, value, replica="r0", kind="histogram"):
-    family = name.removeprefix("ray_")
-    for suffix in ("_sum", "_count", "_bucket", "_total"):
-        family = family.removesuffix(suffix)
-    return {"name": name, "normalized_name": family, "type": kind,
-            "labels": {"ReplicaId": replica, "model_name": "m"}, "value": value}
-
-
-def _vllm_ticks(values):
-    """(t, [(replica, sum, count)]) rows as windowed_ratio's tick inputs."""
-    numerators, denominators = [], []
-    for t, rows in values:
-        numerators.append((T0 + t * S, [
-            (None, _vllm("ray_vllm_time_to_first_token_seconds_sum", total, replica))
-            for replica, total, _ in rows
-        ]))
-        denominators.append((T0 + t * S, [
-            (None, _vllm("ray_vllm_time_to_first_token_seconds_count", count, replica))
-            for replica, _, count in rows
-        ]))
-    return numerators, denominators
-
-
-def test_windowed_ratio_uses_counter_increases_over_the_window():
-    numerators, denominators = _vllm_ticks([
-        (0, [("r0", 1.0, 1)]), (10, [("r0", 3.0, 2)]), (20, [("r0", 3.0, 2)]),
-        (30, [("r0", 9.0, 4)]), (40, [("r0", 9.0, 4), ("r1", 0.5, 1)]),
-    ])
-    points = windowed_ratio(numerators, denominators, 20, T0, scale=1000)
-    # 10s and 20s: (3-1)/(2-1) against the t=0 sample (the latest at or before
-    # t-20); 30s: (9-3)/(4-2) against t=10; 40s: r0 (9-3)/(4-2) against t=20
-    # plus r1's increase from its first sample, which is itself (none yet).
-    assert [(p["relative_time_s"], p["value"]) for p in points] == [
-        (10.0, 2000.0), (20.0, 2000.0), (30.0, 3000.0), (40.0, 3000.0),
-    ]
-    assert points[-1]["series_count"] == 2
-    assert windowed_ratio(numerators[:1], denominators[:1], 20, T0) == []
-
-
-def test_vllm_series_are_attributed_by_replica_id():
-    labels = {"application": APP, "deployment": LLM}
-    records = [
-        _scrape(t, i, [
-            _sample("ray_serve_replica_processing_queries", 1, replica="r0", **labels),
-            _vllm("ray_vllm_num_requests_running", 2.0 + t, "r0", "gauge"),
-            _vllm("ray_vllm_num_requests_running", 100.0, "other-app", "gauge"),
-            _vllm("ray_vllm_time_to_first_token_seconds_sum", 0.5 * t, "r0"),
-            _vllm("ray_vllm_time_to_first_token_seconds_count", float(t), "r0"),
-        ])
-        for i, t in enumerate(range(0, 11, 5))
-    ]
-    warnings = []
-    series = metric_series(records, APP, {LLM}, 5, T0, warnings, window_s=5)
-    assert [p["value"] for p in series["vllm_running_requests"]["points"]] == [2, 7, 12]
-    assert [p["value"] for p in series["vllm_mean_ttft_ms"]["points"]] == [500.0, 500.0]
-    assert series["vllm_mean_ttft_ms"]["aggregation"] == "windowed_ratio_5s"
-    assert not warnings
+# --- Token policy series ----------------------------------------------------
 
 
 def test_policy_metric_gauge_is_split_by_its_metric_label():
@@ -622,7 +412,7 @@ def test_policy_metric_gauge_is_split_by_its_metric_label():
     series = metric_series(records, APP, {LLM}, 5, T0, warnings)
     assert [p["value"] for p in series["token_prefill_replicas"]["points"]] == [1.0, 6.0, 11.0]
     assert [p["value"] for p in series["token_decode_replicas"]["points"]] == [2.0, 2.0, 2.0]
-    assert [p["value"] for p in series["token_desired_replicas"]["points"]] == [3.0, 3.0, 3.0]
+    assert set(series) == {"token_prefill_replicas", "token_decode_replicas"}
     assert "token_prefill_backlog" not in series
     assert not warnings
 
@@ -653,37 +443,132 @@ def test_router_metric_gauge_rebuilds_token_prefill_replicas():
     assert "token_prefill_replicas" not in series
 
 
-def test_sla_policy_events_are_aligned_and_filtered(tmp_path: Path):
-    _jsonl(tmp_path / "telemetry" / "sla_policy_events.jsonl", [
-        {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 - 5 * S,
-         "deployment": f"Deployment(name='{LLM}', app='{APP}')", "reason": "model_not_ready",
-         "recommended_replicas": 1.0, "advisory": False},
-        {"timestamp_ns": T0, "error": "OSError: gone"},
-        {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 + 40 * S,
-         "deployment": "Deployment(name='LLMServer:y', app='other')", "reason": "capacity",
-         "recommended_replicas": 3.0, "advisory": False},
-        {"timestamp_ns": T0, "error": None, "logged_at_ns": T0 + 30 * S,
-         "deployment": f"Deployment(name='{LLM}', app='{APP}')", "reason": "capacity",
-         "recommended_replicas": 2.0, "advisory": False},
-    ])
-    events = read_sla_policy_events(tmp_path, APP, T0)
-    assert [(e["relative_time_s"], e["reason"], e["recommended_replicas"]) for e in events] == [
-        (-5.0, "model_not_ready", 1.0), (30.0, "capacity", 2.0),
+ROUTER_PREFILL = "outstanding_effective_prefill_tokens"
+
+
+def _report(value, replica, server=LLM, **labels):
+    """The router replica's reported prefill load, as current Ray exports it."""
+    labels = {"application": APP, "deployment": "LLMRouter", "replica": replica,
+              "metric": f"{ROUTER_PREFILL}:{server}", **labels}
+    return _sample("ray_serve_autoscaling_replica_metric", value, **labels)
+
+
+def test_router_report_presents_the_replica_gauge_as_the_router_gauge():
+    sample = _report(4000.0, "r1")
+    assert router_report(sample) == {
+        "name": "ray_serve_autoscaling_router_metric",
+        "normalized_name": sample["normalized_name"],
+        "type": "gauge",
+        "value": 4000.0,
+        # The server the router is bound to, with the router replica as the handle.
+        "labels": {"application": APP, "deployment": LLM, "replica": "r1", "handle": "r1",
+                   "metric": ROUTER_PREFILL},
+    }
+    # The recorded sample is not modified.
+    assert sample == _report(4000.0, "r1")
+    # The exporter's ray_ prefix is optional.
+    bare = {**sample, "name": "serve_autoscaling_replica_metric"}
+    assert router_report(bare)["labels"]["deployment"] == LLM
+
+
+@pytest.mark.parametrize("sample", [
+    # The earlier per-handle gauge is already in the reported shape.
+    _sample("ray_serve_autoscaling_router_metric", 4.0, application=APP, deployment=LLM,
+            handle="h1", metric=ROUTER_PREFILL),
+    # Other custom metrics a replica reports, on the router or the server.
+    _sample("ray_serve_autoscaling_replica_metric", 4.0, application=APP,
+            deployment="LLMRouter", replica="r1", metric="queued_requests:" + LLM),
+    _sample("ray_serve_autoscaling_replica_metric", 4.0, application=APP,
+            deployment=LLM, replica="r1", metric=ROUTER_PREFILL),
+    _sample("ray_serve_autoscaling_replica_metric", 4.0, application=APP,
+            deployment="LLMRouter", replica="r1", metric=ROUTER_PREFILL + "_total:" + LLM),
+    # The same metric name under another family, and samples without labels.
+    _sample("ray_serve_autoscaling_policy_metric", 4.0, application=APP, deployment=LLM,
+            metric=ROUTER_PREFILL),
+    _sample("ray_serve_autoscaling_desired_replicas", 2.0, application=APP, deployment=LLM),
+    _sample("ray_serve_autoscaling_replica_metric", 4.0),
+    {"name": "ray_serve_autoscaling_replica_metric", "value": 4.0},
+])
+def test_router_report_passes_other_samples_through(sample):
+    assert router_report(sample) is sample
+
+
+def test_replica_metric_gauge_gives_the_max_router_prefill_mean():
+    records = [
+        _scrape(t, i, [
+            _report(1000.0 * t, "r1"),
+            _report(4000.0, "r2"),
+            # A NaN gap in one router's report is not a value.
+            _report(None, "r3"),
+            # The same metric for a server this analysis does not cover, for
+            # another application, and another metric of the same router.
+            _report(99999.0, "r1", server="LLMServer:other-model"),
+            _report(88888.0, "r4", application="other-app"),
+            _sample("ray_serve_autoscaling_replica_metric", 77777.0, application=APP,
+                    deployment="LLMRouter", replica="r1", metric="queued_requests:" + LLM),
+        ])
+        for i, t in enumerate(range(0, 11, 5))
     ]
-    assert read_sla_policy_events(tmp_path / "missing", APP, T0) == []
+    warnings = []
+    series = metric_series(
+        records, APP, {LLM}, 5, T0, warnings, target_prefill_tokens_per_replica=2000
+    )
+    assert series["token_router_prefill_mean"] == {
+        "metric": "serve_autoscaling_router_metric",
+        "aggregation": "max",
+        "points": [
+            {"relative_time_s": 0.0, "value": 4000.0, "series_count": 2},
+            {"relative_time_s": 5.0, "value": 5000.0, "series_count": 2},
+            {"relative_time_s": 10.0, "value": 10000.0, "series_count": 2},
+        ],
+    }
+    assert [p["value"] for p in series["token_prefill_replicas"]["points"]] == [2.0, 2.5, 5.0]
+    assert set(series) == {"token_router_prefill_mean", "token_prefill_replicas"}
+    assert not warnings
 
 
-# --- AgentX concurrency series ----------------------------------------------
+def test_replica_metric_gauge_with_only_gaps_gives_no_point():
+    records = [
+        _scrape(0, 0, [_report(None, "r1"), _report(None, "r2")]),
+        _scrape(5, 1, [_report(None, "r1"), _report(3000.0, "r2")]),
+    ]
+    series = metric_series(records, APP, {LLM}, 5, T0, [], 2000)
+    assert series["token_router_prefill_mean"]["points"] == [
+        {"relative_time_s": 5.0, "value": 3000.0, "series_count": 1},
+    ]
+    # Only gaps, or only another server's report: no series at all.
+    assert metric_series(records[:1], APP, {LLM}, 5, T0, [], 2000) == {}
+    other = [_scrape(0, 0, [_report(3000.0, "r1", server="LLMServer:other-model")])]
+    assert metric_series(other, APP, {LLM}, 5, T0, [], 2000) == {}
+
+
+def test_replica_metric_copies_from_several_nodes_are_one_series():
+    records = [
+        _scrape(0, 0, [_report(3000.0, "r1")], node="n1"),
+        _scrape(0, 0, [_report(3000.0, "r1"), _report(1000.0, "r2")], node="n2"),
+    ]
+    (point,) = metric_series(records, APP, {LLM}, 5, T0, [])["token_router_prefill_mean"]["points"]
+    assert (point["value"], point["series_count"]) == (3000.0, 2)
+
+
+def test_policy_metric_gauge_takes_precedence_over_the_router_report():
+    records = [_scrape(0, 0, [
+        _report(8000.0, "r1"),
+        _sample("ray_serve_autoscaling_policy_metric", 3.0, application=APP, deployment=LLM,
+                metric="prefill_required_replicas"),
+    ])]
+    series = metric_series(records, APP, {LLM}, 5, T0, [], 2000)
+    assert series["token_prefill_replicas"]["metric"] == "serve_autoscaling_policy_metric"
+    assert [p["value"] for p in series["token_prefill_replicas"]["points"]] == [3.0]
+    assert [p["value"] for p in series["token_router_prefill_mean"]["points"]] == [8000.0]
+
+
+# --- A curve that rises, falls and holds -------------------------------------
 
 
 @pytest.fixture
-def agentx_curve_run(agentx_config, tmp_path: Path):
-    config = agentx_config(
-        {"concurrency_ramp_duration_s": None, "target_concurrency": 4, "unsafe_override": True,
-         "concurrency_series": [{"time_s": 0, "sessions": 1}, {"time_s": 100, "sessions": 4},
-                                {"time_s": 150, "sessions": 2}]},
-        duration_s=200, grace_period_s=30,
-    )
+def agentx_curve_run(tmp_path: Path):
+    config = short_config({"concurrency_series": series((0, 1), (100, 4), (150, 2))})
     return make_agentx_run(tmp_path / "run", config)
 
 
@@ -705,14 +590,8 @@ def test_agentx_curve_concurrency_qps_follows_curve(agentx_curve_run: Path):
         {"time_s": 0.0, "sessions": 1}, {"time_s": 100.0, "sessions": 4},
         {"time_s": 150.0, "sessions": 2},
     ]
-    assert "ramp_duration_s" not in result
     windows = result["windows"]
     assert windows[0]["configured_session_concurrency"] == pytest.approx(1.075)  # mid 2.5s
     assert windows[20]["configured_session_concurrency"] == pytest.approx(3.9)   # mid 102.5s
     assert windows[35]["configured_session_concurrency"] == 2.0                  # mid 177.5s
     assert windows[-1]["configured_session_concurrency"] == 2.0                  # mid 197.5s
-
-
-def test_agentx_curve_plots(agentx_curve_run: Path):
-    analyze_run(agentx_curve_run, plot=True)
-    assert (agentx_curve_run / "analysis" / "autoscaling_timeline.png").exists()

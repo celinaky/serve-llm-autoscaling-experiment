@@ -4,11 +4,12 @@
   2. engine queue time: the part of TTFT the request spent waiting in the
      engine before its first prefill chunk was scheduled (queue_ms)
   3. client-side TTFT (client_ttft_ms)
-All from analysis/load_requests.csv (tools/load_breakdown.py). Request count
+All from analysis/load_requests.csv (diagnostics/load_breakdown.py). Request count
 under each point of the top panel. Target dotted on the top panel; scale
 decisions and startup bands on every panel; load phases shaded.
 
-usage: python tools/arrival_stats_stack.py runs/<run_dir> [--window 120] [--min-samples 5]
+Run by ``autoscale-harness analyze``; by hand:
+    python -m serve_llm_autoscaling.diagnostics.arrival_stats_stack runs/<run_dir> [--window 120] [--min-samples 5]
            [--start 0] [--end END] [--out PATH]
 """
 import argparse, csv, glob, json

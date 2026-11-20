@@ -196,9 +196,7 @@ def _step_lookup(points: list[dict[str, Any]], key: str = "value"):
     return at
 
 
-def scale_events(
-    series: dict[str, Any], status: list[dict[str, Any]], sla_events: list[dict[str, Any]]
-) -> list[dict[str, Any]]:
+def scale_events(series: dict[str, Any], status: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Every change of the autoscaler's desired replica count.
 
     ``running_matched_at_s`` is when the running count first equalled the new
@@ -208,8 +206,6 @@ def scale_events(
     points = (series.get(key) or {}).get("points") or []
     good = [s for s in status if s.get("error") is None]
     status_times = [s["relative_time_s"] for s in good]
-    reason_at = _step_lookup(sla_events, "reason")
-    recommended_at = _step_lookup((series.get("sla_recommended_replicas") or {}).get("points") or [])
 
     events = []
     for previous, point in zip(points, points[1:]):
@@ -220,8 +216,6 @@ def scale_events(
             "from_replicas": previous["value"],
             "to_replicas": point["value"],
             "direction": "up" if point["value"] > previous["value"] else "down",
-            "sla_reason": reason_at(point["relative_time_s"]),
-            "sla_recommended_replicas": recommended_at(point["relative_time_s"]),
         })
     for event, following in zip(events, events[1:] + [None]):
         lo = bisect_left(status_times, event["time_s"])
@@ -274,103 +268,6 @@ def latency_by_replica_count(
             "mean_itl_ms": mean(itl), "p90_itl_ms": percentile(itl, 0.90),
         })
     return rows
-
-
-# --- SLA policy -------------------------------------------------------------------
-
-
-def _error_summary(pairs: list[tuple[float, float]]) -> dict[str, Any]:
-    """Predicted-minus-actual errors; MAPE is over non-zero actuals."""
-    diffs = [p - a for p, a in pairs]
-    relative = [abs(p - a) / a for p, a in pairs if a > 0]
-    return {
-        "samples": len(pairs),
-        "bias_ms": mean(diffs),
-        "mae_ms": mean([abs(d) for d in diffs]),
-        "mape": mean(relative),
-    }
-
-
-def prediction_error(
-    series: dict[str, Any], status: list[dict[str, Any]], windows: list[dict[str, Any]]
-) -> dict[str, Any]:
-    """How the policy's predictions compare with what was measured.
-
-    Predictions are for the recommended replica count, so only scrapes where
-    that equals the running count (and the model is ready) are comparable.
-    The server mean is vLLM's, the policy's own input; the client mean is the
-    rolling mean of the request window containing the scrape.
-    """
-    def values(key: str) -> dict[float, float]:
-        return {p["relative_time_s"]: p["value"] for p in (series.get(key) or {}).get("points") or []}
-
-    ready = values("sla_model_ready")
-    recommended = values("sla_recommended_replicas")
-    running_at = _step_lookup([s for s in status if s.get("error") is None], "running_replicas")
-    window_ends = [w["window_end_s"] for w in windows]
-
-    def client_mean(name: str, time_s: float) -> float | None:
-        i = bisect_left(window_ends, time_s)
-        if i >= len(windows) or windows[i]["window_start_s"] > time_s:
-            return None
-        if not windows[i].get(f"rolling_{name}_sample_count"):
-            return None
-        return windows[i][f"rolling_mean_{name}_ms"]
-
-    result: dict[str, Any] = {}
-    for name in ("ttft", "itl"):
-        predicted = values(f"sla_predicted_{name}_ms")
-        server = values(f"vllm_mean_{name}_ms")
-        comparable = [
-            t for t in predicted
-            if ready.get(t, 0) >= 1 and recommended.get(t) == running_at(t)
-        ]
-        against_server = [(predicted[t], server[t]) for t in comparable if t in server]
-        against_client = [
-            (predicted[t], c) for t in comparable
-            if (c := client_mean(name, t)) is not None
-        ]
-        client_vs_server = [
-            (c, server[t]) for t in server if (c := client_mean(name, t)) is not None
-        ]
-        result[name] = {
-            "predicted_vs_server": _error_summary(against_server),
-            "predicted_vs_client": _error_summary(against_client),
-            # What users saw minus what the policy saw: router and proxy queueing.
-            "client_vs_server": _error_summary(client_vs_server),
-        }
-    return result
-
-
-def sla_evaluation(plot_data: dict[str, Any], horizon_s: float) -> dict[str, Any] | None:
-    series = plot_data["serve_metric_series"]
-    events = plot_data["sla_policy_events"]
-    availability = plot_data["availability"]
-    if not (availability["sla_policy_metrics"] or availability["sla_policy_events"]):
-        return None
-
-    ready_points = (series.get("sla_model_ready") or {}).get("points") or []
-    rows_points = (series.get("sla_training_rows") or {}).get("points") or []
-    timeline = []
-    time_in_reason: dict[str, float] = defaultdict(float)
-    for event, following in zip(events, events[1:] + [None]):
-        end = horizon_s if following is None else following["relative_time_s"]
-        timeline.append({
-            "start_s": event["relative_time_s"], "end_s": end, "reason": event["reason"],
-            "recommended_replicas": event["recommended_replicas"],
-        })
-        time_in_reason[event["reason"]] += max(0.0, min(end, horizon_s) - max(event["relative_time_s"], 0.0))
-    return {
-        "advisory": next((e["advisory"] for e in events), None),
-        "model_ready_at_s": next((p["relative_time_s"] for p in ready_points if p["value"] >= 1), None),
-        "first_capacity_decision_at_s": next(
-            (e["relative_time_s"] for e in events if e["reason"] == "capacity"), None
-        ),
-        "final_training_rows": rows_points[-1]["value"] if rows_points else None,
-        "reason_timeline": timeline,
-        "time_in_reason_s": dict(time_in_reason),
-        "prediction": prediction_error(series, plot_data["serve_status_samples"], plot_data["request_windows"]),
-    }
 
 
 # --- Token policy -----------------------------------------------------------------
@@ -728,7 +625,7 @@ def evaluate_run(plot_data: dict[str, Any], requests: list[Request]) -> dict[str
     slo_percentile = experiment.get("slo_percentile", 0.95)
     gpus = experiment.get("gpus_per_replica", 1)
     periods = scoring_periods(experiment, plot_data["lifecycle"])
-    events = scale_events(series, status, plot_data["sla_policy_events"])
+    events = scale_events(series, status)
     return {
         "schema_version": SCHEMA_VERSION,
         "experiment": experiment["name"],
@@ -757,6 +654,5 @@ def evaluate_run(plot_data: dict[str, Any], requests: list[Request]) -> dict[str
         "latency_by_replica_count": latency_by_replica_count(
             requests, t0, status, periods["steady"]
         ),
-        "sla_policy": sla_evaluation(plot_data, periods["whole_run"]["end_s"]),
         "token_policy": token_policy_evaluation(plot_data, requests, events, periods["steady"]),
     }

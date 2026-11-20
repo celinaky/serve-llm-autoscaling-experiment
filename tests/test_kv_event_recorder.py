@@ -218,12 +218,19 @@ def test_telemetry_enables_recorder_for_kv_routing_and_can_opt_out(tmp_path):
     from serve_llm_autoscaling.config import load_config
     from serve_llm_autoscaling.telemetry import TelemetrySession
 
-    config = load_config("experiments/h100_workday_curve_mooncake_decay_400s.yaml")
-    session = TelemetrySession(config, tmp_path, kv_event_discover=lambda: [])
-    assert any(isinstance(c, GPUKVEventRecorder) for c in session.collectors)
+    def recorders(config):
+        session = TelemetrySession(config, tmp_path, kv_event_discover=lambda: [])
+        return [c for c in session.collectors if isinstance(c, GPUKVEventRecorder)]
+
+    config = load_config("experiments/b200_token_64_sessions.yaml")
+    (recorder,) = recorders(config)
+    assert recorder.path == tmp_path / "telemetry" / "gpu_kv_events.jsonl"
     config.analysis.record_gpu_kv_events = False
-    session = TelemetrySession(config, tmp_path, kv_event_discover=lambda: [])
-    assert not any(isinstance(c, GPUKVEventRecorder) for c in session.collectors)
+    assert recorders(config) == []
+    # Only the KV-aware router's replicas advertise the event stream.
+    config = load_config("experiments/b200_default_target32_64_sessions.yaml")
+    config.deployment.routing.policy = None
+    assert recorders(config) == []
 
 
 def test_discovery_uses_running_replica_actor_name_and_filters_application(monkeypatch):

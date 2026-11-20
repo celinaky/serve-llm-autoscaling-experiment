@@ -1,0 +1,76 @@
+# Serve's default autoscaling policy (target_ongoing_requests 12) under the
+# 64-session curve; the baseline for b200_token_64_sessions.yaml.
+#
+# Workload: AgentX sessions ramp 1 -> 64 (one new cold session every 30s,
+# 0-1890s), hold at 64 (1890-3780s), then ramp back down to 1 (one session
+# fewer every 30s, 3780-5670s). AIPerf then drains for up to 120s and the
+# harness watches the idle deployment for 180s. The seed is shared by all
+# configs, so sessions start at the same times in every run of this curve.
+#
+# Deployment: Qwen3.6-27B-FP8, one B200 per replica, 1-8 replicas, KV-aware
+# routing, 192 GiB native CPU KV offload per replica.
+#
+# To evaluate a policy change, copy this file and edit deployment.autoscaling
+# only; keep the workload and engine identical to the run you compare against.
+name: b200-default-target12-64-sessions
+deployment:
+  model_id: Qwen/Qwen3.6-27B-FP8
+  accelerator_type: B200
+  routing:
+    policy: kv_aware
+    # Largest request body HAProxy forwards to the router. A longer body is
+    # truncated and the router falls back to load balancing.
+    haproxy_request_buffer_bytes: 8388608
+  engine:
+    tensor_parallel_size: 1
+    max_model_len: 262144
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 1024
+    max_num_batched_tokens: 16384
+    enable_prefix_caching: true
+    # CPU KV cache per replica, in GiB. It must be larger than the GPU KV
+    # cache to hold anything the GPU has evicted: this model offloads ~34 KB
+    # per token, so 192 GiB is ~6.0M tokens against ~4.07M on a B200.
+    # 8 replicas x 192 GiB = 1.5 TB of host RAM.
+    kv_offloading_backend: native
+    kv_offloading_size: 192
+    kv_cache_dtype: fp8
+    language_model_only: true
+  autoscaling:
+    policy:
+      # Serve's default policy:
+      # replicas = ceil(look-back mean of ongoing requests / target_ongoing_requests).
+      name: default
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 8
+    # Each session keeps about one request in flight, so the 64-session hold
+    # asks for ceil(64 / 12) = 6 replicas.
+    target_ongoing_requests: 12
+    # A scale-up needs the policy to ask for more replicas for this long, on
+    # top of the look-back mean; likewise for scale-down.
+    upscale_delay_s: 40
+    downscale_delay_s: 600
+    metrics_interval_s: 2
+    # Window of the mean both policies scale on, and of the router's report.
+    look_back_period_s: 60
+    upscaling_factor: 1.0
+    downscaling_factor: 1.0
+benchmark:
+  duration_s: 5670
+  grace_period_s: 120
+  post_load_observation_s: 180
+  workload:
+    public_dataset: semianalysis_cc_traces_weka_062126_256k
+    concurrency_series:
+      - {time_s: 0, sessions: 1}
+      - {time_s: 1890, sessions: 64}
+      - {time_s: 3780, sessions: 64}
+      - {time_s: 5670, sessions: 1}
+    seed: 42
+analysis:
+  # Targets the run is scored against (p95 within target).
+  ttft_slo_ms: 5000
+  itl_slo_ms: 50
+  # Score the whole curve; there is no single steady state.
+  warmup_s: 0

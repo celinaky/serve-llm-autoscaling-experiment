@@ -1,7 +1,0 @@
-[NOTICE]   (3487077) : haproxy version is 2.8.25-5cf5d0683
-[NOTICE]   (3487077) : path to executable is /home/ray/anaconda3/lib/python3.12/site-packages/ray_haproxy/bin/haproxy
-[WARNING]  (3487077) : config : log format ignored for frontend 'prometheus' since it has no log address.
-[WARNING]  (3487077) : Proxy prometheus stopped (cumulated conns: FE: 0, BE: 0).
-[WARNING]  (3487077) : Proxy http_frontend stopped (cumulated conns: FE: 0, BE: 0).
-[WARNING]  (3487077) : Proxy stats stopped (cumulated conns: FE: 0, BE: 0).
-[WARNING]  (3487077) : Proxy default_backend stopped (cumulated conns: FE: 0, BE: 0).

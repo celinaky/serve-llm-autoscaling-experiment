@@ -1,5 +1,0 @@
-replicas: 1=pid 1025265 (first request 0s)
-lane source: recorded initial lane IDs
-Bar ends are last observed request ends, not verified session completion.
-wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261111T002035Z-h100-token-metrics-injected-scheduler-local/analysis/session_lanes_0_1050.png
-wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261111T002035Z-h100-token-metrics-injected-scheduler-local/analysis/session_lanes.csv

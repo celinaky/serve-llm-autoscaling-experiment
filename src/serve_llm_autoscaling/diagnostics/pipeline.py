@@ -4,7 +4,6 @@ from __future__ import annotations
 import datetime as dt
 import html
 import json
-import os
 import re
 import subprocess
 import sys
@@ -12,25 +11,9 @@ from pathlib import Path
 from typing import Any
 
 from ..artifacts import write_json
-from ..config import AgentXWorkloadConfig, CONTINUOUS_MODES, ExperimentConfig
+from ..config import ExperimentConfig
 
-TRACE_ENV = "RAY_SERVE_VLLM_SCHEDULER_TRACE_DIR"
 _ENGINE_ID = re.compile(r"^(?:chatcmpl-|cmpl-)?(.+)-[0-9a-f]{8}$")
-
-
-def prepare_tracing(config: ExperimentConfig, root: Path) -> ExperimentConfig:
-    """Give each new AgentX run its own trace directory and replica config."""
-    if not (config.analysis.generate_plots and config.analysis.diagnostic_plots
-            and config.benchmark.mode in CONTINUOUS_MODES
-            and isinstance(config.benchmark.workload, AgentXWorkloadConfig)):
-        return config
-    config = config.model_copy(deep=True)
-    base = config.analysis.scheduler_trace_dir or os.environ.get(TRACE_ENV)
-    directory = Path(base) / root.name if base else root / "telemetry/scheduler-traces"
-    directory = directory.resolve()
-    directory.mkdir(parents=True, exist_ok=True)
-    config.analysis.scheduler_trace_dir = directory
-    return config
 
 
 def _request_ids(root: Path) -> set[str]:
@@ -54,7 +37,7 @@ def select_traces(root: Path, config: ExperimentConfig,
     timestamp alone cannot safely distinguish their engine load.
     """
     saved = root / "analysis/scheduler_trace_inputs.json"
-    directory = traces_dir or getattr(config.analysis, "scheduler_trace_dir", None) or os.environ.get(TRACE_ENV)
+    directory = traces_dir or config.analysis.scheduler_trace_dir
     saved_paths = json.loads(saved.read_text()) if saved.exists() else []
     if traces_dir is None and saved_paths:
         candidates = [Path(p) for p in saved_paths]
@@ -112,8 +95,6 @@ def _run_plot(root: Path, name: str, args: list[str], output: Path) -> dict[str,
 def _gallery(root: Path, report: dict[str, Any], title: str) -> None:
     out = root / "analysis"
     sections = []
-    if (out / "autoscaling_timeline.png").exists():
-        sections.append('<section><h2>Scaling timeline</h2><a href="autoscaling_timeline.png"><img src="autoscaling_timeline.png" alt="Scaling timeline"></a></section>')
     for name, step in report["plots"].items():
         caption = html.escape(step["title"])
         if step["status"] == "generated":
@@ -122,9 +103,14 @@ def _gallery(root: Path, report: dict[str, Any], title: str) -> None:
         else:
             sections.append(f'<section><h2>{caption}</h2><p>{html.escape(step["status"] + ": " + step["reason"])}</p></section>')
     warnings = ''.join(f'<li>{html.escape(w)}</li>' for w in report["warnings"])
-    session_link = '<a href="session_lanes.csv">Session assignments CSV</a>' if (out / 'session_lanes.csv').exists() else ''
-    request_link = '<a href="load_requests.csv">Per-request engine data</a>' if (out / 'load_requests.csv').exists() else ''
-    body = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)}</title><style>body{{font:16px/1.5 system-ui,sans-serif;margin:32px auto;max-width:1200px;padding:0 20px;color:#18222e;background:#fafaf8}}h1{{font-size:30px}}section{{margin:36px 0;padding:20px;background:white;border:1px solid #ddd;border-radius:10px}}img{{width:100%;height:auto}}code{{overflow-wrap:anywhere}}a{{color:#205bb0}}</style></head><body><h1>{html.escape(title)}</h1><p><code>{html.escape(root.name)}</code></p><p>Saved post-run report. Click any chart to view its full size. Latency plots use successful requests matched to scheduler traces; inspect the timeline/evaluation for failures.</p><ul>{warnings}</ul>{''.join(sections)}<p>Session bars end at the last observed request, not verified session completion. Colors identify the first root replica; the session CSV lists every observed root replica. {session_link}</p><p><a href="diagnostic_plots.json">Plot generation status and trace inputs</a> · <a href="autoscaling_evaluation.json">Autoscaling evaluation</a> {request_link}</p></body></html>'''
+    links = ['<a href="diagnostic_plots.json">Plot generation status and trace inputs</a>',
+             '<a href="autoscaling_evaluation.json">Autoscaling evaluation</a>']
+    links += [f'<a href="{name}">{label}</a>' for name, label in (
+        ("plot_data.json", "Plot data"), ("request_timeseries.json", "Request time series"),
+        ("concurrency_qps.json", "Concurrency and QPS"),
+        ("load_requests.csv", "Per-request engine data"),
+    ) if (out / name).exists()]
+    body = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)}</title><style>body{{font:16px/1.5 system-ui,sans-serif;margin:32px auto;max-width:1200px;padding:0 20px;color:#18222e;background:#fafaf8}}h1{{font-size:30px}}section{{margin:36px 0;padding:20px;background:white;border:1px solid #ddd;border-radius:10px}}img{{width:100%;height:auto}}code{{overflow-wrap:anywhere}}a{{color:#205bb0}}</style></head><body><h1>{html.escape(title)}</h1><p><code>{html.escape(root.name)}</code></p><p>Saved post-run report. Click any chart to view its full size. The arrival statistics use successful requests matched to scheduler traces; inspect the evaluation for failures.</p><ul>{warnings}</ul>{''.join(sections)}<p>{' · '.join(links)}</p></body></html>'''
     (out / "index.html").write_text(body)
 
 
@@ -138,24 +124,18 @@ def generate_diagnostics(root: Path, config: ExperimentConfig, *,
     end = config.benchmark.duration_s
     suffix = f"0_{int(end)}"
     lookback = (config.deployment.autoscaling.policy.kwargs.get("upscale_lookback_s")
-                or getattr(config.deployment.autoscaling, "look_back_period_s", None) or 60)
+                or (config.deployment.autoscaling.model_extra or {}).get("look_back_period_s") or 60)
     specifications = [
         ("arrival_stats_stack", f"arrival_stats_stack180_{suffix}.png",
          ["--window", "180", "--end", str(end)], "Arrival statistics · 180s windows",
          "Successful requests matched to traces: p95, p90 and mean load at arrival, engine queue time and client TTFT; request counts under each point."),
-        ("replica_percentile_lines", f"replica_percentiles180_{suffix}.png",
-         ["--window", "180", "--min-samples", "10", "--end", str(end)], "Replica percentiles · 180s windows",
-         "Matched successful requests per replica: p95, p90 and mean arrival load; windows with fewer than 10 requests are blank."),
         ("policy_vs_engine_mean", f"policy_vs_engine_mean{int(lookback)}_{suffix}.png",
          ["--lookback", str(lookback), "--end", str(end)], "Policy vs engine mean",
          f"Router policy signal and actual remaining engine prefill, averaged over {lookback:g} seconds."),
-        ("session_lanes", f"session_lanes_{suffix}.png", [], "Session lanes and replica placement",
-         "Observed first-to-last request spans with recorded lane IDs when available; inferred rows are explicitly labeled."),
     ]
     # A reanalysis must never leave an old chart/CSV looking current when its
     # input traces disappear or the join fails.
     for filename in ["load_requests.csv", "load_breakdown.csv", "load_breakdown_steps.csv",
-                     "load_breakdown.png", "session_lanes.csv",
                      *(spec[1] for spec in specifications)]:
         (out / filename).unlink(missing_ok=True)
     try:

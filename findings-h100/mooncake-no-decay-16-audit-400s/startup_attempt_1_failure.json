@@ -1,7 +1,0 @@
-{
-  "at": "2026-11-04T23:03:57.831978+00:00",
-  "stage": "cold_pool_reset",
-  "error": "RuntimeError: 10.1.154.0:50052 is already occupied",
-  "driver_pid": null,
-  "driver_still_running": false
-}

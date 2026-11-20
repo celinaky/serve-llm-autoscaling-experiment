@@ -23,28 +23,18 @@ Its client TTFT is split into
   prefill        the steps it had tokens in: steps x mean step time
   after engine   first token produced -> client receives it
 
-usage: python tools/load_breakdown.py runs/<run_dir> \
-           [--traces /mnt/cluster_storage/.../vllm-scheduler-traces]
+Run by ``autoscale-harness analyze``; by hand:
+    python -m serve_llm_autoscaling.diagnostics.load_breakdown runs/<run_dir> [--traces DIR]
+(default traces: <run_dir>/telemetry/scheduler-traces)
 
-Writes analysis/load_breakdown.{png,csv}, load_breakdown_steps.csv and
-load_requests.csv.
+Writes analysis/load_requests.csv (one row per matched request) and the
+binned tables load_breakdown.csv and load_breakdown_steps.csv.
 """
 import argparse, bisect, csv, glob, json, math, os, re
 from collections import defaultdict
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-DEFAULT_TRACES = "/mnt/cluster_storage/serve-llm-autoscaling-experiment/vllm-scheduler-traces"
 ENGINE_ID = re.compile(r"^(?:chatcmpl-|cmpl-)?(.+)-[0-9a-f]{8}$")
-COMPONENTS = [  # stacked bottom to top; categorical slots 1-4
-    ("prefill_ms", "Prefill steps (engine)", "#2a78d6"),
-    ("queue_ms", "Queue (engine)", "#eb6834"),
-    ("pre_ms", "Before engine (proxy, router, tokenize)", "#1baf7a"),
-    ("post_ms", "After engine (detokenize, stream)", "#eda100"),
-]
-SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
+COMPONENTS = ("prefill_ms", "queue_ms", "pre_ms", "post_ms")  # the TTFT split above
 
 
 def aiperf_id(engine_id):
@@ -54,8 +44,9 @@ def aiperf_id(engine_id):
 
 ap = argparse.ArgumentParser()
 ap.add_argument("run")
-ap.add_argument("--traces", default=DEFAULT_TRACES)
+ap.add_argument("--traces", default=None)
 a = ap.parse_args()
+a.traces = a.traces or f"{a.run.rstrip('/')}/telemetry/scheduler-traces"
 R = a.run.rstrip("/")
 
 aiperf = {}
@@ -235,7 +226,7 @@ for kind in ("cold", "warm"):
                "mean_steps": sum(r["steps"] for r in rs) / len(rs),
                # Request-weighted: the step time a request in this bin sat through.
                "mean_step_ms": sum(r["prefill_ms"] for r in rs) / sum(r["steps"] for r in rs)}
-        for key in ["client_ttft_ms"] + [c[0] for c in COMPONENTS]:
+        for key in ("client_ttft_ms", *COMPONENTS):
             out[f"mean_{key}"] = sum(r[key] for r in rs) / len(rs)
         table.append(out)
 with open(f"{R}/analysis/load_breakdown.csv", "w", newline="") as fh:
@@ -277,59 +268,4 @@ for t in table:
           f"{t['mean_queue_ms']:6.0f} {t['mean_prefill_ms']:7.0f} {t['mean_pre_ms']:5.0f} {t['mean_post_ms']:4.0f} "
           f"{t['mean_steps']:5.2f} {t['mean_step_ms']:5.0f} {t['mean_own_uncached']:7.0f}")
 
-plt.rcParams.update({"font.size": 10, "axes.edgecolor": GRID, "axes.labelcolor": INK2,
-                     "xtick.color": INK2, "ytick.color": INK2, "text.color": INK})
-fig, axes = plt.subplots(3, 2, figsize=(13, 12), sharey="row",
-                         gridspec_kw={"height_ratios": [3, 1.6, 1.6]}, facecolor=SURFACE)
-for col, kind in enumerate(("cold", "warm")):
-    ts = [t for t in table if t["kind"] == kind]
-    xs = [labels.index(t["engine_load"]) for t in ts]
-    ax = axes[0, col]
-    bottom = [0.0] * len(ts)
-    for key, label, color in COMPONENTS:
-        vals = [max(t[f"mean_{key}"], 0) / 1000 for t in ts]
-        ax.bar(xs, vals, 0.72, bottom=bottom, color=color, label=label, edgecolor=SURFACE, linewidth=2)
-        bottom = [b + v for b, v in zip(bottom, vals)]
-    for x, t, top in zip(xs, ts, bottom):
-        ax.text(x, top, f"n={t['requests']}", ha="center", va="bottom", fontsize=8, color=INK2)
-    n = sum(t["requests"] for t in ts)
-    ax.set_title(f"{kind.capitalize()} turns ({n}): mean client TTFT", loc="left", fontsize=11, color=INK)
-    sts = [t for t in step_table if t["kind"] == kind]
-    for row, rows_, xs_, key, title, scale, fmt in (
-            (1, sts, [step_labels.index(t["step_load"]) for t in sts], "mean_step_ms",
-             "Mean duration of the steps it had tokens in", 1, "{:.0f} ms"),
-            (2, ts, xs, "mean_own_uncached", "Its own uncached tokens (confounder check)", 1000, "{:.1f}K")):
-        ax = axes[row, col]
-        vals = [t[key] / scale for t in rows_]
-        ax.plot(xs_, vals, color=INK, linewidth=2, marker="o", markersize=7,
-                markeredgecolor=SURFACE, markeredgewidth=1.5)
-        for x, v, t in zip(xs_, vals, rows_):
-            label = fmt.format(v) + (f" (n={t['requests']})" if row == 1 else "")
-            ax.annotate(label, (x, v), textcoords="offset points", xytext=(0, 7),
-                        ha="center", fontsize=8, color=INK2)
-        ax.set_title(title, loc="left", fontsize=10, color=INK)
-        ax.set_ylim(0, max(t[key] / scale for t in (step_table if row == 1 else table)) * 1.3)
-axes[0, 0].set_ylabel("seconds")
-axes[1, 0].set_ylabel("ms per step")
-axes[2, 0].set_ylabel("K tokens")
-for ax in (*axes[0], *axes[2]):
-    ax.set_xticks(range(len(labels)), labels)
-    ax.set_xlim(-0.6, len(labels) - 0.4)
-    ax.set_xlabel("uncached prefill token load on the engine at arrival (excl. the request)")
-for ax in axes[1]:
-    ax.set_xticks(range(len(step_labels)), step_labels)
-    ax.set_xlim(-0.6, len(step_labels) - 0.4)
-    ax.set_xlabel("uncached prefill token load on the engine during its steps (incl. the request)")
-for ax in axes.flat:
-    ax.set_facecolor(SURFACE)
-    ax.grid(axis="y", color=GRID, linewidth=0.8)
-    ax.set_axisbelow(True)
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-handles, hl = axes[0, 0].get_legend_handles_labels()
-fig.legend(handles, hl, loc="upper left", bbox_to_anchor=(0.01, 0.965), frameon=False, ncol=4, fontsize=9)
-fig.suptitle(f"{os.path.basename(R)}: client TTFT by uncached prefill token load on the engine",
-             x=0.01, ha="left", fontsize=13)
-fig.tight_layout(rect=(0, 0, 1, 0.95))
-fig.savefig(f"{R}/analysis/load_breakdown.png", dpi=130, facecolor=SURFACE)
-print(f"wrote {R}/analysis/load_breakdown.png, load_breakdown.csv, load_breakdown_steps.csv, load_requests.csv")
+print(f"wrote {R}/analysis/load_breakdown.csv, load_breakdown_steps.csv, load_requests.csv")

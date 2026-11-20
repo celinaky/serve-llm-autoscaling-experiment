@@ -1,4 +1,0 @@
-{"timestamp": "2026-11-04T09:04:30.364763+00:00", "event": "deploy_started"}
-{"timestamp": "2026-11-04T09:07:22.841085+00:00", "event": "deployment_ready"}
-{"timestamp": "2026-11-04T09:32:39.403464+00:00", "event": "teardown_started"}
-{"timestamp": "2026-11-04T09:33:09.408792+00:00", "event": "teardown_completed"}

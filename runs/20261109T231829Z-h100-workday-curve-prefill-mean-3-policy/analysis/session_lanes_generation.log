@@ -1,5 +1,0 @@
-replicas: 1=pid 279465 (first request 0s), 2=pid 292845 (first request 372s)
-lane source: recorded initial lane IDs
-Bar ends are last observed request ends, not verified session completion.
-wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261109T231829Z-h100-workday-curve-prefill-mean-3-policy/analysis/session_lanes_0_1050.png
-wrote /home/ray/default/serve-llm-autoscaling-experiment/runs/20261109T231829Z-h100-workday-curve-prefill-mean-3-policy/analysis/session_lanes.csv

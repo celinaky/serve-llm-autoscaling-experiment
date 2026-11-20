@@ -181,21 +181,18 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Experiment outputs live in runs/ and are tracked: Anyscale does not persist
-# gitignored files across workspace restarts. Keep their logs too, which the
-# *.log rule above would otherwise drop.
+# Run outputs (runs/) are deliberately NOT ignored as a whole: an Anyscale
+# workspace does not persist gitignored files across restarts, so a blanket
+# ignore would lose every run's summary and figures. Do not commit them
+# either; they are local results. Keep their logs too, which the *.log rule
+# above would otherwise drop.
 !runs/**/*.log
 #
 # Except the bulky raw streams: the workspace uploads the repo with every Ray
-# job, capped at 512 MiB, and these run to hundreds of MB per run. Each run's
-# configs, manifest, summaries, analysis tables and figures stay tracked and
-# are its durable record. The raw files may not survive a workspace restart
-# (a best-effort copy is in /mnt/cluster_storage/serve-llm-autoscaling-
-# experiment/runs); without them, tools that read them (load_breakdown.py
-# reads profile_export.jsonl) cannot be rerun on that run.
+# job, capped at 512 MiB, and these run to hundreds of MB per run. They may
+# not survive a workspace restart; without them a run cannot be re-analyzed.
 runs/*/telemetry/serve_metrics.jsonl
 runs/*/telemetry/serve_status.jsonl
-runs/*/telemetry/mooncake_metrics.jsonl
 runs/*/benchmark/*/profile_export.jsonl
 runs/*/benchmark/*/stdout.log
 runs/*/benchmark/*/logs/
@@ -236,3 +233,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Compressed raw telemetry. Ignored so it stays out of the Anyscale
+# runtime_env zip (512 MiB upload limit); .rayignore alone was not honoured.
+runs/**/*.zst
+# AIPerf's generated prompts: ~0.57 MB per 128K-token synthetic prompt, so a
+# synthetic run's inputs.json can be hundreds of MB. Keep it out of git and
+# the runtime_env zip (rebuilt mid-run when the run dir changes).
+runs/*/benchmark/*/inputs.json
