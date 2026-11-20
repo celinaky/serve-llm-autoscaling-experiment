@@ -104,7 +104,8 @@ the same sessions start at the same times in every run of a curve.
 ## What you get from a run
 
 Three things: a scorecard and two plots. The examples below are from a
-64-session token-policy run on 8x B200 (2026-11-17).
+64-session token-policy run on 8x B200 (2026-11-16), with a 20K-token target
+per replica and a 150-second freeze after each scale-down.
 
 ### 1. The scorecard
 
@@ -112,13 +113,13 @@ Printed at the end of the run and saved as
 `analysis/autoscaling_evaluation.json`.
 
 ```text
-=== Autoscaling evaluation: policy token, steady state 0-5670s, 5082 requests (106 failed): SLO FAIL ===
-TTFT: p95 9261ms vs SLO 5000ms: FAIL · 91% of requests within · mean 1939ms, within SLO 90% of the time (565s over)
-ITL : p95 70ms vs SLO 50ms: FAIL · 87% of requests within · mean 29ms, within SLO 88% of the time (680s over)
-TTFT by prompt: warm p95 8025ms (4400 requests) · cold (<50% cached) p95 14521ms (576 requests)
-GPU time: 5.78 GPU-h during load · 18613 replica-s running (mean 3.3, max 8), 2205 replica-s starting
-Scaling: 5 up / 3 down · first up at 1371s · upscale lag mean 172s, max 188s
-TTFT p95 9261ms = own prefill 1809ms + waiting 7452ms · with instant replica startup 6567ms (346 requests started during a startup)
+=== Autoscaling evaluation: policy token, steady state 0-5670s, 6067 requests (26 failed): SLO PASS ===
+TTFT: p95 2603ms vs SLO 5000ms: PASS · 98% of requests within · mean 849ms, within SLO 99% of the time (45s over)
+ITL : p95 36ms vs SLO 50ms: PASS · 99% of requests within · mean 20ms, within SLO 100% of the time (5s over)
+TTFT by prompt: warm p95 1827ms (5376 requests) · cold (<50% cached) p95 7365ms (665 requests)
+GPU time: 4.24 GPU-h during load · 14667 replica-s running (mean 2.6, max 4), 608 replica-s starting
+Scaling: 5 up / 1 down · first up at 799s · upscale lag mean 159s, max 161s
+TTFT p95 2603ms = own prefill 954ms + waiting 1649ms · with instant replica startup 2431ms (500 requests started during a startup)
 ```
 
 | Line | How to read it |
@@ -153,8 +154,10 @@ decision happen when it did?*
   replica count.
 - **Background tint**: ramp up (blue), hold (grey), ramp down (peach).
 
-In this example the policy scaled 6→1 during the hold, the backlog spiked to
-500K tokens, and it scaled straight back to 8: the kind of behaviour this
+In this example the policy added replicas at 799s, 1449s and 3589s as the
+signal stayed above target, then went from 4 replicas to 1 in a single step
+during the ramp down (5109s). The backlog spiked to 60K tokens at once, and
+within eight minutes it had scaled back up to 3: the kind of behaviour this
 plot is for finding.
 
 ### 3. Arrival statistics plot
@@ -218,7 +221,7 @@ prints one scorecard row per run:
 
 ```text
 run                          policy  SLO  TTFT pN  ITL pN TTFT req ITL req TTFT mean ITL mean failed  GPU-h mean max up/down 1st up   lag
-20261117T002452Z-...-token    token FAIL   9261ms    70ms      91%     87%    1939ms     29ms    106   5.78  3.3   8     5/3  1371s  172s
+20261116T111800Z-...-token    token PASS   2603ms    36ms      98%     99%     849ms     20ms     26   4.24  2.6   4     5/1   799s  159s
 20261117T225619Z-...-default default FAIL   4454ms    60ms      96%     91%    1155ms     31ms     25   2.59  1.6   2     1/1  1353s  161s
 ```
 
@@ -232,6 +235,10 @@ Solid vertical lines mark a new replica serving and dashed lines a
 scale-down decision, each in its run's colour and labelled with the replica
 count after it. `--cols` picks which of `mean,p90,p95` to draw; without it
 you get all three side by side.
+
+Here the token policy met both targets using 4.24 GPU-hours and up to 4
+replicas; the default policy at `target_ongoing_requests: 32` used 2.59
+GPU-hours and 2 replicas and missed the ITL target.
 
 Only compare runs of the same workload and seed; then the same sessions
 arrive at the same times in both, and differences come from the policy.
@@ -336,6 +343,13 @@ analysis:              # what the run is scored against
 
 Serve applies the delays and replica bounds to both. `target_ongoing_requests`
 must be set even for `token`, which ignores it.
+
+> **Not supported yet: router prefill decay.** The decay factor
+> (`routing.request_router_kwargs.prefill_decay_tokens_per_second`, which
+> drains the router's reported prefill tokens at a fixed rate) is not in the
+> pinned Ray branch, so a config that sets it will not behave as intended.
+> It exists only as an unfinished draft against the previous policy design
+> (celinaky/ray#9) and needs porting to the current stack first.
 
 ### `benchmark`
 
