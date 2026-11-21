@@ -175,7 +175,8 @@ panel is how many requests that is.
   request arrived. This is the load the token policy tries to keep near its
   target (dotted line).
 - **Middle**: engine queue time, the wait before the request's first prefill
-  chunk was scheduled.
+  chunk was scheduled. How that moment is estimated from the scheduler trace,
+  and why, is in [docs/queue-time-definition.md](docs/queue-time-definition.md).
 - **Bottom**: client time to first token, what the user felt.
 
 The three panels usually move together: load at arrival drives queue time,
